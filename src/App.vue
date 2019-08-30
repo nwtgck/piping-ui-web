@@ -1,5 +1,5 @@
 <template>
-  <v-app :dark="setTheme">
+  <v-app>
     <v-app-bar app>
       <v-toolbar-title>
         <span>Piping </span>
@@ -7,7 +7,7 @@
       </v-toolbar-title>
       <v-spacer></v-spacer>
       <!-- FIXME: margin-top is not good solution for adjusting middle in the bar -->
-      <v-switch :label="`Dark Theme`" v-model="enableDarkTheme" style="margin-top: 1.5em;"></v-switch>
+      <v-switch :label="`Dark Theme`" @change="toggleLightDarkTheme" style="margin-top: 1.5em;"></v-switch>
     </v-app-bar>
 
     <v-content>
@@ -26,13 +26,8 @@ import HelloWorld from './components/HelloWorld.vue';
   }
 })
 export default class App extends Vue {
-  enableDarkTheme = false;
-  get setTheme() {
-    if (this.enableDarkTheme) {
-      return (this.$vuetify.theme.dark = true);
-    } else {
-      return (this.$vuetify.theme.dark = false);
-    }
+  toggleLightDarkTheme(isDark: boolean) {
+    this.$vuetify.theme.dark = isDark;
   }
 }
 </script>
