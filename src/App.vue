@@ -1,5 +1,5 @@
 <template>
-  <v-app>
+  <v-app id="app">
     <v-app-bar app>
       <v-toolbar-title>
         <span>Piping </span>
@@ -11,7 +11,7 @@
     </v-app-bar>
 
     <v-content>
-      <HelloWorld/>
+      <PipingUI/>
     </v-content>
   </v-app>
 </template>
@@ -19,11 +19,13 @@
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import HelloWorld from './components/HelloWorld.vue';
+import PipingUI from './components/PipingUI.vue';
 import {keys} from "@/local-storage-keys";
 
 @Component({
   components: {
-    HelloWorld
+    HelloWorld,
+    PipingUI,
   }
 })
 export default class App extends Vue {
@@ -46,3 +48,14 @@ export default class App extends Vue {
   }
 }
 </script>
+
+<style>
+  #app {
+    /*font-family: 'Avenir', Helvetica, Arial, sans-serif;*/
+    /*-webkit-font-smoothing: antialiased;*/
+    /*-moz-osx-font-smoothing: grayscale;*/
+    text-align: center;
+    /*color: #2c3e50;*/
+    padding-top: 2em;
+  }
+</style>
