@@ -1,18 +1,13 @@
 <template>
   <v-app>
     <v-app-bar app>
-      <v-toolbar-title class="headline text-uppercase">
-        <span>Vuetify</span>
-        <span class="font-weight-light">MATERIAL DESIGN</span>
+      <v-toolbar-title>
+        <span>Piping </span>
+        <span class="font-weight-light">UI</span>
       </v-toolbar-title>
       <v-spacer></v-spacer>
-      <v-btn
-        text
-        href="https://github.com/vuetifyjs/vuetify/releases/latest"
-        target="_blank"
-      >
-        <span class="mr-2">Latest Release</span>
-      </v-btn>
+      <!-- FIXME: margin-top is not good solution for adjusting middle in the bar -->
+      <v-switch :label="`Dark Theme`" @change="toggleLightDarkTheme" style="margin-top: 1.5em;"></v-switch>
     </v-app-bar>
 
     <v-content>
@@ -22,16 +17,17 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue';
+import { Component, Vue } from 'vue-property-decorator';
 import HelloWorld from './components/HelloWorld.vue';
 
-export default Vue.extend({
-  name: 'App',
+@Component({
   components: {
-    HelloWorld,
-  },
-  data: () => ({
-    //
-  }),
-});
+    HelloWorld
+  }
+})
+export default class App extends Vue {
+  toggleLightDarkTheme(isDark: boolean) {
+    this.$vuetify.theme.dark = isDark;
+  }
+}
 </script>
