@@ -17,27 +17,22 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue';
+import { Component, Vue } from 'vue-property-decorator';
 import HelloWorld from './components/HelloWorld.vue';
 
-export default Vue.extend({
-  name: 'App',
+@Component({
   components: {
-    HelloWorld,
-  },
-  data() {
-    return {
-      enableDarkTheme: false
-    };
-  },
-  computed: {
-    setTheme() {
-      if (this.enableDarkTheme) {
-        return (this.$vuetify.theme.dark = true);
-      } else {
-        return (this.$vuetify.theme.dark = false);
-      }
+    HelloWorld
+  }
+})
+export default class App extends Vue {
+  enableDarkTheme = false;
+  get setTheme() {
+    if (this.enableDarkTheme) {
+      return (this.$vuetify.theme.dark = true);
+    } else {
+      return (this.$vuetify.theme.dark = false);
     }
   }
-});
+}
 </script>
