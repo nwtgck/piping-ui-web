@@ -43,18 +43,23 @@
           <v-icon right dark>file_download</v-icon>
         </v-btn>
 
-<!--        <v-progress-linear-->
-<!--                v-show="progressSetting.show"-->
-<!--                :indeterminate="progressSetting.indeterminate"-->
-<!--                :value="progressSetting.percentage"-->
-<!--        />-->
+        <v-progress-linear
+            v-show="progressSetting.show"
+            :value="progressSetting.percentage"
+            style="margin-top: 1em;"
+        />
       </v-card>
     </v-flex>
+    <v-snackbar v-model="showsSnackbar"
+                color="error">
+      {{ snackbarMessage }}
+    </v-snackbar>
   </v-layout>
 </template>
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
+import urlJoin from 'url-join';
 
 import vueFilePond from 'vue-filepond';
 import 'filepond/dist/filepond.min.css';
@@ -73,14 +78,62 @@ export default class PipingUI extends Vue {
   private serverUrl: string = 'https://ppng.ml';
   private secretPath: string = "";
 
-  // TODO: impl
+  // Progress bar setting
+  private progressSetting = {
+    show: false,
+    percentage: 0
+  };
+
+  // Show snackbar
+  private showsSnackbar: boolean = false;
+  // Message of snackbar
+  private snackbarMessage: string = '';
+
   private send() {
-    console.log('todo impl');
+    // Get file in FilePond
+    const pondFile: {file: File} | null = (this.$refs.pond as any).getFile();
+    if (pondFile === null) {
+      // Show error message
+      this.showSnackbar('Error: File not selected');
+      return;
+    }
+    // If secret path is empty
+    if (this.secretPath === '') {
+      // Show error message
+      this.showSnackbar('Error: Secret path not specified');
+      return;
+    }
+
+    const body = pondFile.file;
+    // Send
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', urlJoin(this.serverUrl, this.secretPath), true);
+    // Update progress bar
+    xhr.upload.onprogress = (ev) => {
+      const progress = ev.loaded / ev.total * 100;
+      this.progressSetting.percentage = progress;
+    };
+    xhr.onreadystatechange = () => {
+      // Send finished
+      if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+        this.progressSetting.percentage = 100;
+      }
+    };
+    xhr.send(body);
+    // Initialize progress bar
+    this.progressSetting.show = true;
+    this.progressSetting.percentage = 0;
   }
 
   // TODO: impl
   private get() {
     console.log('todo impl');
+  }
+
+  // Show error message
+  private showSnackbar(message: string): void {
+    this.showsSnackbar = true;
+    this.snackbarMessage = message;
   }
 }
 </script>
