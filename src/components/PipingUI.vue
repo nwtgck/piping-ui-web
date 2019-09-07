@@ -27,6 +27,7 @@
         />
         <v-textarea v-if="isTextMode"
                     label="Text"
+                    v-model="inputText"
                     outlined
         ></v-textarea>
 
@@ -88,6 +89,7 @@ export default class PipingUI extends Vue {
   private serverUrl: string = 'https://ppng.ml';
   private secretPath: string = "";
   private isTextMode: boolean = false;
+  private inputText: string = '';
 
   // Progress bar setting
   private progressSetting = {
@@ -102,11 +104,15 @@ export default class PipingUI extends Vue {
 
   private send() {
     // Get file in FilePond
-    const pondFile: {file: File} | null = (this.$refs.pond as any).getFile();
-    if (pondFile === null) {
-      // Show error message
-      this.showSnackbar('Error: File not selected');
-      return;
+    let pondFile: {file: File} | null = null;
+    if (!this.isTextMode) {
+      // Get file
+      pondFile = (this.$refs.pond as any).getFile();
+      if (pondFile === null) {
+        // Show error message
+        this.showSnackbar('Error: File not selected');
+        return;
+      }
     }
     // If secret path is empty
     if (this.secretPath === '') {
@@ -115,7 +121,7 @@ export default class PipingUI extends Vue {
       return;
     }
 
-    const body = pondFile.file;
+    const body: File | string = this.isTextMode ? this.inputText : pondFile!.file;
     // Send
     const xhr = new XMLHttpRequest();
     xhr.open('POST', urlJoin(this.serverUrl, this.secretPath), true);
