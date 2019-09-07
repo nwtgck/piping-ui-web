@@ -14,12 +14,22 @@
           </v-btn>
         </v-btn-toggle>
 
-        <file-pond v-if="sendOrGet === 'send'"
+        <v-switch v-if="sendOrGet === 'send'"
+                  inset
+                  v-model="isTextMode"
+                  :class="`justify-end`"
+                  :label="'Text mode'"/>
+        <file-pond v-if="sendOrGet === 'send' && !isTextMode"
                    ref="pond"
                    label-idle="<img src='img/file-icon.svg' style='width: 2em'><br>Drop a file here or <span class='filepond--label-action'>Browse</span>"
                    allow-multiple="false"
                    maxFiles="1"
         />
+        <v-textarea v-if="isTextMode"
+                    label="Text"
+                    outlined
+        ></v-textarea>
+
         <v-text-field label="Server URL"
                       v-model="serverUrl"
         />
@@ -77,6 +87,7 @@ export default class PipingUI extends Vue {
   // TODO: Hard code
   private serverUrl: string = 'https://ppng.ml';
   private secretPath: string = "";
+  private isTextMode: boolean = false;
 
   // Progress bar setting
   private progressSetting = {
