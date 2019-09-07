@@ -14,12 +14,23 @@
           </v-btn>
         </v-btn-toggle>
 
-        <file-pond v-if="sendOrGet === 'send'"
+        <v-switch v-if="sendOrGet === 'send'"
+                  inset
+                  v-model="isTextMode"
+                  :class="`justify-end`"
+                  :label="'Text mode'"/>
+        <file-pond v-if="sendOrGet === 'send' && !isTextMode"
                    ref="pond"
                    label-idle="<img src='img/file-icon.svg' style='width: 2em'><br>Drop a file here or <span class='filepond--label-action'>Browse</span>"
                    allow-multiple="false"
                    maxFiles="1"
         />
+        <v-textarea v-if="isTextMode"
+                    label="Text"
+                    v-model="inputText"
+                    outlined
+        ></v-textarea>
+
         <v-text-field label="Server URL"
                       v-model="serverUrl"
         />
@@ -77,6 +88,8 @@ export default class PipingUI extends Vue {
   // TODO: Hard code
   private serverUrl: string = 'https://ppng.ml';
   private secretPath: string = "";
+  private isTextMode: boolean = false;
+  private inputText: string = '';
 
   // Progress bar setting
   private progressSetting = {
@@ -91,11 +104,15 @@ export default class PipingUI extends Vue {
 
   private send() {
     // Get file in FilePond
-    const pondFile: {file: File} | null = (this.$refs.pond as any).getFile();
-    if (pondFile === null) {
-      // Show error message
-      this.showSnackbar('Error: File not selected');
-      return;
+    let pondFile: {file: File} | null = null;
+    if (!this.isTextMode) {
+      // Get file
+      pondFile = (this.$refs.pond as any).getFile();
+      if (pondFile === null) {
+        // Show error message
+        this.showSnackbar('Error: File not selected');
+        return;
+      }
     }
     // If secret path is empty
     if (this.secretPath === '') {
@@ -104,7 +121,7 @@ export default class PipingUI extends Vue {
       return;
     }
 
-    const body = pondFile.file;
+    const body: File | string = this.isTextMode ? this.inputText : pondFile!.file;
     // Send
     const xhr = new XMLHttpRequest();
     xhr.open('POST', urlJoin(this.serverUrl, this.secretPath), true);
