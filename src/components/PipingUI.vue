@@ -71,6 +71,7 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import urlJoin from 'url-join';
+import * as utils from "@/utils";
 
 import vueFilePond from 'vue-filepond';
 import 'filepond/dist/filepond.min.css';
@@ -121,22 +122,19 @@ export default class PipingUI extends Vue {
       return;
     }
 
-    const body: File | string = this.isTextMode ? this.inputText : pondFile!.file;
-    // Send
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', urlJoin(this.serverUrl, this.secretPath), true);
-    // Update progress bar
-    xhr.upload.onprogress = (ev) => {
-      const progress = ev.loaded / ev.total * 100;
-      this.progressSetting.percentage = progress;
-    };
-    xhr.onreadystatechange = () => {
-      // Send finished
-      if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-        this.progressSetting.percentage = 100;
+    // Data to be sent
+    const data: File | string = this.isTextMode ? this.inputText : pondFile!.file;
+    const url = urlJoin(this.serverUrl, this.secretPath);
+    // Send to Piping Server
+    utils.sendByInlineMultipart(url, data, {
+      onProgress: (progress) => {
+        this.progressSetting.percentage = progress;
+      },
+      onError: () => {
+
       }
-    };
-    xhr.send(body);
+    });
+
     // Initialize progress bar
     this.progressSetting.show = true;
     this.progressSetting.percentage = 0;
