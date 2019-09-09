@@ -29,9 +29,11 @@ import {keys} from "@/local-storage-keys";
   }
 })
 export default class App extends Vue {
-  enableDarkTheme: boolean = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  enableDarkTheme: boolean = false;
 
   mounted () {
+    // Load environmental dark theme setting
+    this.enableDarkTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
     // Load dark theme setting
     const darkThemeStr = window.localStorage.getItem(keys.darkTheme);
     if (darkThemeStr !== null) {
