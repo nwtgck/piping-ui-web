@@ -54,11 +54,16 @@
           <v-icon right dark>file_download</v-icon>
         </v-btn>
 
-        <v-progress-linear
-            v-show="progressSetting.show"
-            :value="progressSetting.percentage"
-            style="margin-top: 1em;"
-        />
+        <div v-show="progressSetting.show" style="margin-top: 1em;">
+          <!-- Percentage -->
+          {{ progressPercentage && progressPercentage.toFixed(2) }} %
+          <!-- Progress bar -->
+          <v-progress-linear
+                  :value="progressPercentage"
+          />
+          <!-- loaded of total -->
+          {{ readableBytesString(progressSetting.loadedBytes, 1) }} of {{ readableBytesString(progressSetting.totalBytes, 1) }}
+        </div>
       </v-card>
     </v-flex>
     <v-snackbar v-model="showsSnackbar"
@@ -71,6 +76,7 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import urlJoin from 'url-join';
+import * as utils from '@/utils';
 
 import vueFilePond from 'vue-filepond';
 import 'filepond/dist/filepond.min.css';
@@ -92,15 +98,26 @@ export default class PipingUI extends Vue {
   private inputText: string = '';
 
   // Progress bar setting
-  private progressSetting = {
+  private progressSetting: {show: boolean, loadedBytes: number, totalBytes?: number} = {
     show: false,
-    percentage: 0
+    loadedBytes: 0,
+    totalBytes: undefined,
   };
 
   // Show snackbar
   private showsSnackbar: boolean = false;
   // Message of snackbar
   private snackbarMessage: string = '';
+
+  private readableBytesString = utils.readableBytesString;
+
+  private get progressPercentage(): number | null {
+    if (this.progressSetting.totalBytes === undefined) {
+      return null;
+    } else {
+      return this.progressSetting.loadedBytes / this.progressSetting.totalBytes * 100;
+    }
+  }
 
   private send() {
     // Get file in FilePond
@@ -122,24 +139,38 @@ export default class PipingUI extends Vue {
     }
 
     const body: File | string = this.isTextMode ? this.inputText : pondFile!.file;
+    const bodyLength: number = typeof body === "string" ? body.length : body.size;
     // Send
     const xhr = new XMLHttpRequest();
     xhr.open('POST', urlJoin(this.serverUrl, this.secretPath), true);
     // Update progress bar
     xhr.upload.onprogress = (ev) => {
-      const progress = ev.loaded / ev.total * 100;
-      this.progressSetting.percentage = progress;
+      this.progressSetting.loadedBytes = ev.loaded;
+      this.progressSetting.totalBytes  = ev.total;
     };
-    xhr.onreadystatechange = () => {
+    xhr.upload.onload = () => {
       // Send finished
-      if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-        this.progressSetting.percentage = 100;
+      if (xhr.status === 200) {
+        if (this.progressSetting.totalBytes !== undefined) {
+          this.progressSetting.loadedBytes = this.progressSetting.totalBytes;
+        }
+      } else {
+        console.error(`Upload HTTP error: ${xhr.status}`);
       }
+    };
+    xhr.upload.onerror = () => {
+      // TODO: Handle
+      console.error('xhr.upload.onerror');
+    };
+    xhr.upload.onabort = () => {
+      // TODO: Handle
+      console.error('xhr.upload.onabort');
     };
     xhr.send(body);
     // Initialize progress bar
     this.progressSetting.show = true;
-    this.progressSetting.percentage = 0;
+    this.progressSetting.loadedBytes = 0;
+    this.progressSetting.totalBytes = bodyLength;
   }
 
   // TODO: impl
