@@ -1,10 +1,17 @@
 <template>
   <v-app id="app">
     <v-app-bar app>
-      <v-toolbar-title>
+      <v-toolbar-title style="margin-right: 0.6em;">
         <span>Piping </span>
         <span class="font-weight-light">UI</span>
       </v-toolbar-title>
+
+      <!-- PWA update button -->
+      <v-btn v-if="pwa.updateExists"
+             @click="refreshApp"
+             depressed color="blue" dark small outlined>
+        <v-icon dark left>mdi-cached</v-icon>Update
+      </v-btn>
       <v-spacer></v-spacer>
       <!-- FIXME: margin-top is not good solution for adjusting middle in the bar -->
       <v-switch :label="`Dark Theme`" v-model="enableDarkTheme" style="margin-top: 1.5em;"></v-switch>
@@ -30,6 +37,40 @@ import {keys} from "@/local-storage-keys";
 })
 export default class App extends Vue {
   enableDarkTheme: boolean = false;
+  // TODO: Remove any
+  pwa: {refreshing: boolean, registration?: any, updateExists: boolean} = {
+    refreshing: false,
+    registration: undefined,
+    updateExists: false
+  };
+
+  created () {
+    document.addEventListener(
+      'swUpdated', this.showRefreshUI, { once: true }
+    );
+    navigator.serviceWorker.addEventListener(
+      'controllerchange', () => {
+        if (this.pwa.refreshing) return;
+        this.pwa.refreshing = true;
+        window.location.reload();
+      }
+    );
+  }
+
+  // TODO: Remove any
+  showRefreshUI (e: any) {
+    this.pwa.registration = e.detail;
+    this.pwa.updateExists = true;
+  }
+
+  // Update PWA app
+  refreshApp () {
+    this.pwa.updateExists = false;
+    if (this.pwa.registration === undefined || !this.pwa.registration.waiting) {
+      return;
+    }
+    this.pwa.registration.waiting.postMessage('skipWaiting');
+  }
 
   mounted () {
     // Load environmental dark theme setting
