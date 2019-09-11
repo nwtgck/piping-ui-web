@@ -158,6 +158,12 @@ export default class PipingUI extends Vue {
         console.error(`Upload HTTP error: ${xhr.status}`);
       }
     };
+    xhr.onabort = (ev) => {
+      console.log("xhr.onabort", ev);
+    };
+    xhr.onerror = (ev) => {
+      console.log("xhr.onerror", ev);
+    };
     xhr.upload.onerror = () => {
       // TODO: Handle
       console.error('xhr.upload.onerror');
