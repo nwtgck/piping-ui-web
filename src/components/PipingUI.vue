@@ -1,7 +1,7 @@
 <template>
   <v-layout>
     <v-flex xs12 sm8 offset-sm2 offset-md3 md6>
-      <v-card style="padding: 1em;">
+      <v-card style="padding: 1em; margin-bottom: 2em;">
 
         <v-btn-toggle v-model="sendOrGet" mandatory style="margin-bottom: 2em;">
           <v-btn text value="send">
@@ -53,18 +53,13 @@
           Get
           <v-icon right dark>file_download</v-icon>
         </v-btn>
-
-        <div v-show="progressSetting.show" style="margin-top: 1em;">
-          <!-- Percentage -->
-          {{ progressPercentage && progressPercentage.toFixed(2) }} %
-          <!-- Progress bar -->
-          <v-progress-linear
-                  :value="progressPercentage"
-          />
-          <!-- loaded of total -->
-          {{ readableBytesString(progressSetting.loadedBytes, 1) }} of {{ readableBytesString(progressSetting.totalBytes, 1) }}
-        </div>
       </v-card>
+
+      <!-- Data uploader to Piping Server -->
+      <div v-for="dataUpload in dataUploads" :key="dataUpload.uploadNo">
+        <DataUploader :props="dataUpload" />
+      </div>
+
     </v-flex>
     <v-snackbar v-model="showsSnackbar"
                 color="error">
@@ -75,8 +70,7 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import urlJoin from 'url-join';
-import * as utils from '@/utils';
+import DataUploader, { DataUploaderProps } from '@/components/DataUploader.vue';
 
 import vueFilePond from 'vue-filepond';
 import 'filepond/dist/filepond.min.css';
@@ -86,6 +80,7 @@ const FilePond = vueFilePond();
 
 @Component({
   components: {
+    DataUploader,
     FilePond,
   },
 })
@@ -104,20 +99,13 @@ export default class PipingUI extends Vue {
     totalBytes: undefined,
   };
 
+  private uploadCount = 0;
+  private dataUploads: DataUploaderProps[] = [];
+
   // Show snackbar
   private showsSnackbar: boolean = false;
   // Message of snackbar
   private snackbarMessage: string = '';
-
-  private readableBytesString = utils.readableBytesString;
-
-  private get progressPercentage(): number | null {
-    if (this.progressSetting.totalBytes === undefined) {
-      return null;
-    } else {
-      return this.progressSetting.loadedBytes / this.progressSetting.totalBytes * 100;
-    }
-  }
 
   private send() {
     // Get file in FilePond
@@ -139,44 +127,16 @@ export default class PipingUI extends Vue {
     }
 
     const body: File | string = this.isTextMode ? this.inputText : pondFile!.file;
-    const bodyLength: number = typeof body === "string" ? body.length : body.size;
-    // Send
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', urlJoin(this.serverUrl, this.secretPath), true);
-    // Update progress bar
-    xhr.upload.onprogress = (ev) => {
-      this.progressSetting.loadedBytes = ev.loaded;
-      this.progressSetting.totalBytes  = ev.total;
-    };
-    xhr.upload.onload = () => {
-      // Send finished
-      if (xhr.status === 200) {
-        if (this.progressSetting.totalBytes !== undefined) {
-          this.progressSetting.loadedBytes = this.progressSetting.totalBytes;
-        }
-      } else {
-        console.error(`Upload HTTP error: ${xhr.status}`);
-      }
-    };
-    xhr.onabort = (ev) => {
-      console.log("xhr.onabort", ev);
-    };
-    xhr.onerror = (ev) => {
-      console.log("xhr.onerror", ev);
-    };
-    xhr.upload.onerror = () => {
-      // TODO: Handle
-      console.error('xhr.upload.onerror');
-    };
-    xhr.upload.onabort = () => {
-      // TODO: Handle
-      console.error('xhr.upload.onabort');
-    };
-    xhr.send(body);
-    // Initialize progress bar
-    this.progressSetting.show = true;
-    this.progressSetting.loadedBytes = 0;
-    this.progressSetting.totalBytes = bodyLength;
+
+    // Increment upload counter
+    this.uploadCount++;
+    // Delegate data uploading
+    this.dataUploads.unshift({
+      uploadNo: this.uploadCount,
+      data: body,
+      serverUrl: this.serverUrl,
+      secretPath: this.secretPath,
+    });
   }
 
   // TODO: impl
