@@ -59,7 +59,7 @@
 
       <!-- Data uploader to Piping Server -->
       <div v-for="dataUpload in dataUploads" :key="dataUpload.uploadNo">
-        <DataUploader :props="dataUpload" />
+        <DataUploader :props="dataUpload" style="margin: 0 1em;"/>
       </div>
 
     </v-flex>
