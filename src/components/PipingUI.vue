@@ -14,22 +14,24 @@
           </v-btn>
         </v-btn-toggle>
 
-        <v-switch v-if="sendOrGet === 'send'"
+        <div v-if="sendOrGet === 'send'">
+          <v-switch
                   inset
                   v-model="isTextMode"
                   :class="`justify-end`"
                   :label="'Text mode'"/>
-        <file-pond v-if="sendOrGet === 'send' && !isTextMode"
-                   ref="pond"
-                   label-idle="<img src='img/file-icon.svg' style='width: 2em'><br>Drop a file here or <span class='filepond--label-action'>Browse</span>"
-                   allow-multiple="false"
-                   maxFiles="1"
-        />
-        <v-textarea v-if="isTextMode"
-                    label="Text"
-                    v-model="inputText"
-                    outlined
-        ></v-textarea>
+          <file-pond v-if="!isTextMode"
+                     ref="pond"
+                     label-idle="<img src='img/file-icon.svg' style='width: 2em'><br>Drop a file here or <span class='filepond--label-action'>Browse</span>"
+                     allow-multiple="false"
+                     maxFiles="1"
+          />
+          <v-textarea v-if="isTextMode"
+                      label="Text"
+                      v-model="inputText"
+                      outlined
+          ></v-textarea>
+        </div>
 
         <v-text-field label="Server URL"
                       v-model="serverUrl"
