@@ -1,19 +1,21 @@
 <template>
   <v-expansion-panel active="true">
-    <v-expansion-panel-header>
-      Upload #{{ props.uploadNo }}
-      <v-spacer></v-spacer>
+    <v-expansion-panel-header :disable-icon-rotate="isDoneUpload">
+      <span>Upload #{{ props.uploadNo }}</span>
       <!-- Percentage -->
       {{ progressPercentage && progressPercentage.toFixed(2) }} %
+      <template v-slot:actions>
+        <v-icon :color="isDoneUpload ? 'teal': undefined" style="margin-left: 0.3em">
+          {{ isDoneUpload ? "mdi-check" : "keyboard_arrow_down"}}
+        </v-icon>
+      </template>
     </v-expansion-panel-header>
     <v-expansion-panel-content>
       <!-- loaded of total -->
       {{ readableBytesString(progressSetting.loadedBytes, 1) }} of {{ readableBytesString(progressSetting.totalBytes, 1) }}
 
       <!-- Progress bar -->
-      <v-progress-linear
-              :value="progressPercentage"
-      />
+      <v-progress-linear :value="progressPercentage"/>
 
       <v-simple-table class="text-left">
         <tbody>
@@ -62,6 +64,10 @@ export default class DataUploader extends Vue {
     } else {
       return this.progressSetting.loadedBytes / this.progressSetting.totalBytes * 100;
     }
+  }
+
+  private get isDoneUpload(): boolean {
+    return this.progressPercentage === 100;
   }
 
   private get uploadPath(): string {
