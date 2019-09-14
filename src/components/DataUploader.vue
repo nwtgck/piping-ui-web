@@ -26,6 +26,16 @@
         </tbody>
       </v-simple-table>
 
+      <div v-if="isCancelable" style="text-align: right">
+        <!-- Cancel button -->
+        <v-btn color="warning"
+               outlined
+               class="ma-2 justify-end">
+          <v-icon >cancel</v-icon>
+          Cancel
+        </v-btn>
+      </div>
+
       <v-alert type="error"
                outlined
                :value="errorMessage !== ''"
@@ -105,6 +115,10 @@ export default class DataUploader extends Vue {
     } else {
       return undefined
     }
+  }
+
+  private get isCancelable(): boolean {
+    return !this.isDoneUpload && !this.hasError;
   }
 
   mounted() {
