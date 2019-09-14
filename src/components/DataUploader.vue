@@ -30,7 +30,8 @@
         <!-- Cancel button -->
         <v-btn color="warning"
                outlined
-               class="ma-2 justify-end">
+               class="ma-2 justify-end"
+               @click="cancelUpload()">
           <v-icon >cancel</v-icon>
           Cancel
         </v-btn>
@@ -74,6 +75,8 @@ export default class DataUploader extends Vue {
   private readableBytesString = utils.readableBytesString;
 
   private errorMessage: string = "";
+
+  private xhr: XMLHttpRequest;
 
   private get progressPercentage(): number | null {
     if (this.progressSetting.totalBytes === undefined) {
@@ -121,47 +124,55 @@ export default class DataUploader extends Vue {
     return !this.isDoneUpload && !this.hasError;
   }
 
+  constructor() {
+    super();
+    this.xhr = new XMLHttpRequest();
+  }
+
   mounted() {
     const data = this.props.data;
 
     const bodyLength: number = typeof data === "string" ? data.length : data.size;
     // Send
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', this.uploadPath, true);
+    this.xhr.open('POST', this.uploadPath, true);
     // Update progress bar
-    xhr.upload.onprogress = (ev) => {
+    this.xhr.upload.onprogress = (ev) => {
       this.progressSetting.loadedBytes = ev.loaded;
       this.progressSetting.totalBytes  = ev.total;
     };
-    xhr.upload.onload = () => {
+    this.xhr.upload.onload = () => {
       // Send finished
-      if (xhr.status === 200) {
+      if (this.xhr.status === 200) {
         if (this.progressSetting.totalBytes !== undefined) {
           this.progressSetting.loadedBytes = this.progressSetting.totalBytes;
         }
       }
     };
-    xhr.onload = () => {
-      if (xhr.status !== 200) {
-        this.errorMessage = `Error (${xhr.status}): "${xhr.responseText}"`;
+    this.xhr.onload = () => {
+      if (this.xhr.status !== 200) {
+        this.errorMessage = `Error (${this.xhr.status}): "${this.xhr.responseText}"`;
       }
     };
-    xhr.onabort = (ev) => {
+    this.xhr.onabort = (ev) => {
       this.errorMessage = "Upload aborted";
     };
-    xhr.onerror = (ev) => {
+    this.xhr.onerror = (ev) => {
       this.errorMessage = `An error occurred. The server may be < 0.9.4. Please check ${urlJoin(this.props.serverUrl, "/version")}`;
     };
-    xhr.upload.onerror = () => {
+    this.xhr.upload.onerror = () => {
       this.errorMessage = "An error occurred while uploading.";
     };
-    xhr.upload.onabort = () => {
+    this.xhr.upload.onabort = () => {
       this.errorMessage = "Upload aborted while uploading.";
     };
-    xhr.send(data);
+    this.xhr.send(data);
     // Initialize progress bar
     this.progressSetting.loadedBytes = 0;
     this.progressSetting.totalBytes = bodyLength;
+  }
+
+  private cancelUpload(): void {
+    this.xhr.abort();
   }
 }
 </script>
