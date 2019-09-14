@@ -57,11 +57,15 @@
         </v-btn>
       </v-card>
 
-      <!-- Data uploader to Piping Server -->
-      <div v-for="dataUpload in dataUploads" :key="dataUpload.uploadNo">
-        <DataUploader :props="dataUpload" style="margin: 0 1em;"/>
+      <!-- Data uploaders to Piping Server -->
+      <div style="padding: 0.5em;">
+        <v-expansion-panels
+                v-for="dataUpload in dataUploads" :key="dataUpload.uploadNo"
+                multiple
+        >
+          <DataUploader :props="dataUpload"/>
+        </v-expansion-panels>
       </div>
-
     </v-flex>
     <v-snackbar v-model="showsSnackbar"
                 color="error">

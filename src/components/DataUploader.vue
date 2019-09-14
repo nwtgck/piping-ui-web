@@ -1,44 +1,32 @@
 <template>
-  <v-card style="margin-top: 1em; padding: 0.6em;">
-    <!-- Align right -->
-    <v-layout class="justify-end">
-      <!-- Close button -->
-      <!-- TODO: implement close action -->
-      <v-btn icon >
-        <v-icon>mdi-close</v-icon>
-      </v-btn>
-    </v-layout>
-
-    <div class="title" style="margin-bottom: 1em;">
+  <v-expansion-panel active="true">
+    <v-expansion-panel-header>
       Upload #{{ props.uploadNo }}
-    </div>
+      <v-spacer></v-spacer>
+      <!-- Percentage -->
+      {{ progressPercentage && progressPercentage.toFixed(2) }} %
+    </v-expansion-panel-header>
+    <v-expansion-panel-content>
+      <!-- loaded of total -->
+      {{ readableBytesString(progressSetting.loadedBytes, 1) }} of {{ readableBytesString(progressSetting.totalBytes, 1) }}
 
-    <v-layout>
-      <v-flex xs6>
-        <!-- Percentage -->
-        {{ progressPercentage && progressPercentage.toFixed(2) }} %
-      </v-flex>
-      <v-flex xs6>
-        <!-- loaded of total -->
-        {{ readableBytesString(progressSetting.loadedBytes, 1) }} of {{ readableBytesString(progressSetting.totalBytes, 1) }}
-      </v-flex>
-    </v-layout>
+      <!-- Progress bar -->
+      <v-progress-linear
+              :value="progressPercentage"
+      />
 
-    <!-- Progress bar -->
-    <v-progress-linear
-            :value="progressPercentage"
-    />
+      <v-simple-table class="text-left">
+        <tbody>
+        <tr class="text-left">
+          <td>Upload URL</td>
+          <td>{{ uploadPath }}</td>
+        </tr>
+        </tbody>
+      </v-simple-table>
 
-    <v-simple-table class="text-left">
-      <tbody>
-      <tr class="text-left">
-        <td>Upload URL</td>
-        <td>{{ uploadPath }}</td>
-      </tr>
-      </tbody>
-    </v-simple-table>
+    </v-expansion-panel-content>
+  </v-expansion-panel>
 
-  </v-card>
 </template>
 
 <script lang="ts">
