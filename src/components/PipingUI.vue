@@ -1,9 +1,9 @@
 <template>
   <v-layout>
     <v-flex xs12 sm8 offset-sm2 offset-md3 md6>
-      <v-card style="padding: 1em; margin-bottom: 2em;">
+      <v-card style="padding: 1em; margin-bottom: 1em;">
 
-        <v-btn-toggle v-model="sendOrGet" mandatory style="margin-bottom: 2em;">
+        <v-btn-toggle v-model="sendOrGet" mandatory>
           <v-btn text value="send">
             Send
             <v-icon right dark>file_upload</v-icon>
