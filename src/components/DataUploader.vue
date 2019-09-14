@@ -26,6 +26,13 @@
         </tbody>
       </v-simple-table>
 
+      <v-alert type="error"
+               outlined
+               :value="errorMessage !== ''"
+               style="text-align: left">
+        {{ errorMessage }}
+      </v-alert>
+
     </v-expansion-panel-content>
   </v-expansion-panel>
 
@@ -55,6 +62,8 @@ export default class DataUploader extends Vue {
   };
 
   private readableBytesString = utils.readableBytesString;
+
+  private errorMessage: string = "";
 
   private get progressPercentage(): number | null {
     if (this.progressSetting.totalBytes === undefined) {
@@ -92,23 +101,24 @@ export default class DataUploader extends Vue {
         if (this.progressSetting.totalBytes !== undefined) {
           this.progressSetting.loadedBytes = this.progressSetting.totalBytes;
         }
-      } else {
-        console.error(`Upload HTTP error: ${xhr.status}`);
+      }
+    };
+    xhr.onload = () => {
+      if (xhr.status !== 200) {
+        this.errorMessage = `Error (${xhr.status}): "${xhr.responseText}"`;
       }
     };
     xhr.onabort = (ev) => {
-      console.log("xhr.onabort", ev);
+      this.errorMessage = "Upload aborted";
     };
     xhr.onerror = (ev) => {
-      console.log("xhr.onerror", ev);
+      this.errorMessage = `An error occurred. The server may be < 0.9.4. Please check ${urlJoin(this.props.serverUrl, "/version")}`;
     };
     xhr.upload.onerror = () => {
-      // TODO: Handle
-      console.error('xhr.upload.onerror');
+      this.errorMessage = "An error occurred while uploading.";
     };
     xhr.upload.onabort = () => {
-      // TODO: Handle
-      console.error('xhr.upload.onabort');
+      this.errorMessage = "Upload aborted while uploading.";
     };
     xhr.send(data);
     // Initialize progress bar
