@@ -1,44 +1,34 @@
 <template>
-  <v-card style="margin-top: 1em; padding: 0.6em;">
-    <!-- Align right -->
-    <v-layout class="justify-end">
-      <!-- Close button -->
-      <!-- TODO: implement close action -->
-      <v-btn icon >
-        <v-icon>mdi-close</v-icon>
-      </v-btn>
-    </v-layout>
+  <v-expansion-panel active="true">
+    <v-expansion-panel-header :disable-icon-rotate="isDoneUpload">
+      <span>Upload #{{ props.uploadNo }}</span>
+      <!-- Percentage -->
+      {{ progressPercentage && progressPercentage.toFixed(2) }} %
+      <template v-slot:actions>
+        <v-icon :color="isDoneUpload ? 'teal': undefined" style="margin-left: 0.3em">
+          {{ isDoneUpload ? "mdi-check" : "keyboard_arrow_down"}}
+        </v-icon>
+      </template>
+    </v-expansion-panel-header>
+    <v-expansion-panel-content>
+      <!-- loaded of total -->
+      {{ readableBytesString(progressSetting.loadedBytes, 1) }} of {{ readableBytesString(progressSetting.totalBytes, 1) }}
 
-    <div class="title" style="margin-bottom: 1em;">
-      Upload #{{ props.uploadNo }}
-    </div>
+      <!-- Progress bar -->
+      <v-progress-linear :value="progressPercentage"/>
 
-    <v-layout>
-      <v-flex xs6>
-        <!-- Percentage -->
-        {{ progressPercentage && progressPercentage.toFixed(2) }} %
-      </v-flex>
-      <v-flex xs6>
-        <!-- loaded of total -->
-        {{ readableBytesString(progressSetting.loadedBytes, 1) }} of {{ readableBytesString(progressSetting.totalBytes, 1) }}
-      </v-flex>
-    </v-layout>
+      <v-simple-table class="text-left">
+        <tbody>
+        <tr class="text-left">
+          <td>Upload URL</td>
+          <td>{{ uploadPath }}</td>
+        </tr>
+        </tbody>
+      </v-simple-table>
 
-    <!-- Progress bar -->
-    <v-progress-linear
-            :value="progressPercentage"
-    />
+    </v-expansion-panel-content>
+  </v-expansion-panel>
 
-    <v-simple-table class="text-left">
-      <tbody>
-      <tr class="text-left">
-        <td>Upload URL</td>
-        <td>{{ uploadPath }}</td>
-      </tr>
-      </tbody>
-    </v-simple-table>
-
-  </v-card>
 </template>
 
 <script lang="ts">
@@ -74,6 +64,10 @@ export default class DataUploader extends Vue {
     } else {
       return this.progressSetting.loadedBytes / this.progressSetting.totalBytes * 100;
     }
+  }
+
+  private get isDoneUpload(): boolean {
+    return this.progressPercentage === 100;
   }
 
   private get uploadPath(): string {

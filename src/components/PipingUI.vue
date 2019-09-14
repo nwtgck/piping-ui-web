@@ -57,11 +57,15 @@
         </v-btn>
       </v-card>
 
-      <!-- Data uploader to Piping Server -->
-      <div v-for="dataUpload in dataUploads" :key="dataUpload.uploadNo">
-        <DataUploader :props="dataUpload" style="margin: 0 1em;"/>
+      <!-- Data uploaders to Piping Server -->
+      <div style="padding: 0.5em;">
+        <v-expansion-panels v-model="expandedPanelIds"
+                            multiple>
+          <DataUploader v-for="dataUpload in dataUploads"
+                        :key="dataUpload.uploadNo"
+                        :props="dataUpload"/>
+        </v-expansion-panels>
       </div>
-
     </v-flex>
     <v-snackbar v-model="showsSnackbar"
                 color="error">
@@ -108,6 +112,8 @@ export default class PipingUI extends Vue {
   private showsSnackbar: boolean = false;
   // Message of snackbar
   private snackbarMessage: string = '';
+  // Indexes of expanded expansion-panel
+  private expandedPanelIds: number[] = [];
 
   private send() {
     // Get file in FilePond
@@ -139,6 +145,8 @@ export default class PipingUI extends Vue {
       serverUrl: this.serverUrl,
       secretPath: this.secretPath,
     });
+    // Open by default
+    this.expandedPanelIds.push(this.uploadCount-1);
   }
 
   // TODO: impl
