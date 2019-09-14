@@ -1,12 +1,12 @@
 <template>
   <v-expansion-panel active="true">
-    <v-expansion-panel-header :disable-icon-rotate="isDoneUpload">
+    <v-expansion-panel-header :disable-icon-rotate="isDoneUpload || hasError">
       <span>Upload #{{ props.uploadNo }}</span>
       <!-- Percentage -->
       {{ progressPercentage && progressPercentage.toFixed(2) }} %
       <template v-slot:actions>
-        <v-icon :color="isDoneUpload ? 'teal': undefined" style="margin-left: 0.3em">
-          {{ isDoneUpload ? "mdi-check" : "keyboard_arrow_down"}}
+        <v-icon :color="headerIconColor" style="margin-left: 0.3em">
+          {{ headerIcon}}
         </v-icon>
       </template>
     </v-expansion-panel-header>
@@ -81,6 +81,30 @@ export default class DataUploader extends Vue {
 
   private get uploadPath(): string {
     return urlJoin(this.props.serverUrl, this.props.secretPath);
+  }
+
+  private get hasError(): boolean {
+    return this.errorMessage !== "";
+  }
+
+  private get headerIcon(): string {
+    if (this.hasError) {
+      return "mdi-alert";
+    } else if (this.isDoneUpload) {
+      return "mdi-check";
+    } else {
+      return "keyboard_arrow_down";
+    }
+  }
+
+  private get headerIconColor(): string | undefined {
+    if (this.hasError) {
+      return "error";
+    } else if (this.isDoneUpload) {
+      return "teal";
+    } else {
+      return undefined
+    }
   }
 
   mounted() {
