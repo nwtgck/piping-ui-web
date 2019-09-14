@@ -68,7 +68,8 @@
       </div>
     </v-flex>
     <v-snackbar v-model="showsSnackbar"
-                color="error">
+                color="error"
+                top>
       {{ snackbarMessage }}
     </v-snackbar>
   </v-layout>
