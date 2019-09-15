@@ -75,8 +75,8 @@ export default class DataUploader extends Vue {
   private readableBytesString = utils.readableBytesString;
 
   private errorMessage: string = "";
-
   private xhr: XMLHttpRequest;
+  private canceled: boolean = false;
 
   private get progressPercentage(): number | null {
     if (this.progressSetting.totalBytes === undefined) {
@@ -103,6 +103,8 @@ export default class DataUploader extends Vue {
   private get headerIcon(): string {
     if (this.hasError) {
       return "mdi-alert";
+    } else if (this.canceled) {
+      return "cancel";
     } else if (this.isDoneUpload) {
       return "mdi-check";
     } else {
@@ -113,6 +115,8 @@ export default class DataUploader extends Vue {
   private get headerIconColor(): string | undefined {
     if (this.hasError) {
       return "error";
+    } else if (this.canceled) {
+      return "warning";
     } else if (this.isDoneUpload) {
       return "teal";
     } else {
@@ -121,7 +125,7 @@ export default class DataUploader extends Vue {
   }
 
   private get isCancelable(): boolean {
-    return !this.isDoneUpload && !this.hasError;
+    return !this.isDoneUpload && !this.hasError && !this.canceled;
   }
 
   constructor() {
@@ -153,17 +157,11 @@ export default class DataUploader extends Vue {
         this.errorMessage = `Error (${this.xhr.status}): "${this.xhr.responseText}"`;
       }
     };
-    this.xhr.onabort = (ev) => {
-      this.errorMessage = "Upload aborted";
-    };
     this.xhr.onerror = (ev) => {
       this.errorMessage = `An error occurred. The server may be < 0.9.4. Please check ${urlJoin(this.props.serverUrl, "/version")}`;
     };
     this.xhr.upload.onerror = () => {
       this.errorMessage = "An error occurred while uploading.";
-    };
-    this.xhr.upload.onabort = () => {
-      this.errorMessage = "Upload aborted while uploading.";
     };
     this.xhr.send(data);
     // Initialize progress bar
@@ -173,6 +171,7 @@ export default class DataUploader extends Vue {
 
   private cancelUpload(): void {
     this.xhr.abort();
+    this.canceled = true;
   }
 }
 </script>
