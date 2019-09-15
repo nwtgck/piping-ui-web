@@ -1,6 +1,6 @@
 <template>
   <v-expansion-panel>
-    <v-expansion-panel-header :disable-icon-rotate="isDoneUpload || hasError">
+    <v-expansion-panel-header :disable-icon-rotate="isDoneDownload || hasError">
       <span>View #{{ props.viewNo }}</span>
       <!-- Percentage -->
       {{ progressPercentage ? `${progressPercentage.toFixed(2)} %` : "" }}
@@ -43,6 +43,15 @@
         </v-btn>
       </div>
 
+      <!-- Save button -->
+      <v-btn v-if="isDoneDownload"
+             color="primary"
+             block
+             @click="save()">
+        <v-icon >save</v-icon>
+        Save
+      </v-btn>
+
       <v-alert type="error"
                outlined
                :value="errorMessage !== ''"
@@ -81,12 +90,13 @@ export default class DataViewer extends Vue {
 
   private errorMessage: string = "";
   private xhr: XMLHttpRequest;
-  private isDoneUpload: boolean = false;
+  private isDoneDownload: boolean = false;
   private canceled: boolean = false;
   private imgSrc: string = '';
+  private blobUrl: string = '';
 
   private get progressPercentage(): number | null {
-    if (this.isDoneUpload) {
+    if (this.isDoneDownload) {
       return 100;
     } else if (this.progressSetting.totalBytes === undefined) {
       return null;
@@ -106,7 +116,7 @@ export default class DataViewer extends Vue {
       return "mdi-alert";
     } else if (this.canceled) {
       return "cancel";
-    } else if (this.isDoneUpload) {
+    } else if (this.isDoneDownload) {
       return "mdi-check";
     } else {
       return "keyboard_arrow_down";
@@ -118,7 +128,7 @@ export default class DataViewer extends Vue {
       return "error";
     } else if (this.canceled) {
       return "warning";
-    } else if (this.isDoneUpload) {
+    } else if (this.isDoneDownload) {
       return "teal";
     } else {
       return undefined
@@ -126,7 +136,7 @@ export default class DataViewer extends Vue {
   }
 
   private get isCancelable(): boolean {
-    return !this.isDoneUpload && !this.hasError && !this.canceled;
+    return !this.isDoneDownload && !this.hasError && !this.canceled;
   }
 
   private get downloadPath(): string {
@@ -157,11 +167,12 @@ export default class DataViewer extends Vue {
     };
     this.xhr.onload = (ev) => {
       if (this.xhr.status === 200) {
-        this.isDoneUpload = true;
+        this.isDoneDownload = true;
         const blob: Blob = this.xhr.response;
         console.log('blob: ', blob);
+        this.blobUrl = URL.createObjectURL(blob);
         // TODO: Everything is not image
-        this.imgSrc = URL.createObjectURL(blob);
+        this.imgSrc = this.blobUrl;
       } else {
         this.errorMessage = `Error (${this.xhr.status}): "${this.xhr.responseText}"`;
       }
@@ -175,6 +186,14 @@ export default class DataViewer extends Vue {
   private cancelDownload(): void {
     this.xhr.abort();
     this.canceled = true;
+  }
+
+  private save(): void {
+    const aTag = document.createElement('a');
+    aTag.href = this.blobUrl;
+    aTag.download = this.props.secretPath;
+    aTag.target = "_blank";
+    aTag.click();
   }
 }
 </script>
