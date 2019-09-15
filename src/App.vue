@@ -2,8 +2,16 @@
   <v-app id="app">
     <v-app-bar app>
       <v-toolbar-title style="margin-right: 0.6em;">
-        <span>Piping </span>
-        <span class="font-weight-light">UI</span>
+        <!-- Show version on app title -->
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on }">
+            <span v-on="on">
+              Piping
+              <span class="font-weight-light">UI</span>
+            </span>
+          </template>
+          <span>{{ version }}</span>
+        </v-tooltip>
       </v-toolbar-title>
 
       <!-- PWA update button -->
@@ -28,6 +36,7 @@ import { Component, Vue, Watch } from 'vue-property-decorator';
 import HelloWorld from './components/HelloWorld.vue';
 import PipingUI from './components/PipingUI.vue';
 import {keys} from "@/local-storage-keys";
+import {VERSION} from '@/version';
 
 @Component({
   components: {
@@ -43,6 +52,7 @@ export default class App extends Vue {
     registration: undefined,
     updateExists: false
   };
+  private version = VERSION;
 
   created () {
     document.addEventListener(
