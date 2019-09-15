@@ -33,8 +33,8 @@
 
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
-import HelloWorld from './components/HelloWorld.vue';
-import PipingUI from './components/PipingUI.vue';
+import HelloWorld from '@/components/HelloWorld.vue';
+import PipingUI from '@/components/PipingUI.vue';
 import {keys} from "@/local-storage-keys";
 import {VERSION} from '@/version';
 
