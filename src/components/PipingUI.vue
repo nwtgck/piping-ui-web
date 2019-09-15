@@ -48,13 +48,26 @@
           Send
           <v-icon right dark>file_upload</v-icon>
         </v-btn>
-        <v-btn v-if="sendOrGet === 'get'"
-               color="secondary"
-               v-on:click="get()"
-               block>
-          Get
-          <v-icon right dark>file_download</v-icon>
-        </v-btn>
+        <v-layout v-if="sendOrGet === 'get'">
+          <v-flex xs6>
+            <v-btn color="light-blue"
+                   dark
+                   block>
+              View
+              <v-icon right dark>mdi-file-find</v-icon>
+            </v-btn>
+          </v-flex>
+          <v-flex xs6>
+            <v-btn color="blue"
+                   @click="get()"
+                   dark
+                   block>
+              Download
+              <v-icon right dark>file_download</v-icon>
+            </v-btn>
+          </v-flex>
+        </v-layout>
+
       </v-card>
 
       <!-- Data uploaders to Piping Server -->
