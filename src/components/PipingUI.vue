@@ -77,6 +77,7 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
+import urlJoin from 'url-join';
 import DataUploader, { DataUploaderProps } from '@/components/DataUploader.vue';
 
 import vueFilePond from 'vue-filepond';
@@ -150,9 +151,13 @@ export default class PipingUI extends Vue {
     this.expandedPanelIds.push(this.uploadCount-1);
   }
 
-  // TODO: impl
+  // NOTE: Some file types are displayed inline
   private get() {
-    console.log('todo impl');
+    const aTag = document.createElement('a');
+    aTag.href = urlJoin(this.serverUrl, this.secretPath);
+    aTag.target = "_blank";
+    aTag.download = this.secretPath;
+    aTag.click();
   }
 
   // Show error message
