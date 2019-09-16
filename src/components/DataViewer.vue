@@ -32,6 +32,12 @@
            style="width: 95%"
            v-if="imgSrc !== ''">
 
+      <!-- Video viewer -->
+      <video :src="videoSrc"
+           style="width: 95%"
+           controls
+           v-if="videoSrc !== ''" />
+
       <div v-if="isCancelable" style="text-align: right">
         <!-- Cancel button -->
         <v-btn color="warning"
@@ -93,6 +99,7 @@ export default class DataViewer extends Vue {
   private isDoneDownload: boolean = false;
   private canceled: boolean = false;
   private imgSrc: string = '';
+  private videoSrc: string = '';
   private blobUrl: string = '';
 
   private get progressPercentage(): number | null {
@@ -169,10 +176,9 @@ export default class DataViewer extends Vue {
       if (this.xhr.status === 200) {
         this.isDoneDownload = true;
         const blob: Blob = this.xhr.response;
-        console.log('blob: ', blob);
         this.blobUrl = URL.createObjectURL(blob);
-        // TODO: Everything is not image
-        this.imgSrc = this.blobUrl;
+        // View blob if possible
+        this.viewBlob(blob, this.blobUrl)
       } else {
         this.errorMessage = `Error (${this.xhr.status}): "${this.xhr.responseText}"`;
       }
@@ -181,6 +187,17 @@ export default class DataViewer extends Vue {
       this.errorMessage = "Download error";
     };
     this.xhr.send();
+  }
+
+  private viewBlob(blob: Blob, blobUrl?: string) {
+    if (blobUrl === undefined) {
+      blobUrl = URL.createObjectURL(blob);
+    }
+    if (blob.type.startsWith("image/")) {
+      this.imgSrc = blobUrl;
+    } else if (blob.type.startsWith("video/")) {
+      this.videoSrc = blobUrl;
+    }
   }
 
   private cancelDownload(): void {
