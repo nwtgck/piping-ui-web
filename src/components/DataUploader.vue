@@ -12,7 +12,9 @@
     </v-expansion-panel-header>
     <v-expansion-panel-content>
       <!-- loaded of total -->
-      {{ readableBytesString(progressSetting.loadedBytes, 1) }} of {{ readableBytesString(progressSetting.totalBytes, 1) }}
+      <div style="text-align: center">
+        {{ readableBytesString(progressSetting.loadedBytes, 1) }} of {{ readableBytesString(progressSetting.totalBytes, 1) }}
+      </div>
 
       <!-- Progress bar -->
       <v-progress-linear :value="progressPercentage"/>
