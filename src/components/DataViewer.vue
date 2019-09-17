@@ -38,6 +38,12 @@
            controls
            v-if="videoSrc !== ''" />
 
+      <!-- Text viewer -->
+      <pre v-html="text"
+           v-if="text !== ''"
+           contenteditable="true"
+           class="text-view" />
+
       <div v-if="isCancelable" style="text-align: right">
         <!-- Cancel button -->
         <v-btn color="warning"
@@ -53,7 +59,8 @@
       <v-btn v-if="isDoneDownload"
              color="primary"
              block
-             @click="save()">
+             @click="save()"
+             style="margin-top: 1em;">
         <v-icon >save</v-icon>
         Save
       </v-btn>
@@ -100,6 +107,7 @@ export default class DataViewer extends Vue {
   private canceled: boolean = false;
   private imgSrc: string = '';
   private videoSrc: string = '';
+  private text: string = '';
   private blobUrl: string = '';
 
   private get progressPercentage(): number | null {
@@ -197,6 +205,12 @@ export default class DataViewer extends Vue {
       this.imgSrc = blobUrl;
     } else if (blob.type.startsWith("video/")) {
       this.videoSrc = blobUrl;
+    } else if (blob.type.startsWith("text/")) {
+      const reader = new FileReader();
+      reader.readAsText(blob);
+      reader.onload = () => {
+        this.text = reader.result as string;
+      }
     }
   }
 
@@ -216,5 +230,12 @@ export default class DataViewer extends Vue {
 </script>
 
 <style scoped>
-
+.text-view {
+  border: 2px dashed #ccc;
+  text-align: left;
+  padding: 0.5em;
+  background-color: rgba(0,0,0,0.05);
+  height: 15em;
+  overflow-y: scroll;
+}
 </style>
