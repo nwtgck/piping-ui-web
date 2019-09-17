@@ -91,6 +91,7 @@ import urlJoin from 'url-join';
 import * as utils from '@/utils';
 import linkifyHtml from 'linkifyjs/html';
 import Clipboard from 'clipboard';
+import * as FileSaver from 'file-saver';
 
 export type DataViewerProps = {
   viewNo: number,
@@ -118,7 +119,8 @@ export default class DataViewer extends Vue {
   private imgSrc: string = '';
   private videoSrc: string = '';
   private text: string = '';
-  private blobUrl: string = '';
+
+  private blob: Blob = new Blob();
 
   private get progressPercentage(): number | null {
     if (this.isDoneDownload) {
@@ -204,10 +206,9 @@ export default class DataViewer extends Vue {
     this.xhr.onload = (ev) => {
       if (this.xhr.status === 200) {
         this.isDoneDownload = true;
-        const blob: Blob = this.xhr.response;
-        this.blobUrl = URL.createObjectURL(blob);
+        this.blob = this.xhr.response;
         // View blob if possible
-        this.viewBlob(blob, this.blobUrl)
+        this.viewBlob();
       } else {
         this.errorMessage = `Error (${this.xhr.status}): "${this.xhr.responseText}"`;
       }
@@ -218,17 +219,15 @@ export default class DataViewer extends Vue {
     this.xhr.send();
   }
 
-  private viewBlob(blob: Blob, blobUrl?: string) {
-    if (blobUrl === undefined) {
-      blobUrl = URL.createObjectURL(blob);
-    }
-    if (blob.type.startsWith("image/")) {
+  private viewBlob() {
+    const blobUrl = URL.createObjectURL(this.blob);
+    if (this.blob.type.startsWith("image/")) {
       this.imgSrc = blobUrl;
-    } else if (blob.type.startsWith("video/")) {
+    } else if (this.blob.type.startsWith("video/")) {
       this.videoSrc = blobUrl;
-    } else if (blob.type.startsWith("text/")) {
+    } else if (this.blob.type.startsWith("text/")) {
       const reader = new FileReader();
-      reader.readAsText(blob);
+      reader.readAsText(this.blob);
       reader.onload = () => {
         // Get text
         this.text = reader.result as string;
@@ -242,11 +241,7 @@ export default class DataViewer extends Vue {
   }
 
   private save(): void {
-    const aTag = document.createElement('a');
-    aTag.href = this.blobUrl;
-    aTag.download = this.props.secretPath;
-    aTag.target = "_blank";
-    aTag.click();
+    FileSaver.saveAs(this.blob, this.props.secretPath);
   }
 }
 </script>
