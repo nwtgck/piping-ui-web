@@ -10,6 +10,7 @@
     "test:unit": "vue-cli-service test:unit"
   },
   "dependencies": {
+    "clipboard": "^2.0.4",
     "core-js": "^2.6.5",
     "filepond": "^4.5.1",
     "linkifyjs": "^2.1.8",
@@ -28,6 +29,7 @@
     "@fortawesome/fontawesome-free-solid": "^5.0.13",
     "@mdi/font": "^4.4.95",
     "@types/chai": "^4.1.0",
+    "@types/clipboard": "^2.0.1",
     "@types/mocha": "^5.2.4",
     "@types/url-join": "^4.0.0",
     "@vue/cli-plugin-babel": "^3.11.0",
