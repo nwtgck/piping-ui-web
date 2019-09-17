@@ -12,6 +12,7 @@
   "dependencies": {
     "core-js": "^2.6.5",
     "filepond": "^4.5.1",
+    "linkifyjs": "^2.1.8",
     "register-service-worker": "^1.6.2",
     "url-join": "^4.0.1",
     "vue": "^2.6.10",

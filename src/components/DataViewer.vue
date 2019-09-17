@@ -41,7 +41,6 @@
       <!-- Text viewer -->
       <pre v-html="text"
            v-if="text !== ''"
-           contenteditable="true"
            class="text-view" />
 
       <div v-if="isCancelable" style="text-align: right">
@@ -81,6 +80,7 @@
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import urlJoin from 'url-join';
 import * as utils from '@/utils';
+import linkifyHtml from 'linkifyjs/html';
 
 export type DataViewerProps = {
   viewNo: number,
@@ -209,7 +209,12 @@ export default class DataViewer extends Vue {
       const reader = new FileReader();
       reader.readAsText(blob);
       reader.onload = () => {
-        this.text = reader.result as string;
+        // Get text
+        const text = reader.result as string;
+        // Attach links
+        this.text = linkifyHtml(text, {
+          defaultProtocol: 'https'
+        });
       }
     }
   }
@@ -231,11 +236,12 @@ export default class DataViewer extends Vue {
 
 <style scoped>
 .text-view {
-  border: 2px dashed #ccc;
+  border: 1px solid #ccc;
   text-align: left;
   padding: 0.5em;
-  background-color: rgba(0,0,0,0.05);
-  height: 15em;
+  max-height: 15em;
+  min-height: 4em;
   overflow-y: scroll;
+  border-radius: 5px;
 }
 </style>
