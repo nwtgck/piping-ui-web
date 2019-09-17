@@ -48,22 +48,46 @@
           Send
           <v-icon right dark>file_upload</v-icon>
         </v-btn>
-        <v-btn v-if="sendOrGet === 'get'"
-               color="secondary"
-               v-on:click="get()"
-               block>
-          Get
-          <v-icon right dark>file_download</v-icon>
-        </v-btn>
+        <v-layout v-if="sendOrGet === 'get'">
+          <v-flex xs6>
+            <v-btn color="light-blue"
+                   dark
+                   @click="view()"
+                   block>
+              View
+              <v-icon right dark>mdi-file-find</v-icon>
+            </v-btn>
+          </v-flex>
+          <v-flex xs6>
+            <v-btn color="blue"
+                   @click="get()"
+                   dark
+                   block>
+              Download
+              <v-icon right dark>file_download</v-icon>
+            </v-btn>
+          </v-flex>
+        </v-layout>
+
       </v-card>
 
-      <!-- Data uploaders to Piping Server -->
       <div style="padding: 0.5em;">
-        <v-expansion-panels v-model="expandedPanelIds"
+        <!-- Data uploaders to Piping Server -->
+        <v-expansion-panels v-model="uploadExpandedPanelIds"
+                            v-show="sendOrGet === 'send'"
                             multiple>
           <DataUploader v-for="dataUpload in dataUploads"
                         :key="dataUpload.uploadNo"
                         :props="dataUpload"/>
+        </v-expansion-panels>
+
+        <!-- Data viewers to Piping Server -->
+        <v-expansion-panels v-model="viewExpandedPanelIds"
+                            v-show="sendOrGet === 'get'"
+                            multiple>
+          <DataViewer v-for="dataView in dataViews"
+                      :key="dataView.viewNo"
+                      :props="dataView"/>
         </v-expansion-panels>
       </div>
     </v-flex>
@@ -79,6 +103,7 @@
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import urlJoin from 'url-join';
 import DataUploader, { DataUploaderProps } from '@/components/DataUploader.vue';
+import DataViewer, {DataViewerProps} from "@/components/DataViewer.vue";
 
 import vueFilePond from 'vue-filepond';
 import 'filepond/dist/filepond.min.css';
@@ -89,7 +114,8 @@ const FilePond = vueFilePond();
 @Component({
   components: {
     DataUploader,
-    FilePond,
+    DataViewer,
+    FilePond
   },
 })
 export default class PipingUI extends Vue {
@@ -108,14 +134,18 @@ export default class PipingUI extends Vue {
   };
 
   private uploadCount = 0;
+  private viewCount = 0;
   private dataUploads: DataUploaderProps[] = [];
+  private dataViews: DataViewerProps[] = [];
 
   // Show snackbar
   private showsSnackbar: boolean = false;
   // Message of snackbar
   private snackbarMessage: string = '';
-  // Indexes of expanded expansion-panel
-  private expandedPanelIds: number[] = [];
+  // Indexes of expanded expansion-panel for upload
+  private uploadExpandedPanelIds: number[] = [];
+  // Indexes of expanded expansion-panel for view
+  private viewExpandedPanelIds: number[] = [];
 
   private send() {
     // Get file in FilePond
@@ -148,16 +178,41 @@ export default class PipingUI extends Vue {
       secretPath: this.secretPath,
     });
     // Open by default
-    this.expandedPanelIds.push(this.uploadCount-1);
+    this.uploadExpandedPanelIds.push(this.uploadCount-1);
   }
 
   // NOTE: Some file types are displayed inline
   private get() {
+    // If secret path is empty
+    if (this.secretPath === '') {
+      // Show error message
+      this.showSnackbar('Error: Secret path not specified');
+      return;
+    }
+
     const aTag = document.createElement('a');
     aTag.href = urlJoin(this.serverUrl, this.secretPath);
     aTag.target = "_blank";
     aTag.download = this.secretPath;
     aTag.click();
+  }
+
+  private view() {
+    // If secret path is empty
+    if (this.secretPath === '') {
+      // Show error message
+      this.showSnackbar('Error: Secret path not specified');
+      return;
+    }
+
+    this.viewCount++;
+    this.dataViews.unshift({
+      viewNo: this.viewCount,
+      serverUrl: this.serverUrl,
+      secretPath: this.secretPath
+    });
+    // Open by default
+    this.viewExpandedPanelIds.push(this.viewCount-1);
   }
 
   // Show error message
