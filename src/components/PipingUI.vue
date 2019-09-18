@@ -35,8 +35,9 @@
           ></v-textarea>
         </div>
 
-        <v-text-field label="Server URL"
-                      v-model="serverUrl"
+        <v-combobox label="Server URL"
+                    v-model="serverUrl"
+                    :items="availableServerUrls"
         />
         <v-text-field label="Secret path"
                       v-model="secretPath"
@@ -106,12 +107,25 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 import urlJoin from 'url-join';
 import DataUploader, { DataUploaderProps } from '@/components/DataUploader.vue';
 import DataViewer, {DataViewerProps} from "@/components/DataViewer.vue";
+import {str, arr, validatingParse} from 'ts-json-validator';
 
 import vueFilePond from 'vue-filepond';
 import 'filepond/dist/filepond.min.css';
+import {keys} from "../local-storage-keys";
 
 // Create component
 const FilePond = vueFilePond();
+
+
+const defaultServerUrls: ReadonlyArray<string> = [
+  "https://ppng.ml",
+  "https://piping.arukascloud.io",
+  "https://ppng.herokuapp.com"
+];
+
+function normalizeUrl(url: string): string {
+  return new URL(url).href;
+}
 
 @Component({
   components: {
@@ -122,11 +136,16 @@ const FilePond = vueFilePond();
 })
 export default class PipingUI extends Vue {
   private sendOrGet: 'send' | 'get' = 'send';
-  // TODO: Hard code
-  private serverUrl: string = 'https://ppng.ml';
+
+  private get availableServerUrls(): string[] {
+    return defaultServerUrls.concat(this.userInputServerUrls);
+  }
+
+  private serverUrl: string = this.availableServerUrls[0];
   private secretPath: string = "";
   private isTextMode: boolean = false;
   private inputText: string = '';
+  private userInputServerUrls: string[] = [];
 
   // Progress bar setting
   private progressSetting: {show: boolean, loadedBytes: number, totalBytes?: number} = {
@@ -148,6 +167,17 @@ export default class PipingUI extends Vue {
   private uploadExpandedPanelIds: number[] = [];
   // Indexes of expanded expansion-panel for view
   private viewExpandedPanelIds: number[] = [];
+
+  private mounted() {
+    // Load user-input server URLs from local storage
+    const userInputServerUrlsStr = window.localStorage.getItem(keys.userInputServerUrls);
+    if (userInputServerUrlsStr !== null) {
+      const userInputServerUrls: string[] | undefined = validatingParse(arr(str), userInputServerUrlsStr);
+      if (userInputServerUrls !== undefined) {
+        this.userInputServerUrls = userInputServerUrls;
+      }
+    }
+  }
 
   private send() {
     // Get file in FilePond
@@ -181,6 +211,15 @@ export default class PipingUI extends Vue {
     });
     // Open by default
     this.uploadExpandedPanelIds.push(this.uploadCount-1);
+
+    // If user-input server URL is new
+    if (!this.availableServerUrls.map(normalizeUrl).includes(normalizeUrl(this.serverUrl))) {
+      // Enroll server URLs
+      this.userInputServerUrls.push(this.serverUrl);
+      // Save to local storage
+      window.localStorage.setItem(keys.userInputServerUrls, JSON.stringify(this.userInputServerUrls));
+      console.log('added', this.userInputServerUrls);
+    }
   }
 
   // NOTE: Some file types are displayed inline
