@@ -38,6 +38,7 @@
         <v-combobox label="Server URL"
                     v-model="serverUrl"
                     :items="availableServerUrls"
+                    @blur="attachProtocolToUrl()"
         />
         <v-text-field label="Secret path"
                       v-model="secretPath"
@@ -218,7 +219,6 @@ export default class PipingUI extends Vue {
       this.userInputServerUrls.push(this.serverUrl);
       // Save to local storage
       window.localStorage.setItem(keys.userInputServerUrls, JSON.stringify(this.userInputServerUrls));
-      console.log('added', this.userInputServerUrls);
     }
   }
 
@@ -260,6 +260,17 @@ export default class PipingUI extends Vue {
   private showSnackbar(message: string): void {
     this.showsSnackbar = true;
     this.snackbarMessage = message;
+  }
+
+  private attachProtocolToUrl(): void {
+    // FIXME: Don't use setTimeout()
+    // @blur is called before the value changed.
+    setTimeout(() => {
+      if (this.serverUrl.match(/^https?:\/\//) === null) {
+        this.serverUrl = `https://${this.serverUrl}`;
+      }
+    }, 100);
+
   }
 }
 </script>
