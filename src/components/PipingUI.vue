@@ -46,7 +46,19 @@
                     :items="userInputSecretPaths"
                     placeholder="e.g. mypath374"
                     clearable
-        />
+        >
+          <template v-slot:item="{ index, item }">
+            {{ item }}
+            <div class="flex-grow-1"></div>
+            <v-list-item-action @click.stop>
+              <v-btn icon
+                     @click.stop.prevent="deleteSecretPath(item)"
+              >
+                <v-icon>mdi-delete</v-icon>
+              </v-btn>
+            </v-list-item-action>
+          </template>
+        </v-combobox>
 
         <v-btn v-if="sendOrGet === 'send'"
                color="primary"
@@ -294,6 +306,13 @@ export default class PipingUI extends Vue {
       }
     }, 100);
 
+  }
+
+  private deleteSecretPath(path: string): void {
+    // Remove path
+    this.userInputSecretPaths = this.userInputSecretPaths.filter(p => p !== path);
+    // Save to local storage
+    window.localStorage.setItem(keys.userInputSecretPaths, JSON.stringify(this.userInputSecretPaths));
   }
 }
 </script>
