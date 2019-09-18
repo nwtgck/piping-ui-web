@@ -35,8 +35,9 @@
           ></v-textarea>
         </div>
 
-        <v-text-field label="Server URL"
-                      v-model="serverUrl"
+        <v-combobox label="Server URL"
+                    v-model="serverUrl"
+                    :items="availableServerUrls"
         />
         <v-text-field label="Secret path"
                       v-model="secretPath"
@@ -122,8 +123,13 @@ const FilePond = vueFilePond();
 })
 export default class PipingUI extends Vue {
   private sendOrGet: 'send' | 'get' = 'send';
-  // TODO: Hard code
-  private serverUrl: string = 'https://ppng.ml';
+  private availableServerUrls: string[] = [
+    "https://ppng.ml",
+    "https://piping.arukascloud.io",
+    "https://ppng.herokuapp.com"
+  ];
+
+  private serverUrl: string = this.availableServerUrls[0];
   private secretPath: string = "";
   private isTextMode: boolean = false;
   private inputText: string = '';
