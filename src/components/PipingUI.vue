@@ -41,9 +41,11 @@
                     @blur="attachProtocolToUrl()"
                     clearable
         />
-        <v-text-field label="Secret path"
-                      v-model="secretPath"
-                      placeholder="e.g. mypath374"
+        <v-combobox label="Secret path"
+                    v-model="secretPath"
+                    :items="userInputSecretPaths"
+                    placeholder="e.g. mypath374"
+                    clearable
         />
 
         <v-btn v-if="sendOrGet === 'send'"
@@ -109,7 +111,7 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 import urlJoin from 'url-join';
 import DataUploader, { DataUploaderProps } from '@/components/DataUploader.vue';
 import DataViewer, {DataViewerProps} from "@/components/DataViewer.vue";
-import {str, arr, validatingParse} from 'ts-json-validator';
+import {str, arr, validatingParse, Json, TsType} from 'ts-json-validator';
 
 import vueFilePond from 'vue-filepond';
 import 'filepond/dist/filepond.min.css';
@@ -127,6 +129,14 @@ const defaultServerUrls: ReadonlyArray<string> = [
 
 function normalizeUrl(url: string): string {
   return new URL(url).href;
+}
+
+// Load from local storage with validation
+function loadLocalStorage<J extends Json>(format: J, key: string): TsType<J> | undefined {
+  const item: string | null = window.localStorage.getItem(key);
+  if (item !== null) {
+    return validatingParse(format, item);
+  }
 }
 
 @Component({
@@ -148,6 +158,7 @@ export default class PipingUI extends Vue {
   private isTextMode: boolean = false;
   private inputText: string = '';
   private userInputServerUrls: string[] = [];
+  private userInputSecretPaths: string[] = [];
 
   // Progress bar setting
   private progressSetting: {show: boolean, loadedBytes: number, totalBytes?: number} = {
@@ -172,12 +183,15 @@ export default class PipingUI extends Vue {
 
   private mounted() {
     // Load user-input server URLs from local storage
-    const userInputServerUrlsStr = window.localStorage.getItem(keys.userInputServerUrls);
-    if (userInputServerUrlsStr !== null) {
-      const userInputServerUrls: string[] | undefined = validatingParse(arr(str), userInputServerUrlsStr);
-      if (userInputServerUrls !== undefined) {
-        this.userInputServerUrls = userInputServerUrls;
-      }
+    const userInputServerUrls: string[] | undefined = loadLocalStorage(arr(str), keys.userInputServerUrls);
+    if (userInputServerUrls !== undefined) {
+      this.userInputServerUrls = userInputServerUrls;
+    }
+
+    // Load user-input server URLs from local storage
+    const userInputSecretPaths: string[] | undefined = loadLocalStorage(arr(str), keys.userInputSecretPaths);
+    if (userInputSecretPaths !== undefined) {
+      this.userInputSecretPaths = userInputSecretPaths;
     }
   }
 
@@ -220,6 +234,14 @@ export default class PipingUI extends Vue {
       this.userInputServerUrls.push(this.serverUrl);
       // Save to local storage
       window.localStorage.setItem(keys.userInputServerUrls, JSON.stringify(this.userInputServerUrls));
+    }
+
+    // If user-input secret path is new
+    if (!this.userInputSecretPaths.includes(this.secretPath)) {
+      // Enrol secret path
+      this.userInputSecretPaths.push(this.secretPath);
+      // Save to local storage
+      window.localStorage.setItem(keys.userInputSecretPaths, JSON.stringify(this.userInputSecretPaths));
     }
   }
 
