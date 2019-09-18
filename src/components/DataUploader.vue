@@ -41,8 +41,7 @@
 
       <v-alert type="error"
                outlined
-               :value="errorMessage !== ''"
-               style="text-align: left">
+               :value="errorMessage !== ''">
         {{ errorMessage }}
       </v-alert>
 
