@@ -37,10 +37,22 @@
 
         <v-combobox label="Server URL"
                     v-model="serverUrl"
-                    :items="availableServerUrls"
+                    :items="userInputServerUrls"
                     @blur="attachProtocolToUrl()"
                     clearable
-        />
+        >
+          <template v-slot:item="{ index, item }">
+            {{ item }}
+            <div class="flex-grow-1"></div>
+            <v-list-item-action @click.stop>
+              <v-btn icon
+                     @click.stop.prevent="deleteServerUrl(item)"
+              >
+                <v-icon>mdi-delete</v-icon>
+              </v-btn>
+            </v-list-item-action>
+          </template>
+        </v-combobox>
         <v-combobox label="Secret path"
                     v-model="secretPath"
                     :items="userInputSecretPaths"
@@ -161,11 +173,7 @@ function loadLocalStorage<J extends Json>(format: J, key: string): TsType<J> | u
 export default class PipingUI extends Vue {
   private sendOrGet: 'send' | 'get' = 'send';
 
-  private get availableServerUrls(): string[] {
-    return defaultServerUrls.concat(this.userInputServerUrls);
-  }
-
-  private serverUrl: string = this.availableServerUrls[0];
+  private serverUrl: string = defaultServerUrls[0];
   private secretPath: string = "";
   private isTextMode: boolean = false;
   private inputText: string = '';
@@ -196,7 +204,12 @@ export default class PipingUI extends Vue {
   private mounted() {
     // Load user-input server URLs from local storage
     const userInputServerUrls: string[] | undefined = loadLocalStorage(arr(str), keys.userInputServerUrls);
-    if (userInputServerUrls !== undefined) {
+    // If none
+    if (userInputServerUrls === undefined) {
+      // Set default
+      this.userInputServerUrls = defaultServerUrls.slice();
+    } else {
+      // Load from storage
       this.userInputServerUrls = userInputServerUrls;
     }
 
@@ -241,7 +254,7 @@ export default class PipingUI extends Vue {
     this.uploadExpandedPanelIds.push(this.uploadCount-1);
 
     // If user-input server URL is new
-    if (!this.availableServerUrls.map(normalizeUrl).includes(normalizeUrl(this.serverUrl))) {
+    if (!this.userInputServerUrls.map(normalizeUrl).includes(normalizeUrl(this.serverUrl))) {
       // Enroll server URLs
       this.userInputServerUrls.push(this.serverUrl);
       // Save to local storage
@@ -306,6 +319,13 @@ export default class PipingUI extends Vue {
       }
     }, 100);
 
+  }
+
+  private deleteServerUrl(url: string): void {
+    // Remove path
+    this.userInputServerUrls = this.userInputServerUrls.filter(u => u !== url);
+    // Save to local storage
+    window.localStorage.setItem(keys.userInputServerUrls, JSON.stringify(this.userInputServerUrls));
   }
 
   private deleteSecretPath(path: string): void {
