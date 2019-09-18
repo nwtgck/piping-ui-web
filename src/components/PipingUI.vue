@@ -39,6 +39,7 @@
                     v-model="serverUrl"
                     :items="availableServerUrls"
                     @blur="attachProtocolToUrl()"
+                    clearable
         />
         <v-text-field label="Secret path"
                       v-model="secretPath"
