@@ -3,16 +3,18 @@
     <v-flex xs12 sm8 offset-sm2 offset-md3 md6>
       <v-card style="padding: 1em; margin-bottom: 1em;">
 
-        <v-btn-toggle v-model="sendOrGet" mandatory>
-          <v-btn text value="send">
-            Send
-            <v-icon right dark>file_upload</v-icon>
-          </v-btn>
-          <v-btn text value="get">
-            Get
-            <v-icon right dark>file_download</v-icon>
-          </v-btn>
-        </v-btn-toggle>
+        <div style="text-align: center">
+          <v-btn-toggle v-model="sendOrGet" mandatory>
+            <v-btn text value="send">
+              Send
+              <v-icon right dark>file_upload</v-icon>
+            </v-btn>
+            <v-btn text value="get">
+              Get
+              <v-icon right dark>file_download</v-icon>
+            </v-btn>
+          </v-btn-toggle>
+        </div>
 
         <div v-if="sendOrGet === 'send'">
           <v-switch

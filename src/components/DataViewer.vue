@@ -12,7 +12,9 @@
     </v-expansion-panel-header>
     <v-expansion-panel-content>
       <!-- loaded of total -->
-      {{ readableBytesString(progressSetting.loadedBytes, 1) }}{{ !progressSetting.totalBytes ? "" : ` of ${readableBytesString(progressSetting.totalBytes, 1)}` }}
+      <div style="text-align: center">
+        {{ readableBytesString(progressSetting.loadedBytes, 1) }}{{ !progressSetting.totalBytes ? "" : ` of ${readableBytesString(progressSetting.totalBytes, 1)}` }}
+      </div>
 
       <!-- Progress bar -->
       <v-progress-linear :value="progressPercentage"
@@ -28,19 +30,21 @@
       </v-simple-table>
 
       <!-- Image viewer -->
-      <img :src="imgSrc"
-           style="width: 95%"
-           v-if="imgSrc !== ''">
+      <div v-show="imgSrc !== ''" style="text-align: center">
+        <img :src="imgSrc"
+             style="width: 95%">
+      </div>
 
       <!-- Video viewer -->
-      <video :src="videoSrc"
-           style="width: 95%"
-           controls
-           v-if="videoSrc !== ''" />
+      <div v-if="videoSrc !== ''" style="text-align: center">
+        <video :src="videoSrc"
+               style="width: 95%"
+               controls />
+      </div>
 
       <!-- Text viewer -->
       <!-- NOTE: Don't use v-if because the inner uses "ref" and the ref is loaded in mounted()-->
-      <div v-show="text !== ''">
+      <div v-show="text !== ''" style="text-align: center">
         <div style="text-align: right">
           <v-btn ref="text_copy_button" style="background-color: #dcdcdc; margin-bottom: 0.3em;">
             <!-- (from: https://iconify.design/icon-sets/octicon/clippy.html) -->
@@ -75,8 +79,7 @@
 
       <v-alert type="error"
                outlined
-               :value="errorMessage !== ''"
-               style="text-align: left">
+               :value="errorMessage !== ''">
         {{ errorMessage }}
       </v-alert>
 
