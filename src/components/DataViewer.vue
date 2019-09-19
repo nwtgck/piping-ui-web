@@ -11,10 +11,16 @@
       </template>
     </v-expansion-panel-header>
     <v-expansion-panel-content>
+
       <!-- loaded of total -->
-      <div style="text-align: center">
-        {{ readableBytesString(progressSetting.loadedBytes, 1) }}{{ !progressSetting.totalBytes ? "" : ` of ${readableBytesString(progressSetting.totalBytes, 1)}` }}
-      </div>
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on }">
+          <div style="text-align: center" v-on="on">
+            {{ readableBytesString(progressSetting.loadedBytes, 1) }}{{ !progressSetting.totalBytes ? "" : ` of ${readableBytesString(progressSetting.totalBytes, 1)}` }}
+          </div>
+        </template>
+        <span>{{ progressSetting.loadedBytes }}{{ !progressSetting.totalBytes ? "" : ` of ${progressSetting.totalBytes}` }}</span>
+      </v-tooltip>
 
       <!-- Progress bar -->
       <v-progress-linear :value="progressPercentage"
