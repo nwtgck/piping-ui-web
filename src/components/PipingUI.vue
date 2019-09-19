@@ -57,12 +57,13 @@
                     v-model="secretPath"
                     :items="userInputSecretPaths"
                     placeholder="e.g. mypath374"
+                    ref="secret_path_ref"
                     clearable
         >
           <template v-slot:item="{ index, item }">
             {{ item }}
             <div class="flex-grow-1"></div>
-            <v-list-item-action @click.stop>
+            <v-list-item-action>
               <v-btn icon
                      @click.stop.prevent="deleteSecretPath(item)"
               >
@@ -131,7 +132,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import urlJoin from 'url-join';
 import DataUploader, { DataUploaderProps } from '@/components/DataUploader.vue';
 import DataViewer, {DataViewerProps} from "@/components/DataViewer.vue";
@@ -201,7 +202,20 @@ export default class PipingUI extends Vue {
   // Indexes of expanded expansion-panel for view
   private viewExpandedPanelIds: number[] = [];
 
+  // FIXME: Remove this
+  // This for lazy v-model of Combobox
+  private shouldBeRemoved = {
+    latestSecretPath: this.secretPath,
+  };
+
   private mounted() {
+    // FIXME: Combobox is lazy to update v-model
+    // This is for updating secret path in real-time
+    (this.$refs.secret_path_ref as Vue).$el.querySelector('input')!.addEventListener('keyup', (ev)=>{
+      // NOTE: [Send] button is hidden by auto-complete list if assigning to this.secretPath
+      this.shouldBeRemoved.latestSecretPath = (ev.target as any).value;
+    });
+
     // Load user-input server URLs from local storage
     const userInputServerUrls: string[] | undefined = loadLocalStorage(arr(str), keys.userInputServerUrls);
     // If none
@@ -221,6 +235,10 @@ export default class PipingUI extends Vue {
   }
 
   private send() {
+    // FIXME: remove
+    // NOTE: This set the latest secret path because v-model of Combobox is lazy
+    this.secretPath = this.shouldBeRemoved.latestSecretPath;
+
     // Get file in FilePond
     let pondFile: {file: File} | null = null;
     if (!this.isTextMode) {
