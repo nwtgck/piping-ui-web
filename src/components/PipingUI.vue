@@ -210,6 +210,21 @@ export default class PipingUI extends Vue {
     latestSecretPath: this.secretPath,
   };
 
+
+  // FIXME: Remove
+  // NOTE: This is for update by clicking listed auto-complete
+  @Watch('serverUrl')
+  private onServerUrl() {
+    this.shouldBeRemoved.latestServerUrl = this.serverUrl;
+  }
+
+  // FIXME: Remove
+  // NOTE: This is for update by clicking listed auto-complete
+  @Watch('secretPath')
+  private onSecretPath() {
+    this.shouldBeRemoved.latestSecretPath = this.secretPath;
+  }
+
   private mounted() {
     // FIXME: Combobox is lazy to update v-model
     // This is for updating server URL in real-time
