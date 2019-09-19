@@ -39,6 +39,7 @@
                     v-model="serverUrl"
                     :items="userInputServerUrls"
                     @blur="attachProtocolToUrl()"
+                    ref="server_url_ref"
                     clearable
         >
           <template v-slot:item="{ index, item }">
@@ -205,10 +206,17 @@ export default class PipingUI extends Vue {
   // FIXME: Remove this
   // This for lazy v-model of Combobox
   private shouldBeRemoved = {
+    latestServerUrl: this.serverUrl,
     latestSecretPath: this.secretPath,
   };
 
   private mounted() {
+    // FIXME: Combobox is lazy to update v-model
+    // This is for updating server URL in real-time
+    (this.$refs.server_url_ref as Vue).$el.querySelector('input')!.addEventListener('keyup', (ev)=>{
+      // NOTE: [Send] button is hidden by auto-complete list if assigning to this.serverUrl
+      this.shouldBeRemoved.latestServerUrl = (ev.target as any).value;
+    });
     // FIXME: Combobox is lazy to update v-model
     // This is for updating secret path in real-time
     (this.$refs.secret_path_ref as Vue).$el.querySelector('input')!.addEventListener('keyup', (ev)=>{
@@ -235,6 +243,9 @@ export default class PipingUI extends Vue {
   }
 
   private send() {
+    // FIXME: remove
+    // NOTE: This set the latest secret path because v-model of Combobox is lazy
+    this.serverUrl = this.shouldBeRemoved.latestServerUrl;
     // FIXME: remove
     // NOTE: This set the latest secret path because v-model of Combobox is lazy
     this.secretPath = this.shouldBeRemoved.latestSecretPath;
