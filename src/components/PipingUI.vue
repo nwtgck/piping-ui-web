@@ -16,7 +16,7 @@
           </v-btn-toggle>
         </div>
 
-        <div v-if="sendOrGet === 'send'">
+        <div v-show="sendOrGet === 'send'">
           <v-switch
                   inset
                   v-model="isTextMode"
