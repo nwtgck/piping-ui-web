@@ -1,7 +1,7 @@
 export const keys = {
   darkTheme: 'DARK_THEME',
-  userInputServerUrls: 'USER_INPUT_SERVER_URLS',
-  userInputSecretPaths: 'USER_INPUT_SECRET_PATHS',
+  serverUrlHistory: 'SERVER_URL_HISTORY',
+  secretPathHistory: 'SECRET_PATHS_HISTORY',
   language: 'LANGUAGE',
   selectedServerUrl: 'SELECTED_SERVER_URL',
   recordsServerUrlHistory: 'RECORDS_SERVER_URL_HISTORY',
