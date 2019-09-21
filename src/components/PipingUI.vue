@@ -57,7 +57,7 @@
         <v-combobox :label="strings('secret_path')"
                     v-model="secretPath"
                     :items="userInputSecretPaths"
-                    placeholder="e.g. mypath374"
+                    :placeholder="strings('secret_path_placeholder')"
                     ref="secret_path_ref"
                     clearable
         >
