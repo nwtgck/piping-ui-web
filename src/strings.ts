@@ -1,4 +1,5 @@
 import urlJoin from 'url-join';
+import {VERSION} from "@/version";
 
 export function strings(language: string) {
   return <K extends keyof (typeof defaultStr)>(key: K) => {
@@ -16,6 +17,7 @@ const en = {
   language: 'Language',
   dark_theme: 'Dark Theme',
   pwa_update: 'Update',
+  version: `Version: ${VERSION}`,
   send: 'Send',
   get: 'Get',
   text_mode: 'Text mode',
@@ -51,6 +53,7 @@ const ja: typeof defaultStr = {
   language: '言語 (Language)',
   dark_theme: 'ダークテーマ',
   pwa_update: 'Update',
+  version: `バージョン: ${VERSION}`,
   send: '送信',
   get: '受信',
   text_mode: 'テキスト',

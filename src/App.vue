@@ -32,6 +32,21 @@
 
         <v-card>
           <v-list>
+            <v-list>
+              <v-list-item>
+                <v-list-item-avatar>
+                  <img :src="require('./assets/logo.svg')" alt="Piping UI" />
+                </v-list-item-avatar>
+
+                <v-list-item-content>
+                  <v-list-item-title>Piping UI</v-list-item-title>
+                  <v-list-item-subtitle>{{ strings('version') }}</v-list-item-subtitle>
+                </v-list-item-content>
+              </v-list-item>
+            </v-list>
+
+            <v-divider></v-divider>
+
             <v-list-item>
               <v-list-item-action>
                 <v-select v-model="language"
