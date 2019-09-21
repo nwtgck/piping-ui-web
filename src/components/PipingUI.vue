@@ -38,6 +38,7 @@
         <v-combobox :label="strings('server_url')"
                     v-model="serverUrl"
                     :items="userInputServerUrls"
+                    @change="onUpdateServerUrl()"
                     @blur="attachProtocolToUrl()"
                     ref="server_url_ref"
                     clearable
@@ -178,19 +179,7 @@ function loadLocalStorage<J extends Json>(format: J, key: string): TsType<J> | u
 export default class PipingUI extends Vue {
   private sendOrGet: 'send' | 'get' = 'send';
 
-  private get serverUrl(): string {
-    // Load from Local Storage
-    const serverUrl = window.localStorage.getItem(keys.selectedServerUrl);
-    if (serverUrl === null) {
-      return defaultServerUrls[0];
-    } else {
-      return serverUrl;
-    }
-  }
-  private set serverUrl(url: string) {
-    window.localStorage.setItem(keys.selectedServerUrl, url);
-  }
-
+  private serverUrl: string = defaultServerUrls[0];
   private secretPath: string = "";
   private isTextMode: boolean = false;
   private inputText: string = '';
@@ -245,7 +234,16 @@ export default class PipingUI extends Vue {
     this.shouldBeRemoved.latestSecretPath = this.secretPath;
   }
 
+  private onUpdateServerUrl() {
+    window.localStorage.setItem(keys.selectedServerUrl, this.serverUrl);
+  }
   private mounted() {
+    // Load from Local Storage
+    const serverUrl = window.localStorage.getItem(keys.selectedServerUrl);
+    if (serverUrl !== null) {
+      this.serverUrl = serverUrl;
+    }
+
     // FIXME: Combobox is lazy to update v-model
     // This is for updating server URL in real-time
     (this.$refs.server_url_ref as Vue).$el.querySelector('input')!.addEventListener('keyup', (ev)=>{
