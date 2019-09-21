@@ -173,10 +173,10 @@ export default class DataUploader extends Vue {
     };
     this.xhr.onerror = (ev) => {
       // this.errorMessage = `An error occurred. The server may be < 0.9.4. Please check ${urlJoin(this.props.serverUrl, "/version")}`;
-      this.errorMessage = this.strings('error_xhr_onerror')(this.props.serverUrl);
+      this.errorMessage = this.strings('data_uploader_xhr_onerror')({serverUrl: this.props.serverUrl});
     };
     this.xhr.upload.onerror = () => {
-      this.errorMessage = this.strings('error_xhr_upload_onerror');
+      this.errorMessage = this.strings('data_uploader_xhr_upload_onerror');
     };
     this.xhr.send(data);
     // Initialize progress bar
