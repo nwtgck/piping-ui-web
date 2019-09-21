@@ -111,6 +111,8 @@ export default class App extends Vue {
 
   set language(l: string){
     globalStore.language = l;
+    // Store to Local Storage
+    window.localStorage.setItem(keys.language, l);
   }
   get language(): string {
     return globalStore.language;
