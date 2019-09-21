@@ -21,8 +21,35 @@
         <v-icon dark left>mdi-cached</v-icon>Update
       </v-btn>
       <v-spacer></v-spacer>
-      <!-- FIXME: margin-top is not good solution for adjusting middle in the bar -->
-      <v-switch :label="`Dark Theme`" v-model="enableDarkTheme" style="margin-top: 1.5em;"></v-switch>
+
+      <!-- Menu -->
+      <v-menu :close-on-content-click="false">
+        <template v-slot:activator="{ on }">
+          <v-btn icon v-on="on">
+            <v-icon>mdi-dots-vertical</v-icon>
+          </v-btn>
+        </template>
+
+        <v-card>
+          <v-list>
+            <v-list-item>
+              <v-list-item-action>
+                <v-select :items="['English', '日本語 (Japanese)']"
+                          label="Language"
+                          outlined
+                          @click.prevent="alert('hello')" />
+              </v-list-item-action>
+            </v-list-item>
+
+            <v-list-item>
+              <v-list-item-action>
+                <v-switch v-model="enableDarkTheme"></v-switch>
+              </v-list-item-action>
+              <v-list-item-title>Dark Theme</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-card>
+      </v-menu>
     </v-app-bar>
 
     <v-content>
