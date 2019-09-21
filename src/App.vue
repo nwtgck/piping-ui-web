@@ -67,7 +67,7 @@ import PipingUI from '@/components/PipingUI.vue';
 import {keys} from "@/local-storage-keys";
 import {VERSION} from '@/version';
 import {globalStore} from "@/vue-global";
-import strings from "@/strings";
+import {strings} from "@/strings";
 
 // Available languages
 type Language = 'en' | 'ja';
