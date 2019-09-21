@@ -1,7 +1,7 @@
 <template>
   <v-expansion-panel>
     <v-expansion-panel-header :disable-icon-rotate="isDoneDownload || hasError">
-      <span>View #{{ props.viewNo }}</span>
+      <span>{{ strings('view_in_viewer') }} #{{ props.viewNo }}</span>
       <!-- Percentage -->
       {{ progressPercentage ? `${progressPercentage.toFixed(2)} %` : "" }}
       <template v-slot:actions>
@@ -29,7 +29,7 @@
       <v-simple-table class="text-left">
         <tbody>
         <tr class="text-left">
-          <td>Download URL</td>
+          <td>{{ strings('download_url') }}</td>
           <td>{{ downloadPath }}</td>
         </tr>
         </tbody>
@@ -69,7 +69,7 @@
                class="ma-2 justify-end"
                @click="cancelDownload()">
           <v-icon >cancel</v-icon>
-          Cancel
+          {{ strings('cancel') }}
         </v-btn>
       </div>
 
@@ -80,7 +80,7 @@
              @click="save()"
              style="margin-top: 1em;">
         <v-icon >save</v-icon>
-        Save
+        {{ strings('save') }}
       </v-btn>
 
       <v-alert type="error"
@@ -101,6 +101,8 @@ import * as utils from '@/utils';
 import linkifyHtml from 'linkifyjs/html';
 import Clipboard from 'clipboard';
 import * as FileSaver from 'file-saver';
+import {globalStore} from "@/vue-global";
+import {strings} from "@/strings";
 
 export type DataViewerProps = {
   viewNo: number,
@@ -130,6 +132,11 @@ export default class DataViewer extends Vue {
   private text: string = '';
 
   private blob: Blob = new Blob();
+
+  // for language support
+  private get strings() {
+    return strings(globalStore.language);
+  }
 
   private get progressPercentage(): number | null {
     if (this.isDoneDownload) {
@@ -219,11 +226,14 @@ export default class DataViewer extends Vue {
         // View blob if possible
         this.viewBlob();
       } else {
-        this.errorMessage = `Error (${this.xhr.status}): "${this.xhr.responseText}"`;
+        this.errorMessage = this.strings('data_viewer_xhr_status_error')({
+          status: this.xhr.status,
+          response: this.xhr.responseText,
+        });
       }
     };
     this.xhr.onerror = () => {
-      this.errorMessage = "Download error";
+      this.errorMessage = this.strings('data_viewer_xhr_onerror');
     };
     this.xhr.send();
   }

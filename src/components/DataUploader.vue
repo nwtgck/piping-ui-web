@@ -1,7 +1,7 @@
 <template>
   <v-expansion-panel active="true">
     <v-expansion-panel-header :disable-icon-rotate="isDoneUpload || hasError">
-      <span>Upload #{{ props.uploadNo }}</span>
+      <span>{{ strings('upload') }} #{{ props.uploadNo }}</span>
       <!-- Percentage -->
       {{ progressPercentage && progressPercentage.toFixed(2) }} %
       <template v-slot:actions>
@@ -28,7 +28,7 @@
       <v-simple-table class="text-left">
         <tbody>
         <tr class="text-left">
-          <td>Upload URL</td>
+          <td>{{ strings('upload_url') }}</td>
           <td>{{ uploadPath }}</td>
         </tr>
         </tbody>
@@ -41,7 +41,7 @@
                class="ma-2 justify-end"
                @click="cancelUpload()">
           <v-icon >cancel</v-icon>
-          Cancel
+          {{ strings('cancel') }}
         </v-btn>
       </div>
 
@@ -60,6 +60,8 @@
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import urlJoin from 'url-join';
 import * as utils from '@/utils';
+import {globalStore} from "@/vue-global";
+import {strings} from "@/strings";
 
 export type DataUploaderProps = {
   uploadNo: number,
@@ -135,6 +137,11 @@ export default class DataUploader extends Vue {
     return !this.isDoneUpload && !this.hasError && !this.canceled;
   }
 
+  // for language support
+  private get strings() {
+    return strings(globalStore.language);
+  }
+
   constructor() {
     super();
     this.xhr = new XMLHttpRequest();
@@ -165,10 +172,11 @@ export default class DataUploader extends Vue {
       }
     };
     this.xhr.onerror = (ev) => {
-      this.errorMessage = `An error occurred. The server may be < 0.9.4. Please check ${urlJoin(this.props.serverUrl, "/version")}`;
+      // this.errorMessage = `An error occurred. The server may be < 0.9.4. Please check ${urlJoin(this.props.serverUrl, "/version")}`;
+      this.errorMessage = this.strings('data_uploader_xhr_onerror')({serverUrl: this.props.serverUrl});
     };
     this.xhr.upload.onerror = () => {
-      this.errorMessage = "An error occurred while uploading.";
+      this.errorMessage = this.strings('data_uploader_xhr_upload_onerror');
     };
     this.xhr.send(data);
     // Initialize progress bar
