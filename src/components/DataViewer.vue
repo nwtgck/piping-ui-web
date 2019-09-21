@@ -103,6 +103,7 @@ import Clipboard from 'clipboard';
 import * as FileSaver from 'file-saver';
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
+import {readBlobAsText} from "@/utils";
 
 export type DataViewerProps = {
   viewNo: number,
@@ -219,16 +220,17 @@ export default class DataViewer extends Vue {
     this.xhr.onprogress = (ev) => {
       this.progressSetting.loadedBytes = ev.loaded;
     };
-    this.xhr.onload = (ev) => {
+    this.xhr.onload = async (ev) => {
       if (this.xhr.status === 200) {
         this.isDoneDownload = true;
         this.blob = this.xhr.response;
         // View blob if possible
         this.viewBlob();
       } else {
+        const responseText = await readBlobAsText(this.xhr.response);
         this.errorMessage = () => this.strings('xhr_status_error')({
           status: this.xhr.status,
-          response: this.xhr.responseText,
+          response: responseText,
         });
       }
     };
@@ -238,19 +240,15 @@ export default class DataViewer extends Vue {
     this.xhr.send();
   }
 
-  private viewBlob() {
+  private async viewBlob() {
     const blobUrl = URL.createObjectURL(this.blob);
     if (this.blob.type.startsWith("image/")) {
       this.imgSrc = blobUrl;
     } else if (this.blob.type.startsWith("video/")) {
       this.videoSrc = blobUrl;
     } else if (this.blob.type.startsWith("text/")) {
-      const reader = new FileReader();
-      reader.readAsText(this.blob);
-      reader.onload = () => {
-        // Get text
-        this.text = reader.result as string;
-      }
+      // Get text
+      this.text = await readBlobAsText(this.blob);
     }
   }
 

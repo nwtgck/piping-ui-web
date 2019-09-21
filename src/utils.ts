@@ -13,3 +13,13 @@ export function readableBytesString(bytes: number, fractionDigits: number): stri
   // NOTE: Never execute
   return '';
 }
+
+export function readBlobAsText(blob: Blob): Promise<string> {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.readAsText(blob);
+    reader.onload = () => {
+      resolve(reader.result as string);
+    }
+  });
+}

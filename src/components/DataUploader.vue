@@ -154,6 +154,7 @@ export default class DataUploader extends Vue {
     const bodyLength: number = typeof data === "string" ? data.length : data.size;
     // Send
     this.xhr.open('POST', this.uploadPath, true);
+    this.xhr.responseType = 'text';
     // Update progress bar
     this.xhr.upload.onprogress = (ev) => {
       this.progressSetting.loadedBytes = ev.loaded;
