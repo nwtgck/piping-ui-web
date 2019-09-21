@@ -12,6 +12,8 @@ export const globalStore = new Vue({
       } else {
         return language;
       }
-    })()
+    })(),
+    recordsServerUrlHistory: true,
+    recordsSecretPathHistory: true,
   }
 });

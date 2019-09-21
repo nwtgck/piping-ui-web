@@ -316,7 +316,7 @@ export default class PipingUI extends Vue {
     this.uploadExpandedPanelIds.push(this.uploadCount-1);
 
     // If user-input server URL is new
-    if (!this.userInputServerUrls.map(normalizeUrl).includes(normalizeUrl(this.serverUrl))) {
+    if (globalStore.recordsServerUrlHistory && !this.userInputServerUrls.map(normalizeUrl).includes(normalizeUrl(this.serverUrl))) {
       // Enroll server URLs
       this.userInputServerUrls.push(this.serverUrl);
       // Save to local storage
@@ -324,7 +324,7 @@ export default class PipingUI extends Vue {
     }
 
     // If user-input secret path is new
-    if (!this.userInputSecretPaths.includes(this.secretPath)) {
+    if (globalStore.recordsSecretPathHistory && !this.userInputSecretPaths.includes(this.secretPath)) {
       // Enrol secret path
       this.userInputSecretPaths.push(this.secretPath);
       // Save to local storage
