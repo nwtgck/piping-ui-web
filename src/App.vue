@@ -59,29 +59,73 @@
             </v-list-item>
 
             <v-list-item>
+              <v-list-item-title>{{ strings('dark_theme') }}</v-list-item-title>
               <v-list-item-action>
                 <v-switch v-model="enableDarkTheme"></v-switch>
               </v-list-item-action>
-              <v-list-item-title>{{ strings('dark_theme') }}</v-list-item-title>
             </v-list-item>
 
             <v-list-item>
+              <v-list-item-title>{{ strings('record_server_url') }}</v-list-item-title>
               <v-list-item-action>
                 <v-switch v-model="recordsServerUrlHistory"></v-switch>
               </v-list-item-action>
-              <v-list-item-title>{{ strings('record_server_url') }}</v-list-item-title>
             </v-list-item>
 
             <v-list-item>
+              <v-list-item-title>{{ strings('record_secret_path') }}</v-list-item-title>
               <v-list-item-action>
                 <v-switch v-model="recordsSecretPathHistory"></v-switch>
               </v-list-item-action>
-              <v-list-item-title>{{ strings('record_secret_path') }}</v-list-item-title>
+            </v-list-item>
+
+            <v-list-item @click="licenseDialog = true">
+              <v-list-item-title>{{ strings('open_source_licenses') }}</v-list-item-title>
             </v-list-item>
           </v-list>
         </v-card>
       </v-menu>
     </v-app-bar>
+
+    <!--  Open source licenses -->
+    <v-dialog v-model="licenseDialog" scrollable max-width="70%">
+      <v-card>
+        <v-card-title>{{ strings('open_source_licenses') }}</v-card-title>
+        <v-divider></v-divider>
+        <v-card-text>
+
+          <!-- Library licenses -->
+          <v-list-item two-line v-for="(lib, libName) in licenses" :key="libName">
+            <v-list-item-content>
+              <v-list-item-title>
+                <a :href="lib.repository" target="_blank">{{ libName.replace(/@.*?$/, '') }}</a>
+                ({{ lib.licenses }})
+              </v-list-item-title>
+              <v-list-item-subtitle>{{ lib.publisher }}</v-list-item-subtitle>
+            </v-list-item-content>
+          </v-list-item>
+
+          <v-divider></v-divider>
+
+          <!--  Logo license -->
+          <v-list-item two-line>
+            <v-list-item-content>
+              <v-list-item-title>
+                <div>Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik" target="_blank">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon" target="_blank">www.flaticon.com</a></div>
+              </v-list-item-title>
+              <v-list-item-subtitle>Secondary text</v-list-item-subtitle>
+            </v-list-item-content>
+          </v-list-item>
+
+        </v-card-text>
+        <v-divider></v-divider>
+        <v-card-actions class="justify-end">
+          <v-btn color="blue darken-1" text @click="licenseDialog = false">
+            {{ strings('close') }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <v-content>
       <PipingUI/>
@@ -97,6 +141,7 @@ import {keys} from "@/local-storage-keys";
 import {VERSION} from '@/version';
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
+import licenses from '@/licenses.json';
 
 // Available languages
 type Language = 'en' | 'ja';
@@ -108,7 +153,9 @@ type Language = 'en' | 'ja';
   }
 })
 export default class App extends Vue {
-  enableDarkTheme: boolean = false;
+  private enableDarkTheme: boolean = false;
+  private licenseDialog: boolean = false;
+  private licenses = licenses;
   private get recordsServerUrlHistory(): boolean {
     return globalStore.recordsServerUrlHistory;
   }

@@ -2,6 +2,7 @@
 node_modules
 /dist
 /src/version.ts
+/src/licenses.json
 
 # local env files
 .env.local

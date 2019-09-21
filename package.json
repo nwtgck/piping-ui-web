@@ -5,10 +5,11 @@
   "scripts": {
     "generate-version": "cross-var echo \"export const VERSION = \\\"$npm_package_version\\\";\" > src/version.ts",
     "serve": "npm run generate-version && vue-cli-service serve",
-    "real-serve": "watch-build-serve -i=dist -i=.idea -i=./node_modules -i=.git -i=src/version.ts",
+    "real-serve": "watch-build-serve -i=dist -i=.idea -i=./node_modules -i=.git -i=src/version.ts -i src/licenses.json",
     "build": "npm run generate-version && vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "test:unit": "vue-cli-service test:unit"
+    "test:unit": "vue-cli-service test:unit",
+    "postinstall": "license-checker --production --json > src/licenses.json"
   },
   "dependencies": {
     "clipboard": "^2.0.4",
@@ -49,6 +50,7 @@
     "cross-var": "^1.1.0",
     "eslint": "^5.16.0",
     "eslint-plugin-vue": "^5.2.3",
+    "license-checker": "^25.0.1",
     "material-design-icons-iconfont": "^5.0.1",
     "sass": "^1.22.12",
     "sass-loader": "^7.3.1",
