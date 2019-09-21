@@ -18,7 +18,7 @@
       <v-btn v-if="pwa.updateExists"
              @click="refreshApp"
              depressed color="blue" dark small outlined>
-        <v-icon dark left>mdi-cached</v-icon>Update
+        <v-icon dark left>mdi-cached</v-icon>{{ strings('pwa_update') }}
       </v-btn>
       <v-spacer></v-spacer>
 
@@ -34,10 +34,12 @@
           <v-list>
             <v-list-item>
               <v-list-item-action>
-                <v-select :items="['English', '日本語 (Japanese)']"
-                          label="Language"
-                          outlined
-                          @click.prevent="alert('hello')" />
+                <v-select v-model="language"
+                          :items="availableLanguages"
+                          :label="strings('language')"
+                          item-text="str"
+                          item-value="lang"
+                          outlined/>
               </v-list-item-action>
             </v-list-item>
 
@@ -45,7 +47,7 @@
               <v-list-item-action>
                 <v-switch v-model="enableDarkTheme"></v-switch>
               </v-list-item-action>
-              <v-list-item-title>Dark Theme</v-list-item-title>
+              <v-list-item-title>{{ strings('dark_theme') }}</v-list-item-title>
             </v-list-item>
           </v-list>
         </v-card>
@@ -64,6 +66,11 @@ import HelloWorld from '@/components/HelloWorld.vue';
 import PipingUI from '@/components/PipingUI.vue';
 import {keys} from "@/local-storage-keys";
 import {VERSION} from '@/version';
+import {globalStore} from "@/vue-global";
+import strings from "@/strings";
+
+// Available languages
+type Language = 'en' | 'ja';
 
 @Component({
   components: {
@@ -80,6 +87,14 @@ export default class App extends Vue {
     updateExists: false
   };
   private version = VERSION;
+  private availableLanguages: {lang: Language, str: string}[] = [
+    {lang: 'en', str: 'English'},
+    {lang: 'ja', str: '日本語'},
+  ];
+  // for language support
+  private get strings() {
+    return strings(globalStore.language);
+  }
 
   created () {
     document.addEventListener(
@@ -92,6 +107,13 @@ export default class App extends Vue {
         window.location.reload();
       }
     );
+  }
+
+  set language(l: string){
+    globalStore.language = l;
+  }
+  get language(): string {
+    return globalStore.language;
   }
 
   // TODO: Remove any
