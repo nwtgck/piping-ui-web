@@ -178,7 +178,19 @@ function loadLocalStorage<J extends Json>(format: J, key: string): TsType<J> | u
 export default class PipingUI extends Vue {
   private sendOrGet: 'send' | 'get' = 'send';
 
-  private serverUrl: string = defaultServerUrls[0];
+  private get serverUrl(): string {
+    // Load from Local Storage
+    const serverUrl = window.localStorage.getItem(keys.selectedServerUrl);
+    if (serverUrl === null) {
+      return defaultServerUrls[0];
+    } else {
+      return serverUrl;
+    }
+  }
+  private set serverUrl(url: string) {
+    window.localStorage.setItem(keys.selectedServerUrl, url);
+  }
+
   private secretPath: string = "";
   private isTextMode: boolean = false;
   private inputText: string = '';
