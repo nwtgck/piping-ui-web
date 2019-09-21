@@ -52,7 +52,7 @@
     "material-design-icons-iconfont": "^5.0.1",
     "sass": "^1.17.4",
     "sass-loader": "^7.1.0",
-    "typescript": "^3.4.3",
+    "typescript": "^3.6.3",
     "vue-cli-plugin-vuetify": "^0.6.3",
     "vue-template-compiler": "^2.6.10",
     "vuetify-loader": "^1.2.2",
