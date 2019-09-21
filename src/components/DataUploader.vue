@@ -47,8 +47,8 @@
 
       <v-alert type="error"
                outlined
-               :value="errorMessage !== ''">
-        {{ errorMessage }}
+               :value="errorMessage() !== ''">
+        {{ errorMessage() }}
       </v-alert>
 
     </v-expansion-panel-content>
@@ -83,7 +83,8 @@ export default class DataUploader extends Vue {
 
   private readableBytesString = utils.readableBytesString;
 
-  private errorMessage: string = "";
+  // NOTE: Function makes dynamic language-switch support possible
+  private errorMessage: () => string = () => "";
   private xhr: XMLHttpRequest;
   private canceled: boolean = false;
 
@@ -106,7 +107,7 @@ export default class DataUploader extends Vue {
   }
 
   private get hasError(): boolean {
-    return this.errorMessage !== "";
+    return this.errorMessage() !== "";
   }
 
   private get headerIcon(): string {
@@ -168,17 +169,17 @@ export default class DataUploader extends Vue {
     };
     this.xhr.onload = () => {
       if (this.xhr.status !== 200) {
-        this.errorMessage = this.strings('xhr_status_error')({
+        this.errorMessage = () => this.strings('xhr_status_error')({
           status: this.xhr.status,
           response: this.xhr.responseText
         });
       }
     };
     this.xhr.onerror = (ev) => {
-      this.errorMessage = this.strings('data_uploader_xhr_onerror')({serverUrl: this.props.serverUrl});
+      this.errorMessage = () => this.strings('data_uploader_xhr_onerror')({serverUrl: this.props.serverUrl});
     };
     this.xhr.upload.onerror = () => {
-      this.errorMessage = this.strings('data_uploader_xhr_upload_onerror');
+      this.errorMessage = () => this.strings('data_uploader_xhr_upload_onerror');
     };
     this.xhr.send(data);
     // Initialize progress bar

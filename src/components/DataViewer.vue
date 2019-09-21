@@ -24,7 +24,7 @@
 
       <!-- Progress bar -->
       <v-progress-linear :value="progressPercentage"
-                         :indeterminate="progressPercentage === null && !canceled && errorMessage === ''" />
+                         :indeterminate="progressPercentage === null && !canceled && errorMessage() === ''" />
 
       <v-simple-table class="text-left">
         <tbody>
@@ -85,8 +85,8 @@
 
       <v-alert type="error"
                outlined
-               :value="errorMessage !== ''">
-        {{ errorMessage }}
+               :value="errorMessage() !== ''">
+        {{ errorMessage() }}
       </v-alert>
 
     </v-expansion-panel-content>
@@ -123,7 +123,7 @@ export default class DataViewer extends Vue {
 
   private readableBytesString = utils.readableBytesString;
 
-  private errorMessage: string = "";
+  private errorMessage: () => string = () => "";
   private xhr: XMLHttpRequest;
   private isDoneDownload: boolean = false;
   private canceled: boolean = false;
@@ -151,7 +151,7 @@ export default class DataViewer extends Vue {
   }
 
   private get hasError(): boolean {
-    return this.errorMessage !== "";
+    return this.errorMessage() !== "";
   }
 
   private get headerIcon(): string {
@@ -226,14 +226,14 @@ export default class DataViewer extends Vue {
         // View blob if possible
         this.viewBlob();
       } else {
-        this.errorMessage = this.strings('xhr_status_error')({
+        this.errorMessage = () => this.strings('xhr_status_error')({
           status: this.xhr.status,
           response: this.xhr.responseText,
         });
       }
     };
     this.xhr.onerror = () => {
-      this.errorMessage = this.strings('data_viewer_xhr_onerror');
+      this.errorMessage = () => this.strings('data_viewer_xhr_onerror');
     };
     this.xhr.send();
   }
