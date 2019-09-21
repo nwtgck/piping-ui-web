@@ -226,7 +226,7 @@ export default class DataViewer extends Vue {
         // View blob if possible
         this.viewBlob();
       } else {
-        this.errorMessage = this.strings('data_viewer_xhr_status_error')({
+        this.errorMessage = this.strings('xhr_status_error')({
           status: this.xhr.status,
           response: this.xhr.responseText,
         });

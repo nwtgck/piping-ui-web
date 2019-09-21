@@ -41,7 +41,7 @@ const en = {
   cancel: 'Cancel',
   view_in_viewer: 'View',
   download_url: 'Download URL',
-  data_viewer_xhr_status_error: (p: {status: number, response: string}) => {
+  xhr_status_error: (p: {status: number, response: string}) => {
     return `Error (${p.status}): "${p.response}"`;
   },
   data_viewer_xhr_onerror: 'Download error',
@@ -79,7 +79,7 @@ const ja: typeof defaultStr = {
   cancel: 'キャンセル',
   view_in_viewer: '表示',
   download_url: 'ダウンロードURL',
-  data_viewer_xhr_status_error: (p: {status: number, response: string}) => {
+  xhr_status_error: (p: {status: number, response: string}) => {
     return `エラー (${p.status}): "${p.response}"`;
   },
   data_viewer_xhr_onerror: 'ダウンロードエラー',
