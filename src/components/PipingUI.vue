@@ -142,6 +142,7 @@ import {str, arr, validatingParse, Json, TsType} from 'ts-json-validator';
 import vueFilePond from 'vue-filepond';
 import 'filepond/dist/filepond.min.css';
 import {keys} from "../local-storage-keys";
+import {supportsSwDownload} from "@/sw-download";
 
 // Create component
 const FilePond = vueFilePond();
@@ -323,11 +324,23 @@ export default class PipingUI extends Vue {
       return;
     }
 
-    const aTag = document.createElement('a');
-    aTag.href = urlJoin(this.serverUrl, this.secretPath);
-    aTag.target = "_blank";
-    aTag.download = this.secretPath;
-    aTag.click();
+    // If supporting stream-download via Service Worker
+    if (supportsSwDownload) {
+      // Download via Service Worker
+      const aTag = document.createElement('a');
+      const downloadUrl = urlJoin(this.serverUrl, this.secretPath);
+      // NOTE: '/sw-download' can be received by Service Worker in src/sw.js
+      aTag.href = `/sw-download?url=${encodeURIComponent(downloadUrl)}&filename=${this.secretPath}`;
+      aTag.target = "_blank";
+      aTag.click();
+    } else {
+      // Download or show on browser sometimes
+      const aTag = document.createElement('a');
+      aTag.href = urlJoin(this.serverUrl, this.secretPath);
+      aTag.target = "_blank";
+      aTag.download = this.secretPath;
+      aTag.click();
+    }
   }
 
   private view() {
