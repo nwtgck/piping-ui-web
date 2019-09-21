@@ -316,7 +316,7 @@ export default class PipingUI extends Vue {
   }
 
   // NOTE: Some file types are displayed inline
-  private get() {
+  private async get() {
     // If secret path is empty
     if (this.secretPath === '') {
       // Show error message
@@ -325,7 +325,7 @@ export default class PipingUI extends Vue {
     }
 
     // If supporting stream-download via Service Worker
-    if (supportsSwDownload) {
+    if (await supportsSwDownload) {
       // Download via Service Worker
       const aTag = document.createElement('a');
       const downloadUrl = urlJoin(this.serverUrl, this.secretPath);
@@ -333,7 +333,7 @@ export default class PipingUI extends Vue {
       aTag.href = `/sw-download?url=${encodeURIComponent(downloadUrl)}&filename=${this.secretPath}`;
       aTag.target = "_blank";
       aTag.click();
-    } else {
+    } else { 
       // Download or show on browser sometimes
       const aTag = document.createElement('a');
       aTag.href = urlJoin(this.serverUrl, this.secretPath);
