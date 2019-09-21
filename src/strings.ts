@@ -42,6 +42,8 @@ const en = {
   },
   data_viewer_xhr_onerror: 'Download error',
   save: 'Save',
+  record_server_url: 'Record server URL',
+  record_secret_path: 'Record secret path',
 };
 const defaultStr = en;
 
@@ -75,4 +77,6 @@ const ja: typeof defaultStr = {
   },
   data_viewer_xhr_onerror: 'ダウンロードエラー',
   save: '保存',
+  record_server_url: 'サーバーURLを記憶',
+  record_secret_path: '転送パスを記憶',
 } as const;

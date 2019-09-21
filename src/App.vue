@@ -49,6 +49,20 @@
               </v-list-item-action>
               <v-list-item-title>{{ strings('dark_theme') }}</v-list-item-title>
             </v-list-item>
+
+            <v-list-item>
+              <v-list-item-action>
+                <v-switch v-model="recordsServerUrlHistory"></v-switch>
+              </v-list-item-action>
+              <v-list-item-title>{{ strings('record_server_url') }}</v-list-item-title>
+            </v-list-item>
+
+            <v-list-item>
+              <v-list-item-action>
+                <v-switch v-model="recordsSecretPathHistory"></v-switch>
+              </v-list-item-action>
+              <v-list-item-title>{{ strings('record_secret_path') }}</v-list-item-title>
+            </v-list-item>
           </v-list>
         </v-card>
       </v-menu>
@@ -80,6 +94,22 @@ type Language = 'en' | 'ja';
 })
 export default class App extends Vue {
   enableDarkTheme: boolean = false;
+  private get recordsServerUrlHistory(): boolean {
+    return globalStore.recordsServerUrlHistory;
+  }
+  private set recordsServerUrlHistory(b: boolean) {
+    globalStore.recordsServerUrlHistory = b;
+    window.localStorage.setItem(keys.recordsServerUrlHistory, b+"");
+  }
+
+  private get recordsSecretPathHistory(): boolean {
+    return globalStore.recordsSecretPathHistory;
+  }
+  private set recordsSecretPathHistory(b: boolean) {
+    globalStore.recordsSecretPathHistory = b;
+    window.localStorage.setItem(keys.recordsSecretPathHistory, b+"");
+  }
+
   // TODO: Remove any
   pwa: {refreshing: boolean, registration?: any, updateExists: boolean} = {
     refreshing: false,
@@ -136,10 +166,23 @@ export default class App extends Vue {
   mounted () {
     // Load environmental dark theme setting
     this.enableDarkTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
     // Load dark theme setting
     const darkThemeStr = window.localStorage.getItem(keys.darkTheme);
     if (darkThemeStr !== null) {
       this.enableDarkTheme = darkThemeStr === "true";
+    }
+
+    // Load server url recording setting
+    const recordsServerUrlHistory = window.localStorage.getItem((keys.recordsServerUrlHistory));
+    if (recordsServerUrlHistory !== null) {
+      globalStore.recordsServerUrlHistory = recordsServerUrlHistory === "true";
+    }
+
+    // Load secret path recording setting
+    const recordsSecretPathHistory = window.localStorage.getItem((keys.recordsSecretPathHistory));
+    if (recordsSecretPathHistory !== null) {
+      globalStore.recordsSecretPathHistory = recordsSecretPathHistory === "true";
     }
   }
 

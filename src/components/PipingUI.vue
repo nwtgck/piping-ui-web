@@ -37,7 +37,7 @@
 
         <v-combobox :label="strings('server_url')"
                     v-model="serverUrl"
-                    :items="userInputServerUrls"
+                    :items="serverUrlHistory"
                     @change="onUpdateServerUrl()"
                     @blur="attachProtocolToUrl()"
                     ref="server_url_ref"
@@ -57,7 +57,7 @@
         </v-combobox>
         <v-combobox :label="strings('secret_path')"
                     v-model="secretPath"
-                    :items="userInputSecretPaths"
+                    :items="secretPathHistory"
                     :placeholder="strings('secret_path_placeholder')"
                     ref="secret_path_ref"
                     clearable
@@ -183,8 +183,8 @@ export default class PipingUI extends Vue {
   private secretPath: string = "";
   private isTextMode: boolean = false;
   private inputText: string = '';
-  private userInputServerUrls: string[] = [];
-  private userInputSecretPaths: string[] = [];
+  private serverUrlHistory: string[] = [];
+  private secretPathHistory: string[] = [];
 
   // Progress bar setting
   private progressSetting: {show: boolean, loadedBytes: number, totalBytes?: number} = {
@@ -257,21 +257,21 @@ export default class PipingUI extends Vue {
       this.shouldBeRemoved.latestSecretPath = (ev.target as any).value;
     });
 
-    // Load user-input server URLs from local storage
-    const userInputServerUrls: string[] | undefined = loadLocalStorage(arr(str), keys.userInputServerUrls);
+    // Load server URL history from local storage
+    const serverUrlHistory: string[] | undefined = loadLocalStorage(arr(str), keys.serverUrlHistory);
     // If none
-    if (userInputServerUrls === undefined) {
+    if (serverUrlHistory === undefined) {
       // Set default
-      this.userInputServerUrls = defaultServerUrls.slice();
+      this.serverUrlHistory = defaultServerUrls.slice();
     } else {
       // Load from storage
-      this.userInputServerUrls = userInputServerUrls;
+      this.serverUrlHistory = serverUrlHistory;
     }
 
-    // Load user-input server URLs from local storage
-    const userInputSecretPaths: string[] | undefined = loadLocalStorage(arr(str), keys.userInputSecretPaths);
-    if (userInputSecretPaths !== undefined) {
-      this.userInputSecretPaths = userInputSecretPaths;
+    // Load server URL history from local storage
+    const secretPathHistory: string[] | undefined = loadLocalStorage(arr(str), keys.secretPathHistory);
+    if (secretPathHistory !== undefined) {
+      this.secretPathHistory = secretPathHistory;
     }
   }
 
@@ -315,20 +315,20 @@ export default class PipingUI extends Vue {
     // Open by default
     this.uploadExpandedPanelIds.push(this.uploadCount-1);
 
-    // If user-input server URL is new
-    if (!this.userInputServerUrls.map(normalizeUrl).includes(normalizeUrl(this.serverUrl))) {
+    // If history is enable and user-input server URL is new
+    if (globalStore.recordsServerUrlHistory && !this.serverUrlHistory.map(normalizeUrl).includes(normalizeUrl(this.serverUrl))) {
       // Enroll server URLs
-      this.userInputServerUrls.push(this.serverUrl);
+      this.serverUrlHistory.push(this.serverUrl);
       // Save to local storage
-      window.localStorage.setItem(keys.userInputServerUrls, JSON.stringify(this.userInputServerUrls));
+      window.localStorage.setItem(keys.serverUrlHistory, JSON.stringify(this.serverUrlHistory));
     }
 
-    // If user-input secret path is new
-    if (!this.userInputSecretPaths.includes(this.secretPath)) {
+    // If history is enable and user-input secret path is new
+    if (globalStore.recordsSecretPathHistory && !this.secretPathHistory.includes(this.secretPath)) {
       // Enrol secret path
-      this.userInputSecretPaths.push(this.secretPath);
+      this.secretPathHistory.push(this.secretPath);
       // Save to local storage
-      window.localStorage.setItem(keys.userInputSecretPaths, JSON.stringify(this.userInputSecretPaths));
+      window.localStorage.setItem(keys.secretPathHistory, JSON.stringify(this.secretPathHistory));
     }
   }
 
@@ -397,16 +397,16 @@ export default class PipingUI extends Vue {
 
   private deleteServerUrl(url: string): void {
     // Remove path
-    this.userInputServerUrls = this.userInputServerUrls.filter(u => u !== url);
+    this.serverUrlHistory = this.serverUrlHistory.filter(u => u !== url);
     // Save to local storage
-    window.localStorage.setItem(keys.userInputServerUrls, JSON.stringify(this.userInputServerUrls));
+    window.localStorage.setItem(keys.serverUrlHistory, JSON.stringify(this.serverUrlHistory));
   }
 
   private deleteSecretPath(path: string): void {
     // Remove path
-    this.userInputSecretPaths = this.userInputSecretPaths.filter(p => p !== path);
+    this.secretPathHistory = this.secretPathHistory.filter(p => p !== path);
     // Save to local storage
-    window.localStorage.setItem(keys.userInputSecretPaths, JSON.stringify(this.userInputSecretPaths));
+    window.localStorage.setItem(keys.secretPathHistory, JSON.stringify(this.secretPathHistory));
   }
 }
 </script>
