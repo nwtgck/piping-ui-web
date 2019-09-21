@@ -21,7 +21,7 @@
     "clipboard": "^2.0.4",
     "core-js": "^2.6.5",
     "file-saver": "^2.0.2",
-    "filepond": "^4.5.1",
+    "filepond": "^4.7.1",
     "linkifyjs": "^2.1.8",
     "register-service-worker": "^1.6.2",
     "ts-json-validator": "git+https://github.com/nwtgck/ts-json-validator.git#v0.1.2",
