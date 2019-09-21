@@ -17,6 +17,35 @@ self.addEventListener('message', (e) => {
   }
 });
 
+// Support for stream download
+self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+  if (url.pathname === '/sw-download-support') {
+    // Return "OK"
+    event.respondWith(new Response(
+      new ReadableStream({
+        start(controller) {
+          controller.enqueue(new Uint8Array([79, 75]));
+          controller.close();
+        }
+      })
+    ));
+  } else if (url.pathname === '/sw-download') {
+    const targetUrl = url.searchParams.get('url');
+    const filename = url.searchParams.get('filename');
+
+    event.respondWith((async () => {
+      const res = await fetch(targetUrl);
+      const headers = new Headers([...res.headers.entries()]);
+      headers.set('Content-Disposition', `attachment; filename="${filename}"`);
+      const downloadableRes = new Response(res.body, {
+        headers
+      });
+      return downloadableRes;
+    })());
+  }
+});
+
 workbox.clientsClaim();
 
 // The precaching code provided by Workbox.
