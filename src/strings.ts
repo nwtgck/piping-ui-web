@@ -1,3 +1,5 @@
+import urlJoin from 'url-join';
+
 export function strings(language: string) {
   return <K extends keyof (typeof defaultStr)>(key: K) => {
     if(language.startsWith("en")) {
@@ -25,6 +27,13 @@ const en = {
   download: 'Download',
   error_file_not_selected: 'Error: File not selected',
   error_secret_path_not_specified: 'Error: Secret path not specified',
+  upload: 'Upload',
+  upload_url: 'Upload URL',
+  error_xhr_onerror: (serverUrl: string) => {
+    return `An error occurred. The server might be < 0.9.4. Please check ${urlJoin(serverUrl, "/version")}`;
+  },
+  error_xhr_upload_onerror: 'An error occurred while uploading',
+  cancel: 'Cancel',
 };
 const defaultStr = en;
 
@@ -43,4 +52,11 @@ const ja: typeof defaultStr = {
   download: 'ダウンロード',
   error_file_not_selected: 'エラー: ファイルが選択されていません',
   error_secret_path_not_specified: 'エラー: 転送パスが指定されていません',
+  upload: 'アップロード',
+  upload_url: 'アップロードURL',
+  error_xhr_onerror: (serverUrl: string) => {
+    return `エラーが発生しました。サーバーが0.9.4より低い可能性があります。 ${urlJoin(serverUrl, "/version")}でバージョンの確認できます。`;
+  },
+  error_xhr_upload_onerror: 'アップロード中にエラが発生しました',
+  cancel: 'キャンセル',
 } as const;
