@@ -13,6 +13,7 @@ import '@fortawesome/fontawesome';
 import '@fortawesome/fontawesome-free-solid';
 import '@fortawesome/fontawesome-free-regular';
 import '@fortawesome/fontawesome-free-brands';
+import {supportsSwDownload} from "@/sw-download";
 
 Vue.config.productionTip = false;
 
@@ -20,3 +21,7 @@ new Vue({
   vuetify,
   render: h => h(App)
 }).$mount('#app');
+
+(async () => {
+  console.log('Support streaming download:', await supportsSwDownload);
+})();
