@@ -24,7 +24,7 @@
                   :label="strings('text_mode')"/>
           <file-pond v-if="!isTextMode"
                      v-model="files"
-                     :label-idle="`<img src='img/file-icon.svg' style='width: 2em'><br>${strings('drop_a_file_here_or_browse')}`"
+                     :label-idle="filePondLabelIdle"
                      :allow-multiple="true"
           />
           <v-textarea v-if="isTextMode"
@@ -239,6 +239,17 @@ export default class PipingUI extends Vue {
   private onUpdateServerUrl() {
     window.localStorage.setItem(keys.selectedServerUrl, this.serverUrl);
   }
+
+  private get filePondLabelIdle(): string {
+    // If files are nothing
+    if (this.files.length === 0) {
+      // Hint with file icon
+      return `<img src='img/file-icon.svg' style='width: 2em'><br>${this.strings('drop_a_file_here_or_browse')}`;
+    } else {
+      return this.strings('drop_a_file_here_or_browse');
+    }
+  }
+
   private mounted() {
     // Load from Local Storage
     const serverUrl = window.localStorage.getItem(keys.selectedServerUrl);
