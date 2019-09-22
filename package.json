@@ -19,7 +19,7 @@
   "license": "MIT",
   "dependencies": {
     "clipboard": "^2.0.4",
-    "core-js": "^2.6.5",
+    "core-js": "^3.2.1",
     "file-saver": "^2.0.2",
     "filepond": "^4.7.1",
     "jszip": "^3.2.2",
