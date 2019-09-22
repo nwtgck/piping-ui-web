@@ -12,18 +12,27 @@
     </v-expansion-panel-header>
     <v-expansion-panel-content>
 
-      <!-- loaded of total -->
-      <v-tooltip bottom>
-        <template v-slot:activator="{ on }">
-          <div style="text-align: center" v-on="on">
-            {{ readableBytesString(progressSetting.loadedBytes, 1) }} of {{ readableBytesString(progressSetting.totalBytes, 1) }}
-          </div>
-        </template>
-        <span>{{ progressSetting.loadedBytes }} of {{ progressSetting.totalBytes }}</span>
-      </v-tooltip>
+      <div v-show="isCompressing">
+        <div style="text-align: center">
+          {{ strings('compressing') }}
+        </div>
+        <!-- Compression progress bar -->
+        <v-progress-linear indeterminate />
+      </div>
 
-      <!-- Progress bar -->
-      <v-progress-linear :value="progressPercentage"/>
+      <div v-show="!isCompressing">
+        <!-- loaded of total -->
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on }">
+            <div style="text-align: center" v-on="on">
+              {{ readableBytesString(progressSetting.loadedBytes, 1) }} of {{ readableBytesString(progressSetting.totalBytes, 1) }}
+            </div>
+          </template>
+          <span>{{ progressSetting.loadedBytes }} of {{ progressSetting.totalBytes }}</span>
+        </v-tooltip>
+        <!-- Upload progress bar -->
+        <v-progress-linear :value="progressPercentage"/>
+      </div>
 
       <v-simple-table class="text-left">
         <tbody>
@@ -65,7 +74,7 @@ import {strings} from "@/strings";
 
 export type DataUploaderProps = {
   uploadNo: number,
-  data: File | string,
+  data: File[] | string,
   serverUrl: string,
   secretPath: string
 };
@@ -87,6 +96,7 @@ export default class DataUploader extends Vue {
   private errorMessage: () => string = () => "";
   private xhr: XMLHttpRequest;
   private canceled: boolean = false;
+  private isCompressing: boolean = false;
 
   private get progressPercentage(): number | null {
     if (this.progressSetting.totalBytes === undefined) {
@@ -148,10 +158,27 @@ export default class DataUploader extends Vue {
     this.xhr = new XMLHttpRequest();
   }
 
-  mounted() {
-    const data = this.props.data;
+  async mounted() {
+    const data: File[] | string = this.props.data;
 
-    const bodyLength: number = typeof data === "string" ? data.length : data.size;
+    const {body, bodyLength} = await (async () => {
+      // Text
+      if (typeof data === "string") {
+        return {body: data, bodyLength: data.length};
+      // One file
+      } else if (data.length === 1) {
+        return {body: data[0], bodyLength: data[0].size};
+      // Multiple files
+      } else {
+        const files: File[] = data;
+        this.isCompressing = true;
+        // Zip files
+        const zipBlob: Blob = await utils.zipFilesAsBlob(files);
+        this.isCompressing = false;
+        return {body: zipBlob, bodyLength: zipBlob.size};
+      }
+    })();
+
     // Send
     this.xhr.open('POST', this.uploadPath, true);
     this.xhr.responseType = 'text';
@@ -182,7 +209,7 @@ export default class DataUploader extends Vue {
     this.xhr.upload.onerror = () => {
       this.errorMessage = () => this.strings('data_uploader_xhr_upload_onerror');
     };
-    this.xhr.send(data);
+    this.xhr.send(body);
     // Initialize progress bar
     this.progressSetting.loadedBytes = 0;
     this.progressSetting.totalBytes = bodyLength;
