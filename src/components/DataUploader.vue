@@ -71,7 +71,6 @@ import urlJoin from 'url-join';
 import * as utils from '@/utils';
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
-import JSZip from "jszip";
 
 export type DataUploaderProps = {
   uploadNo: number,
@@ -172,13 +171,9 @@ export default class DataUploader extends Vue {
       // Multiple files
       } else {
         const files: File[] = data;
-        const zip = JSZip();
-        const directory = zip.folder('files');
-        for (const file of files) {
-          directory.file(file.name, file);
-        }
         this.isCompressing = true;
-        const zipBlob: Blob = await directory.generateAsync({type : "blob"});
+        // Zip files
+        const zipBlob: Blob = await utils.zipFilesAsBlob(files);
         this.isCompressing = false;
         return {body: zipBlob, bodyLength: zipBlob.size};
       }

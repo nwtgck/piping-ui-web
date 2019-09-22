@@ -138,7 +138,6 @@ import urlJoin from 'url-join';
 import DataUploader, { DataUploaderProps } from '@/components/DataUploader.vue';
 import DataViewer, {DataViewerProps} from "@/components/DataViewer.vue";
 import {str, arr, validatingParse, Json, TsType} from 'ts-json-validator';
-import JSZip from "jszip";
 
 import vueFilePond from 'vue-filepond';
 import 'filepond/dist/filepond.min.css';
