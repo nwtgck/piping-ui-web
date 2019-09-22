@@ -141,6 +141,10 @@
                 color="error"
                 top>
       {{ snackbarMessage }}
+      <v-btn text
+             @click="showsSnackbar = false">
+        <v-icon>close</v-icon>
+      </v-btn>
     </v-snackbar>
   </v-layout>
 </template>
