@@ -23,7 +23,7 @@
                   :class="`justify-end`"
                   :label="strings('text_mode')"/>
           <file-pond v-if="!isTextMode"
-                     ref="pond"
+                     v-model="files"
                      :label-idle="`<img src='img/file-icon.svg' style='width: 2em'><br>${strings('drop_a_file_here_or_browse')}`"
                      :allow-multiple="true"
           />
@@ -146,6 +146,7 @@ import {keys} from "../local-storage-keys";
 import {supportsSwDownload} from "@/sw-download";
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
+import * as filepond from "filepond";
 
 // Create component
 const FilePond = vueFilePond();
@@ -183,6 +184,7 @@ export default class PipingUI extends Vue {
   private secretPath: string = "";
   private isTextMode: boolean = false;
   private inputText: string = '';
+  private files: filepond.File[] = [];
   private serverUrlHistory: string[] = [];
   private secretPathHistory: string[] = [];
 
@@ -283,16 +285,10 @@ export default class PipingUI extends Vue {
     // NOTE: This set the latest secret path because v-model of Combobox is lazy
     this.secretPath = this.shouldBeRemoved.latestSecretPath;
 
-    // Get file in FilePond
-    let pondFiles: {file: File}[];
-    if (!this.isTextMode) {
-      // Get file
-      pondFiles = (this.$refs.pond as any).getFiles();
-      if (pondFiles.length === 0) {
-        // Show error message
-        this.showSnackbar(this.strings('error_file_not_selected'));
-        return;
-      }
+    if (!this.isTextMode && this.files.length === 0) {
+      // Show error message
+      this.showSnackbar(this.strings('error_file_not_selected'));
+      return;
     }
     // If secret path is empty
     if (this.secretPath === '') {
@@ -301,7 +297,7 @@ export default class PipingUI extends Vue {
       return;
     }
 
-    const body: File[] | string = this.isTextMode ? this.inputText : pondFiles!.map(f => f.file);
+    const body: File[] | string = this.isTextMode ? this.inputText : this.files.map(f => f.file);
 
     // Increment upload counter
     this.uploadCount++;
