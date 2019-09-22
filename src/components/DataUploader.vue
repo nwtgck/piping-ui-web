@@ -12,18 +12,27 @@
     </v-expansion-panel-header>
     <v-expansion-panel-content>
 
-      <!-- loaded of total -->
-      <v-tooltip bottom>
-        <template v-slot:activator="{ on }">
-          <div style="text-align: center" v-on="on">
-            {{ readableBytesString(progressSetting.loadedBytes, 1) }} of {{ readableBytesString(progressSetting.totalBytes, 1) }}
-          </div>
-        </template>
-        <span>{{ progressSetting.loadedBytes }} of {{ progressSetting.totalBytes }}</span>
-      </v-tooltip>
+      <div v-show="isCompressing">
+        <div style="text-align: center">
+          {{ strings('compressing') }}
+        </div>
+        <!-- Compression progress bar -->
+        <v-progress-linear indeterminate />
+      </div>
 
-      <!-- Progress bar -->
-      <v-progress-linear :value="progressPercentage"/>
+      <div v-show="!isCompressing">
+        <!-- loaded of total -->
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on }">
+            <div style="text-align: center" v-on="on">
+              {{ readableBytesString(progressSetting.loadedBytes, 1) }} of {{ readableBytesString(progressSetting.totalBytes, 1) }}
+            </div>
+          </template>
+          <span>{{ progressSetting.loadedBytes }} of {{ progressSetting.totalBytes }}</span>
+        </v-tooltip>
+        <!-- Upload progress bar -->
+        <v-progress-linear :value="progressPercentage"/>
+      </div>
 
       <v-simple-table class="text-left">
         <tbody>
@@ -88,6 +97,7 @@ export default class DataUploader extends Vue {
   private errorMessage: () => string = () => "";
   private xhr: XMLHttpRequest;
   private canceled: boolean = false;
+  private isCompressing: boolean = false;
 
   private get progressPercentage(): number | null {
     if (this.progressSetting.totalBytes === undefined) {
@@ -167,9 +177,9 @@ export default class DataUploader extends Vue {
         for (const file of files) {
           directory.file(file.name, file);
         }
-        console.log('compressing...');
+        this.isCompressing = true;
         const zipBlob: Blob = await directory.generateAsync({type : "blob"});
-        console.log('compressed...');
+        this.isCompressing = false;
         return {body: zipBlob, bodyLength: zipBlob.size};
       }
     })();

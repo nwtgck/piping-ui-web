@@ -34,6 +34,7 @@ const en = {
   error_secret_path_not_specified: 'Error: Secret path not specified',
   upload: 'Upload',
   upload_url: 'Upload URL',
+  compressing: 'Compressing...',
   data_uploader_xhr_onerror: (p: {serverUrl: string}) => {
     return `An error occurred. The server might be < 0.9.4. Please check ${urlJoin(p.serverUrl, "/version")}`;
   },
@@ -72,6 +73,7 @@ const ja: typeof defaultStr = {
   error_secret_path_not_specified: 'エラー: 転送パスが指定されていません',
   upload: 'アップロード',
   upload_url: 'アップロードURL',
+  compressing: '圧縮中...',
   data_uploader_xhr_onerror: (p: {serverUrl: string}) => {
     return `エラーが発生しました。サーバーが0.9.4より低い可能性があります。 ${urlJoin(p.serverUrl, "/version")}でバージョンの確認できます。`;
   },
