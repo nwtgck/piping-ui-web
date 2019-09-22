@@ -259,10 +259,15 @@ export default class PipingUI extends Vue {
     this.shouldBeRemoved.latestServerUrl = this.serverUrl;
   }
 
-  // FIXME: Remove
-  // NOTE: This is for update by clicking listed auto-complete
   @Watch('secretPath')
   private onSecretPath() {
+    // NOTE: <v-combobox> "clearable" makes it null or undefined (maybe)
+    if ( this.secretPath === null || this.secretPath === undefined) {
+      this.secretPath = '';
+    }
+
+    // FIXME: Remove
+    // NOTE: This is for update by clicking listed auto-complete
     this.shouldBeRemoved.latestSecretPath = this.secretPath;
   }
 
