@@ -74,13 +74,16 @@
           </template>
         </v-combobox>
 
-        <div v-if="sendOrGet === 'send' && files.length > 1 && !secretPath.endsWith('.zip')" style="text-align: right; margin-bottom: 1.5em; ">
-          <v-btn color="blue"
-                 @click="secretPath += '.zip'"
+        <!-- Secret path suggestion  -->
+        <div v-if="sendOrGet === 'send' && suggestedSecretPaths.length !== 0" style="text-align: right; margin-bottom: 1.5em;">
+          <v-btn v-for="suggestedSecretPath in suggestedSecretPaths"
+                 :key="suggestedSecretPath"
+                 color="blue"
+                 @click="secretPath = suggestedSecretPath"
                  outlined
+                 class="ma-2"
                  style="text-transform: none;">
-            <v-icon left>mdi-plus</v-icon>
-            .zip
+            {{ suggestedSecretPath }}
           </v-btn>
         </div>
 
@@ -156,6 +159,7 @@ import {supportsSwDownload} from "@/sw-download";
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import * as filepond from "filepond";
+import {baseAndExt} from "@/utils";
 
 // Create component
 const FilePond = vueFilePond();
@@ -179,6 +183,17 @@ function loadLocalStorage<J extends Json>(format: J, key: string): TsType<J> | u
   }
 }
 
+const chars = {
+  nonConfusing: ["a", "b", "c", "d", "e", "f", "h", "i", "j", "k", "m", "n", "p", "r", "s", "t", "u", "v", "w", "x", "y", "z", "2", "3", "4", "5", "6", "7", "8"],
+  alphanum: ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+};
+
+function randomStr(len: number, chars: ReadonlyArray<string>){
+  // NOTE: Confusing characters are erased
+  const randomArr = window.crypto.getRandomValues(new Uint32Array(len));
+  return Array.from(randomArr).map(n => chars[n % chars.length]).join('');
+}
+
 @Component({
   components: {
     DataUploader,
@@ -196,6 +211,12 @@ export default class PipingUI extends Vue {
   private files: filepond.File[] = [];
   private serverUrlHistory: string[] = [];
   private secretPathHistory: string[] = [];
+
+  // Random strings for suggested secret paths
+  private randomStrs: [string] = [
+    // mini
+    '',
+  ];
 
   // Progress bar setting
   private progressSetting: {show: boolean, loadedBytes: number, totalBytes?: number} = {
@@ -259,7 +280,46 @@ export default class PipingUI extends Vue {
     }
   }
 
+  private updateRandomStrs() {
+    this.randomStrs[0] = randomStr(3, chars.nonConfusing);
+  }
+
+  private get suggestedSecretPaths(): string[] {
+    const candidates: string[] = (() => {
+      if ((!this.isTextMode && this.files.length === 0) || (this.isTextMode && this.inputText === '')) {
+        // NOTE: This is for simplicity of UI
+        //       Not show suggested secret path on initial status
+        return [];
+      } else if (this.isTextMode) {
+        return this.randomStrs.map(s => `${s}.txt`);
+      } else if (this.files.length === 1) {
+        const fileName = this.files[0].filename;
+        const {ext} = baseAndExt(fileName);
+        return [
+          fileName,
+          ...this.randomStrs.map(s => `${s}${ext}`)
+        ];
+      } else if(this.files.length > 1) {
+        if(this.secretPath.endsWith('.zip')) {
+          return [];
+        } else {
+          return [
+            ...(this.secretPath === '' ? [] : [`${this.secretPath}.zip`]),
+            ...this.randomStrs.map(s => `${s}.zip`)
+          ];
+        }
+      } else {
+        return this.randomStrs;
+      }
+    })();
+
+    return candidates.filter(c => this.secretPath !== c);
+  }
+
   private mounted() {
+    // Update random strings
+    this.updateRandomStrs();
+
     // Load from Local Storage
     const serverUrl = window.localStorage.getItem(keys.selectedServerUrl);
     if (serverUrl !== null) {
