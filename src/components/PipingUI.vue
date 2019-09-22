@@ -74,7 +74,7 @@
           </template>
         </v-combobox>
 
-        <div v-if="files.length > 1 && !secretPath.endsWith('.zip')" style="text-align: right; margin-bottom: 1.5em; ">
+        <div v-if="sendOrGet === 'send' && files.length > 1 && !secretPath.endsWith('.zip')" style="text-align: right; margin-bottom: 1.5em; ">
           <v-btn color="blue"
                  @click="secretPath += '.zip'"
                  outlined
