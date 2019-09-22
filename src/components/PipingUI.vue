@@ -25,8 +25,7 @@
           <file-pond v-if="!isTextMode"
                      ref="pond"
                      :label-idle="`<img src='img/file-icon.svg' style='width: 2em'><br>${strings('drop_a_file_here_or_browse')}`"
-                     allow-multiple="false"
-                     maxFiles="1"
+                     :allow-multiple="true"
           />
           <v-textarea v-if="isTextMode"
                       :label="strings('text_placeholder')"
@@ -139,6 +138,7 @@ import urlJoin from 'url-join';
 import DataUploader, { DataUploaderProps } from '@/components/DataUploader.vue';
 import DataViewer, {DataViewerProps} from "@/components/DataViewer.vue";
 import {str, arr, validatingParse, Json, TsType} from 'ts-json-validator';
+import JSZip from "jszip";
 
 import vueFilePond from 'vue-filepond';
 import 'filepond/dist/filepond.min.css';
@@ -284,11 +284,11 @@ export default class PipingUI extends Vue {
     this.secretPath = this.shouldBeRemoved.latestSecretPath;
 
     // Get file in FilePond
-    let pondFile: {file: File} | null = null;
+    let pondFiles: {file: File}[];
     if (!this.isTextMode) {
       // Get file
-      pondFile = (this.$refs.pond as any).getFile();
-      if (pondFile === null) {
+      pondFiles = (this.$refs.pond as any).getFiles();
+      if (pondFiles.length === 0) {
         // Show error message
         this.showSnackbar(this.strings('error_file_not_selected'));
         return;
@@ -301,7 +301,7 @@ export default class PipingUI extends Vue {
       return;
     }
 
-    const body: File | string = this.isTextMode ? this.inputText : pondFile!.file;
+    const body: File[] | string = this.isTextMode ? this.inputText : pondFiles!.map(f => f.file);
 
     // Increment upload counter
     this.uploadCount++;

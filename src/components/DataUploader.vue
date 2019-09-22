@@ -62,10 +62,11 @@ import urlJoin from 'url-join';
 import * as utils from '@/utils';
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
+import JSZip from "jszip";
 
 export type DataUploaderProps = {
   uploadNo: number,
-  data: File | string,
+  data: File[] | string,
   serverUrl: string,
   secretPath: string
 };
@@ -148,10 +149,31 @@ export default class DataUploader extends Vue {
     this.xhr = new XMLHttpRequest();
   }
 
-  mounted() {
-    const data = this.props.data;
+  async mounted() {
+    const data: File[] | string = this.props.data;
 
-    const bodyLength: number = typeof data === "string" ? data.length : data.size;
+    const {body, bodyLength} = await (async () => {
+      // Text
+      if (typeof data === "string") {
+        return {body: data, bodyLength: data.length};
+      // One file
+      } else if (data.length === 1) {
+        return {body: data[0], bodyLength: data[0].size};
+      // Multiple files
+      } else {
+        const files: File[] = data;
+        const zip = JSZip();
+        const directory = zip.folder('files');
+        for (const file of files) {
+          directory.file(file.name, file);
+        }
+        console.log('compressing...');
+        const zipBlob: Blob = await directory.generateAsync({type : "blob"});
+        console.log('compressed...');
+        return {body: zipBlob, bodyLength: zipBlob.size};
+      }
+    })();
+
     // Send
     this.xhr.open('POST', this.uploadPath, true);
     this.xhr.responseType = 'text';
@@ -182,7 +204,7 @@ export default class DataUploader extends Vue {
     this.xhr.upload.onerror = () => {
       this.errorMessage = () => this.strings('data_uploader_xhr_upload_onerror');
     };
-    this.xhr.send(data);
+    this.xhr.send(body);
     // Initialize progress bar
     this.progressSetting.loadedBytes = 0;
     this.progressSetting.totalBytes = bodyLength;
