@@ -74,6 +74,16 @@
           </template>
         </v-combobox>
 
+        <div v-if="files.length > 1 && !secretPath.endsWith('.zip')" style="text-align: right; margin-bottom: 1.5em; ">
+          <v-btn color="blue"
+                 @click="secretPath += '.zip'"
+                 outlined
+                 style="text-transform: none;">
+            <v-icon left>mdi-plus</v-icon>
+            .zip
+          </v-btn>
+        </div>
+
         <v-btn v-if="sendOrGet === 'send'"
                color="primary"
                v-on:click="send()"
