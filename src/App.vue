@@ -18,7 +18,7 @@
       <v-btn v-if="pwa.updateExists"
              @click="refreshApp"
              depressed color="blue" dark small outlined>
-        <v-icon dark left>mdi-cached</v-icon>{{ strings('pwa_update') }}
+        <v-icon dark left>mdi-cached</v-icon>{{ strings['pwa_update'] }}
       </v-btn>
       <v-spacer></v-spacer>
 
@@ -40,9 +40,9 @@
 
                 <v-list-item-content>
                   <v-list-item-title>Piping UI</v-list-item-title>
-                  <v-list-item-subtitle>{{ strings('version') }}</v-list-item-subtitle>
+                  <v-list-item-subtitle>{{ strings['version'] }}</v-list-item-subtitle>
                   <a href="https://github.com/nwtgck/piping-ui-web" target="_blank">
-                    <v-icon small style="margin-right: 0.3em;">fab fa-github</v-icon>{{ strings('view_on_github') }}
+                    <v-icon small style="margin-right: 0.3em;">fab fa-github</v-icon>{{ strings['view_on_github'] }}
                   </a>
                 </v-list-item-content>
               </v-list-item>
@@ -54,7 +54,7 @@
               <v-list-item-action>
                 <v-select v-model="language"
                           :items="availableLanguages"
-                          :label="strings('language')"
+                          :label="strings['language']"
                           item-text="str"
                           item-value="lang"
                           outlined/>
@@ -62,28 +62,28 @@
             </v-list-item>
 
             <v-list-item>
-              <v-list-item-title>{{ strings('dark_theme') }}</v-list-item-title>
+              <v-list-item-title>{{ strings['dark_theme'] }}</v-list-item-title>
               <v-list-item-action>
                 <v-switch v-model="enableDarkTheme"></v-switch>
               </v-list-item-action>
             </v-list-item>
 
             <v-list-item>
-              <v-list-item-title>{{ strings('record_server_url') }}</v-list-item-title>
+              <v-list-item-title>{{ strings['record_server_url'] }}</v-list-item-title>
               <v-list-item-action>
                 <v-switch v-model="recordsServerUrlHistory"></v-switch>
               </v-list-item-action>
             </v-list-item>
 
             <v-list-item>
-              <v-list-item-title>{{ strings('record_secret_path') }}</v-list-item-title>
+              <v-list-item-title>{{ strings['record_secret_path'] }}</v-list-item-title>
               <v-list-item-action>
                 <v-switch v-model="recordsSecretPathHistory"></v-switch>
               </v-list-item-action>
             </v-list-item>
 
             <v-list-item @click="licenseDialog = true">
-              <v-list-item-title>{{ strings('open_source_licenses') }}</v-list-item-title>
+              <v-list-item-title>{{ strings['open_source_licenses'] }}</v-list-item-title>
             </v-list-item>
           </v-list>
         </v-card>
@@ -93,7 +93,7 @@
     <!--  Open source licenses -->
     <v-dialog v-model="licenseDialog" scrollable max-width="70%">
       <v-card>
-        <v-card-title>{{ strings('open_source_licenses') }}</v-card-title>
+        <v-card-title>{{ strings['open_source_licenses'] }}</v-card-title>
         <v-divider></v-divider>
         <v-card-text>
 
@@ -124,7 +124,7 @@
         <v-divider></v-divider>
         <v-card-actions class="justify-end">
           <v-btn color="blue darken-1" text @click="licenseDialog = false">
-            {{ strings('close') }}
+            {{ strings['close'] }}
           </v-btn>
         </v-card-actions>
       </v-card>

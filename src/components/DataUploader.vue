@@ -1,7 +1,7 @@
 <template>
   <v-expansion-panel active="true">
     <v-expansion-panel-header :disable-icon-rotate="isDoneUpload || hasError">
-      <span>{{ strings('upload') }} #{{ props.uploadNo }}</span>
+      <span>{{ strings['upload'] }} #{{ props.uploadNo }}</span>
       <!-- Percentage -->
       {{ progressPercentage && progressPercentage.toFixed(2) }} %
       <template v-slot:actions>
@@ -14,7 +14,7 @@
 
       <div v-show="isCompressing">
         <div style="text-align: center">
-          {{ strings('compressing') }}
+          {{ strings['compressing'] }}
         </div>
         <!-- Compression progress bar -->
         <v-progress-linear indeterminate />
@@ -37,7 +37,7 @@
       <v-simple-table class="text-left">
         <tbody>
         <tr class="text-left">
-          <td>{{ strings('upload_url') }}</td>
+          <td>{{ strings['upload_url'] }}</td>
           <td>{{ uploadPath }}</td>
         </tr>
         </tbody>
@@ -50,7 +50,7 @@
                class="ma-2 justify-end"
                @click="cancelUpload()">
           <v-icon >cancel</v-icon>
-          {{ strings('cancel') }}
+          {{ strings['cancel'] }}
         </v-btn>
       </div>
 
@@ -197,17 +197,17 @@ export default class DataUploader extends Vue {
     };
     this.xhr.onload = () => {
       if (this.xhr.status !== 200) {
-        this.errorMessage = () => this.strings('xhr_status_error')({
+        this.errorMessage = () => this.strings['xhr_status_error']({
           status: this.xhr.status,
           response: this.xhr.responseText
         });
       }
     };
     this.xhr.onerror = (ev) => {
-      this.errorMessage = () => this.strings('data_uploader_xhr_onerror')({serverUrl: this.props.serverUrl});
+      this.errorMessage = () => this.strings['data_uploader_xhr_onerror']({serverUrl: this.props.serverUrl});
     };
     this.xhr.upload.onerror = () => {
-      this.errorMessage = () => this.strings('data_uploader_xhr_upload_onerror');
+      this.errorMessage = () => this.strings['data_uploader_xhr_upload_onerror'];
     };
     this.xhr.send(body);
     // Initialize progress bar

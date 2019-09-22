@@ -6,11 +6,11 @@
         <div style="text-align: center">
           <v-btn-toggle v-model="sendOrGet" mandatory>
             <v-btn text value="send">
-              {{ strings('send') }}
+              {{ strings['send'] }}
               <v-icon right dark>file_upload</v-icon>
             </v-btn>
             <v-btn text value="get">
-              {{ strings('get') }}
+              {{ strings['get'] }}
               <v-icon right dark>file_download</v-icon>
             </v-btn>
           </v-btn-toggle>
@@ -21,20 +21,20 @@
                   inset
                   v-model="isTextMode"
                   :class="`justify-end`"
-                  :label="strings('text_mode')"/>
+                  :label="strings['text_mode']"/>
           <file-pond v-if="!isTextMode"
                      v-model="files"
                      :label-idle="filePondLabelIdle"
                      :allow-multiple="true"
           />
           <v-textarea v-if="isTextMode"
-                      :label="strings('text_placeholder')"
+                      :label="strings['text_placeholder']"
                       v-model="inputText"
                       outlined
           ></v-textarea>
         </div>
 
-        <v-combobox :label="strings('server_url')"
+        <v-combobox :label="strings['server_url']"
                     v-model="serverUrl"
                     :items="serverUrlHistory"
                     @change="onUpdateServerUrl()"
@@ -54,10 +54,10 @@
             </v-list-item-action>
           </template>
         </v-combobox>
-        <v-combobox :label="strings('secret_path')"
+        <v-combobox :label="strings['secret_path']"
                     v-model="secretPath"
                     :items="secretPathHistory"
-                    :placeholder="strings('secret_path_placeholder')"
+                    :placeholder="strings['secret_path_placeholder']"
                     ref="secret_path_ref"
                     clearable
         >
@@ -88,7 +88,7 @@
                color="primary"
                v-on:click="send()"
                block>
-          {{ strings('send') }}
+          {{ strings['send'] }}
           <v-icon right dark>file_upload</v-icon>
         </v-btn>
         <v-layout v-if="sendOrGet === 'get'">
@@ -97,7 +97,7 @@
                    dark
                    @click="view()"
                    block>
-              {{ strings('view') }}
+              {{ strings['view'] }}
               <v-icon right dark>mdi-file-find</v-icon>
             </v-btn>
           </v-flex>
@@ -106,7 +106,7 @@
                    @click="get()"
                    dark
                    block>
-              {{ strings('download') }}
+              {{ strings['download'] }}
               <v-icon right dark>file_download</v-icon>
             </v-btn>
           </v-flex>
@@ -253,9 +253,9 @@ export default class PipingUI extends Vue {
     // If files are nothing
     if (this.files.length === 0) {
       // Hint with file icon
-      return `<img src='img/file-icon.svg' style='width: 2em'><br>${this.strings('drop_a_file_here_or_browse')}`;
+      return `<img src='img/file-icon.svg' style='width: 2em'><br>${this.strings['drop_a_file_here_or_browse']}`;
     } else {
-      return this.strings('drop_a_file_here_or_browse');
+      return this.strings['drop_a_file_here_or_browse'];
     }
   }
 
@@ -307,13 +307,13 @@ export default class PipingUI extends Vue {
 
     if (!this.isTextMode && this.files.length === 0) {
       // Show error message
-      this.showSnackbar(this.strings('error_file_not_selected'));
+      this.showSnackbar(this.strings['error_file_not_selected']);
       return;
     }
     // If secret path is empty
     if (this.secretPath === '') {
       // Show error message
-      this.showSnackbar(this.strings('error_secret_path_not_specified'));
+      this.showSnackbar(this.strings['error_secret_path_not_specified']);
       return;
     }
 
@@ -353,7 +353,7 @@ export default class PipingUI extends Vue {
     // If secret path is empty
     if (this.secretPath === '') {
       // Show error message
-      this.showSnackbar(this.strings('error_secret_path_not_specified'));
+      this.showSnackbar(this.strings['error_secret_path_not_specified']);
       return;
     }
 
@@ -380,7 +380,7 @@ export default class PipingUI extends Vue {
     // If secret path is empty
     if (this.secretPath === '') {
       // Show error message
-      this.showSnackbar(this.strings('error_secret_path_not_specified'));
+      this.showSnackbar(this.strings['error_secret_path_not_specified']);
       return;
     }
 

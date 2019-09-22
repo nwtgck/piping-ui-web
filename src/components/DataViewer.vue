@@ -1,7 +1,7 @@
 <template>
   <v-expansion-panel>
     <v-expansion-panel-header :disable-icon-rotate="isDoneDownload || hasError">
-      <span>{{ strings('view_in_viewer') }} #{{ props.viewNo }}</span>
+      <span>{{ strings['view_in_viewer'] }} #{{ props.viewNo }}</span>
       <!-- Percentage -->
       {{ progressPercentage ? `${progressPercentage.toFixed(2)} %` : "" }}
       <template v-slot:actions>
@@ -29,7 +29,7 @@
       <v-simple-table class="text-left">
         <tbody>
         <tr class="text-left">
-          <td>{{ strings('download_url') }}</td>
+          <td>{{ strings['download_url'] }}</td>
           <td>{{ downloadPath }}</td>
         </tr>
         </tbody>
@@ -69,7 +69,7 @@
                class="ma-2 justify-end"
                @click="cancelDownload()">
           <v-icon >cancel</v-icon>
-          {{ strings('cancel') }}
+          {{ strings['cancel'] }}
         </v-btn>
       </div>
 
@@ -80,7 +80,7 @@
              @click="save()"
              style="margin-top: 1em;">
         <v-icon >save</v-icon>
-        {{ strings('save') }}
+        {{ strings['save'] }}
       </v-btn>
 
       <v-alert type="error"
@@ -228,14 +228,14 @@ export default class DataViewer extends Vue {
         this.viewBlob();
       } else {
         const responseText = await readBlobAsText(this.xhr.response);
-        this.errorMessage = () => this.strings('xhr_status_error')({
+        this.errorMessage = () => this.strings['xhr_status_error']({
           status: this.xhr.status,
           response: responseText,
         });
       }
     };
     this.xhr.onerror = () => {
-      this.errorMessage = () => this.strings('data_viewer_xhr_onerror');
+      this.errorMessage = () => this.strings['data_viewer_xhr_onerror'];
     };
     this.xhr.send();
   }

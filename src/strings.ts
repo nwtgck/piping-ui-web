@@ -1,16 +1,14 @@
 import urlJoin from 'url-join';
 import {VERSION} from "@/version";
 
-export function strings(language: string) {
-  return <K extends keyof (typeof defaultStr)>(key: K) => {
-    if(language.startsWith("en")) {
-      return en[key];
-    } else if(language.startsWith("ja")) {
-      return ja[key];
-    } else {
-      return defaultStr[key];
-    }
-  };
+export function strings(language: string): typeof defaultStr {
+  if(language.startsWith("en")) {
+    return en;
+  } else if(language.startsWith("ja")) {
+    return ja;
+  } else {
+    return defaultStr;
+  }
 }
 
 const en = {
