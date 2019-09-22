@@ -52,10 +52,15 @@
       <!-- NOTE: Don't use v-if because the inner uses "ref" and the ref is loaded in mounted()-->
       <div v-show="text !== ''" style="text-align: center">
         <div style="text-align: right">
-          <v-btn ref="text_copy_button" style="background-color: #dcdcdc; margin-bottom: 0.3em;">
-            <!-- (from: https://iconify.design/icon-sets/octicon/clippy.html) -->
-            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" focusable="false" width="1.5em" height="1.5em" style="-ms-transform: rotate(360deg); -webkit-transform: rotate(360deg); transform: rotate(360deg);" preserveAspectRatio="xMidYMid meet" viewBox="0 0 14 16"><path fill-rule="evenodd" d="M2 13h4v1H2v-1zm5-6H2v1h5V7zm2 3V8l-3 3 3 3v-2h5v-2H9zM4.5 9H2v1h2.5V9zM2 12h2.5v-1H2v1zm9 1h1v2c-.02.28-.11.52-.3.7-.19.18-.42.28-.7.3H1c-.55 0-1-.45-1-1V4c0-.55.45-1 1-1h3c0-1.11.89-2 2-2 1.11 0 2 .89 2 2h3c.55 0 1 .45 1 1v5h-1V6H1v9h10v-2zM2 5h8c0-.55-.45-1-1-1H8c-.55 0-1-.45-1-1s-.45-1-1-1-1 .45-1 1-.45 1-1 1H3c-.55 0-1 .45-1 1z" fill="#000000"/></svg>
-          </v-btn>
+          <v-tooltip v-model="showsCopied" bottom>
+            <template v-slot:activator="{ on }">
+              <v-btn ref="text_copy_button" style="background-color: #dcdcdc; margin-bottom: 0.3em;">
+                <!-- (from: https://iconify.design/icon-sets/octicon/clippy.html) -->
+                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" focusable="false" width="1.5em" height="1.5em" style="-ms-transform: rotate(360deg); -webkit-transform: rotate(360deg); transform: rotate(360deg);" preserveAspectRatio="xMidYMid meet" viewBox="0 0 14 16"><path fill-rule="evenodd" d="M2 13h4v1H2v-1zm5-6H2v1h5V7zm2 3V8l-3 3 3 3v-2h5v-2H9zM4.5 9H2v1h2.5V9zM2 12h2.5v-1H2v1zm9 1h1v2c-.02.28-.11.52-.3.7-.19.18-.42.28-.7.3H1c-.55 0-1-.45-1-1V4c0-.55.45-1 1-1h3c0-1.11.89-2 2-2 1.11 0 2 .89 2 2h3c.55 0 1 .45 1 1v5h-1V6H1v9h10v-2zM2 5h8c0-.55-.45-1-1-1H8c-.55 0-1-.45-1-1s-.45-1-1-1-1 .45-1 1-.45 1-1 1H3c-.55 0-1 .45-1 1z" fill="#000000"/></svg>
+              </v-btn>
+            </template>
+            <span>{{ strings['copied'] }}</span>
+          </v-tooltip>
         </div>
         <pre v-html="linkifiedText"
              class="text-view"
@@ -134,6 +139,8 @@ export default class DataViewer extends Vue {
 
   private blob: Blob = new Blob();
 
+  private showsCopied: boolean = false;
+
   // for language support
   private get strings() {
     return strings(globalStore.language);
@@ -201,7 +208,13 @@ export default class DataViewer extends Vue {
   mounted() {
     // Setting for copying to clipboard
     new Clipboard((this.$refs.text_copy_button as Vue).$el, {
-      target: () => this.$refs.text_viewer as Element
+      target: () => {
+        this.showsCopied = true;
+        setTimeout(() => {
+          this.showsCopied = false;
+        }, 2000);
+        return this.$refs.text_viewer as Element
+      }
     });
 
     this.xhr.open('GET', this.downloadPath);

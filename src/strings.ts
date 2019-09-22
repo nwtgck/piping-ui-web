@@ -41,6 +41,7 @@ const en = {
   cancel: 'Cancel',
   view_in_viewer: 'View',
   download_url: 'Download URL',
+  copied: 'Copied',
   xhr_status_error: (p: {status: number, response: string}) => {
     return `Error (${p.status}): "${p.response}"`;
   },
@@ -81,6 +82,7 @@ const ja: typeof defaultStr = {
   cancel: 'キャンセル',
   view_in_viewer: '表示',
   download_url: 'ダウンロードURL',
+  copied: 'コピーされました',
   xhr_status_error: (p: {status: number, response: string}) => {
     return `エラー (${p.status}): "${p.response}"`;
   },
