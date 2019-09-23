@@ -1,6 +1,6 @@
 {
   "name": "piping-ui",
-  "version": "0.1.0",
+  "version": "0.1.1-SNAPSHOT",
   "private": true,
   "scripts": {
     "generate-version": "cross-var echo \"export const VERSION = \\\"$npm_package_version\\\";\" > src/version.ts",
