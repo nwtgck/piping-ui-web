@@ -5,6 +5,9 @@
 Web UI for [Piping Server](https://github.com/nwtgck/piping-server)  
 ![Piping UI - iPhone to UI](doc_assets/iphone-to-ui.gif)
 
+## Application
+<https://piping-ui.org>
+
 ## Features
 
 - Download while uploading
@@ -13,6 +16,7 @@ Web UI for [Piping Server](https://github.com/nwtgck/piping-server)
 - English/Japanese
 - Multi-file sending with zip
 - Auto completes for server URLs and secret paths
+- Image/video preview
 
 ## Logo
 <div>Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
