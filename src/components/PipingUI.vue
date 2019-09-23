@@ -248,7 +248,7 @@ export default class PipingUI extends Vue {
     return strings(globalStore.language);
   }
 
-  // FIXME: Remove this
+  // FIXME: Should be removed
   // This for lazy v-model of Combobox
   private shouldBeRemoved = {
     latestServerUrl: this.serverUrl,
@@ -256,7 +256,7 @@ export default class PipingUI extends Vue {
   };
 
 
-  // FIXME: Remove
+  // FIXME: Should be removed
   // NOTE: This is for update by clicking listed auto-complete
   @Watch('serverUrl')
   private onServerUrl() {
@@ -270,7 +270,7 @@ export default class PipingUI extends Vue {
       this.secretPath = '';
     }
 
-    // FIXME: Remove
+    // FIXME: Should be removed
     // NOTE: This is for update by clicking listed auto-complete
     this.shouldBeRemoved.latestSecretPath = this.secretPath;
   }
@@ -366,13 +366,18 @@ export default class PipingUI extends Vue {
     }
   }
 
-  private send() {
-    // FIXME: remove
+  // FIXME: Should be removed
+  private applyLatestServerUrlAndSecretPath() {
+    // FIXME: should be removed after fix
     // NOTE: This set the latest secret path because v-model of Combobox is lazy
     this.serverUrl = this.shouldBeRemoved.latestServerUrl;
-    // FIXME: remove
+    // FIXME: should be removed after fix
     // NOTE: This set the latest secret path because v-model of Combobox is lazy
     this.secretPath = this.shouldBeRemoved.latestSecretPath;
+  }
+
+  private send() {
+    this.applyLatestServerUrlAndSecretPath();
 
     if (!this.isTextMode && this.files.length === 0) {
       // Show error message
@@ -419,6 +424,8 @@ export default class PipingUI extends Vue {
 
   // NOTE: Some file types are displayed inline
   private async get() {
+    this.applyLatestServerUrlAndSecretPath();
+
     // If secret path is empty
     if (this.secretPath === '') {
       // Show error message
@@ -447,6 +454,8 @@ export default class PipingUI extends Vue {
   }
 
   private view() {
+    this.applyLatestServerUrlAndSecretPath();
+
     // If secret path is empty
     if (this.secretPath === '') {
       // Show error message
