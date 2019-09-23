@@ -5,8 +5,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [0.1.1] - 2019-09-23
+### Fixed
+- Apply latest server URL and secret path inputs
+
 ## 0.1.0 - 2019-09-23
 ### Added
 - First release
 
-[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/nwtgck/piping-ui-web/compare/v0.1.0...v0.1.1
