@@ -426,11 +426,12 @@ export default class PipingUI extends Vue {
       return;
     }
 
+    const downloadUrl = urlJoin(this.serverUrl, encodeURI(this.secretPath));
+
     // If supporting stream-download via Service Worker
     if (await supportsSwDownload) {
       // Download via Service Worker
       const aTag = document.createElement('a');
-      const downloadUrl = urlJoin(this.serverUrl, this.secretPath);
       // NOTE: '/sw-download' can be received by Service Worker in src/sw.js
       aTag.href = `/sw-download?url=${encodeURIComponent(downloadUrl)}&filename=${encodeURIComponent(this.secretPath)}`;
       aTag.target = "_blank";
@@ -438,7 +439,7 @@ export default class PipingUI extends Vue {
     } else {
       // Download or show on browser sometimes
       const aTag = document.createElement('a');
-      aTag.href = urlJoin(this.serverUrl, this.secretPath);
+      aTag.href = downloadUrl;
       aTag.target = "_blank";
       aTag.download = this.secretPath;
       aTag.click();
