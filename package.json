@@ -21,7 +21,7 @@
     "clipboard": "^2.0.4",
     "core-js": "^2.6.5",
     "file-saver": "^2.0.2",
-    "filepond": "^4.7.1",
+    "filepond": "^4.7.2",
     "jszip": "^3.2.2",
     "linkifyjs": "^2.1.8",
     "register-service-worker": "^1.6.2",
