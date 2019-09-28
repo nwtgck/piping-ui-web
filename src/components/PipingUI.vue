@@ -87,6 +87,21 @@
           </v-btn>
         </div>
 
+        <v-layout>
+          <v-switch v-model="enablePasswordProtection"
+                    inset
+                    :label="strings['protect_with_password']"
+                    color="blue"
+                    style="padding-left: 0.5em;"/>
+
+          <v-text-field :style="{visibility: enablePasswordProtection ? 'visible' : 'hidden'}"
+                        type="password"
+                        :label="strings['password']"
+                        single-line
+                        outlined
+                        style="margin-left: 0.5em;" />
+        </v-layout>
+
         <v-btn v-if="sendOrGet === 'send'"
                color="primary"
                v-on:click="send()"
@@ -215,6 +230,7 @@ export default class PipingUI extends Vue {
   private files: filepond.File[] = [];
   private serverUrlHistory: string[] = [];
   private secretPathHistory: string[] = [];
+  private enablePasswordProtection: boolean = false;
 
   // Random strings for suggested secret paths
   private randomStrs: [string] = [
