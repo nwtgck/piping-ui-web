@@ -176,6 +176,10 @@ const DataUploader = () => import('@/components/DataUploader.vue');
 import {DataViewerProps} from "@/components/DataViewer.vue";
 const DataViewer = () => import("@/components/DataViewer.vue");
 import {str, arr, validatingParse, Json, TsType} from 'ts-json-validator';
+import * as FileSaver from 'file-saver';
+import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
+import {uint8ArrayToBlob} from 'binconv/dist/src/uint8ArrayToBlob';
+import * as openpgp from 'openpgp';
 import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiCloseCircle, mdiClose} from "@mdi/js";
 
 import {keys} from "../local-storage-keys";
@@ -492,12 +496,27 @@ export default class PipingUI extends Vue {
       aTag.target = "_blank";
       aTag.click();
     } else {
-      // Download or show on browser sometimes
-      const aTag = document.createElement('a');
-      aTag.href = downloadUrl;
-      aTag.target = "_blank";
-      aTag.download = this.secretPath;
-      aTag.click();
+      // If password-protection is disabled
+      if (this.password === '') {
+        // Download or show on browser sometimes
+        const aTag = document.createElement('a');
+        aTag.href = downloadUrl;
+        aTag.target = "_blank";
+        aTag.download = this.secretPath;
+        aTag.click();
+      } else {
+        // Get response
+        const res = await fetch(downloadUrl);
+        const resBody = await blobToUint8Array(await res.blob());
+        // Decrypt the response body
+        const plain = (await openpgp.decrypt({
+          message: await openpgp.message.read(resBody),
+          passwords: [this.password],
+          format: 'binary'
+        })).data as Uint8Array;
+        // Save
+        FileSaver.saveAs(uint8ArrayToBlob(plain), this.secretPath);
+      }
     }
   }
 
