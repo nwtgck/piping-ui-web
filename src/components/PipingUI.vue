@@ -477,7 +477,7 @@ export default class PipingUI extends Vue {
       // Download via Service Worker
       const aTag = document.createElement('a');
       // NOTE: '/sw-download' can be received by Service Worker in src/sw.js
-      aTag.href = `/sw-download?url=${encodeURIComponent(downloadUrl)}&filename=${encodeURIComponent(this.secretPath)}`;
+      aTag.href = `/sw-download?url=${encodeURIComponent(downloadUrl)}&filename=${encodeURIComponent(this.secretPath)}&password=${encodeURIComponent(this.password)}`;
       aTag.target = "_blank";
       aTag.click();
     } else {

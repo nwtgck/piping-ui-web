@@ -1,5 +1,7 @@
 // (from: https://medium.com/@dougallrich/give-users-control-over-app-updates-in-vue-cli-3-pwas-20453aedc1f2)
 
+importScripts('openpgp/openpgp.min.js');
+
 // This is the code piece that GenerateSW mode can't provide for us.
 // This code listens for the user's confirmation to update the app.
 self.addEventListener('message', (e) => {
@@ -33,6 +35,7 @@ self.addEventListener('fetch', (event) => {
   } else if (url.pathname === '/sw-download') {
     const targetUrl = url.searchParams.get('url');
     let filename = url.searchParams.get('filename');
+    const password = url.searchParams.get('password');
 
     event.respondWith((async () => {
       const res = await fetch(targetUrl);
@@ -41,7 +44,14 @@ self.addEventListener('fetch', (event) => {
       // Make filename RFC5987 compatible
       filename = encodeURIComponent(filename).replace(/['()]/g, escape).replace(/\*/g, '%2A');
       headers.set('Content-Disposition', "attachment; filename*=UTF-8''" + filename);
-      const downloadableRes = new Response(res.body, {
+      // Decrypt the response body
+      const plainStream = (await openpgp.decrypt({
+        message: await openpgp.message.read(res.body),
+        passwords: [password],
+        format: 'binary'
+      })).data;
+      console.log('plainStream:', plainStream);
+      const downloadableRes = new Response(plainStream, {
         headers
       });
       return downloadableRes;
