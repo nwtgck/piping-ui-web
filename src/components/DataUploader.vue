@@ -68,15 +68,22 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import urlJoin from 'url-join';
+import * as openpgp from 'openpgp';
+import {blobToReadableStream} from 'binconv/dist/src/blobToReadableStream';
+import {readableStreamToUint8Array} from 'binconv/dist/src/readableStreamToUint8Array';
+
 import * as utils from '@/utils';
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
+
 
 export type DataUploaderProps = {
   uploadNo: number,
   data: File[] | string,
   serverUrl: string,
-  secretPath: string
+  secretPath: string,
+  // NOTE: empty string means non-encryption
+  password: string,
 };
 
 // NOTE: Automatically upload when mounted
@@ -161,13 +168,13 @@ export default class DataUploader extends Vue {
   async mounted() {
     const data: File[] | string = this.props.data;
 
-    const {body, bodyLength} = await (async () => {
+    const plainBody: Blob = await (async () => {
       // Text
       if (typeof data === "string") {
-        return {body: data, bodyLength: data.length};
+        return new Blob([data]);
       // One file
       } else if (data.length === 1) {
-        return {body: data[0], bodyLength: data[0].size};
+        return data[0];
       // Multiple files
       } else {
         const files: File[] = data;
@@ -175,7 +182,34 @@ export default class DataUploader extends Vue {
         // Zip files
         const zipBlob: Blob = await utils.zipFilesAsBlob(files);
         this.isCompressing = false;
-        return {body: zipBlob, bodyLength: zipBlob.size};
+        return zipBlob;
+      }
+    })();
+
+    const {body, bodyLength} = await (async () => {
+      const password: string = this.props.password;
+      // If password protection is disabled
+      if (password === '') {
+        // Return as plain
+        return {body: plainBody, bodyLength: plainBody.size};
+      } else {
+        // Convert plain body blob to ReadableStream
+        const plainBodyStream: ReadableStream<Uint8Array> = await blobToReadableStream(plainBody);
+        // Encrypt with PGP streamingly
+        const encryptResult = await openpgp.encrypt({
+          message: openpgp.message.fromBinary(plainBodyStream),
+          passwords: [password],
+          armor: false
+        });
+        // Get encrypted stream
+        const encryptedStream: ReadableStream<Uint8Array> =
+            encryptResult.message.packets.write() as any;
+
+        // Convert ReadableStream to Uint8Array
+        // NOTE: In the future, ReadableStream can be uploaded.
+        // (see: https://github.com/whatwg/fetch/pull/425#issuecomment-518899855)
+        const encrypted: Uint8Array = await readableStreamToUint8Array(encryptedStream);
+        return {body: encrypted, bodyLength: encrypted.byteLength};
       }
     })();
 
