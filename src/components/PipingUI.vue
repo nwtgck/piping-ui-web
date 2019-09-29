@@ -98,6 +98,7 @@
                     style="padding-left: 0.5em;"/>
 
           <v-text-field :style="{visibility: enablePasswordProtection ? 'visible' : 'hidden'}"
+                        v-model="password"
                         type="password"
                         :label="strings['password']"
                         single-line
@@ -236,6 +237,7 @@ export default class PipingUI extends Vue {
   private serverUrlHistory: string[] = [];
   private secretPathHistory: string[] = [];
   private enablePasswordProtection: boolean = false;
+  private password: string = '';
 
   // Random strings for suggested secret paths
   private randomStrs: [string] = [
@@ -421,6 +423,13 @@ export default class PipingUI extends Vue {
       return;
     }
 
+    // If enabling password protection and password is empty
+    if (this.enablePasswordProtection && this.password === '') {
+      // Show error message
+      this.showSnackbar(this.strings['password_is_required']);
+      return;
+    }
+
     const body: File[] | string = this.isTextMode ? this.inputText : this.files.map(f => f.file);
 
     // Increment upload counter
@@ -431,6 +440,7 @@ export default class PipingUI extends Vue {
       data: body,
       serverUrl: this.serverUrl,
       secretPath: this.secretPath,
+      password: this.password,
     });
     // Open by default
     this.uploadExpandedPanelIds.push(this.uploadCount-1);
