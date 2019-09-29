@@ -107,6 +107,8 @@ import * as FileSaver from 'file-saver';
 import Clipboard from 'clipboard';
 import fileType from 'file-type';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
+import {uint8ArrayToBlob} from 'binconv/dist/src/uint8ArrayToBlob';
+import * as openpgp from 'openpgp';
 
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
@@ -115,7 +117,9 @@ import * as utils from '@/utils';
 export type DataViewerProps = {
   viewNo: number,
   serverUrl: string,
-  secretPath: string
+  secretPath: string,
+  // NOTE: empty string means non-encryption
+  password: string,
 };
 
 // NOTE: Automatically download when mounted
@@ -238,7 +242,23 @@ export default class DataViewer extends Vue {
     this.xhr.onload = async (ev) => {
       if (this.xhr.status === 200) {
         this.isDoneDownload = true;
-        this.blob = this.xhr.response;
+
+        this.blob = await (async () => {
+          if (this.props.password === '') {
+            return this.xhr.response;
+          } else {
+            // Get response body
+            const resBody = await blobToUint8Array(this.xhr.response);
+            // Decrypt the response body
+            const plain = (await openpgp.decrypt({
+              message: await openpgp.message.read(resBody),
+              passwords: [this.props.password],
+              format: 'binary'
+            })).data as Uint8Array;
+            return uint8ArrayToBlob(plain);
+          }
+        })();
+
         // View blob if possible
         this.viewBlob();
       } else {
