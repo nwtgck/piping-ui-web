@@ -99,8 +99,10 @@
 
           <v-text-field :style="{visibility: enablePasswordProtection ? 'visible' : 'hidden'}"
                         v-model="password"
-                        type="password"
+                        :type="showsPassword ? 'text' : 'password'"
                         :label="strings['password']"
+                        :append-icon="showsPassword ? 'visibility' : 'visibility_off'"
+                        @click:append="showsPassword = !showsPassword"
                         single-line
                         outlined
                         style="margin-left: 0.5em;" />
@@ -242,6 +244,7 @@ export default class PipingUI extends Vue {
   private secretPathHistory: string[] = [];
   private enablePasswordProtection: boolean = false;
   private password: string = '';
+  private showsPassword: boolean = false;
 
   // Random strings for suggested secret paths
   private randomStrs: [string] = [
