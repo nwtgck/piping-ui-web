@@ -459,6 +459,13 @@ export default class PipingUI extends Vue {
       return;
     }
 
+    // If enabling password protection and password is empty
+    if (this.enablePasswordProtection && this.password === '') {
+      // Show error message
+      this.showSnackbar(this.strings['password_is_required']);
+      return;
+    }
+
     const downloadUrl = urlJoin(this.serverUrl, encodeURI(this.secretPath));
 
     // If supporting stream-download via Service Worker
@@ -486,6 +493,13 @@ export default class PipingUI extends Vue {
     if (this.secretPath === '') {
       // Show error message
       this.showSnackbar(this.strings['error_secret_path_not_specified']);
+      return;
+    }
+
+    // If enabling password protection and password is empty
+    if (this.enablePasswordProtection && this.password === '') {
+      // Show error message
+      this.showSnackbar(this.strings['password_is_required']);
       return;
     }
 
