@@ -105,6 +105,8 @@ import urlJoin from 'url-join';
 import linkifyHtml from 'linkifyjs/html';
 import * as FileSaver from 'file-saver';
 import Clipboard from 'clipboard';
+import fileType from 'file-type';
+import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
 
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
@@ -254,14 +256,20 @@ export default class DataViewer extends Vue {
   }
 
   private async viewBlob() {
-    const blobUrl = URL.createObjectURL(this.blob);
-    if (this.blob.type.startsWith("image/")) {
-      this.imgSrc = blobUrl;
-    } else if (this.blob.type.startsWith("video/")) {
-      this.videoSrc = blobUrl;
-    } else if (this.blob.type.startsWith("text/")) {
-      // Get text
-      this.text = await utils.readBlobAsText(this.blob);
+    // Get first bytes from blob
+    const firstChunk: Uint8Array = await blobToUint8Array(this.blob.slice(0, fileType.minimumBytes));
+    // Detect type of blob
+    const fileTypeResult = fileType(firstChunk);
+    if (fileTypeResult !== undefined) {
+      const blobUrl = URL.createObjectURL(this.blob);
+      if (fileTypeResult.mime.startsWith("image/")) {
+        this.imgSrc = blobUrl;
+      } else if (fileTypeResult.mime.startsWith("video/")) {
+        this.videoSrc = blobUrl;
+      } else if (fileTypeResult.mime.startsWith("text/")) {
+        // Get text
+        this.text = await utils.readBlobAsText(this.blob);
+      }
     }
   }
 

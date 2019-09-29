@@ -18,9 +18,11 @@
   "author": "Ryo Ota <nwtgck@gmail.com> (https://github.com/nwtgck)",
   "license": "MIT",
   "dependencies": {
+    "binconv": "github:nwtgck/binconv-npm#v0.1.0",
     "clipboard": "^2.0.4",
     "core-js": "^2.6.5",
     "file-saver": "^2.0.2",
+    "file-type": "^12.3.0",
     "filepond": "^4.7.2",
     "jszip": "^3.2.2",
     "linkifyjs": "^2.1.8",
