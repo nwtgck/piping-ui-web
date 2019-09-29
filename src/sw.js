@@ -60,13 +60,21 @@ self.addEventListener('fetch', (event) => {
       // Make filename RFC5987 compatible
       filename = encodeURIComponent(filename).replace(/['()]/g, escape).replace(/\*/g, '%2A');
       headers.set('Content-Disposition', "attachment; filename*=UTF-8''" + filename);
-      // Decrypt the response body
-      const plainStream = (await openpgp.decrypt({
-        message: await openpgp.message.read(res.body),
-        passwords: [password],
-        format: 'binary'
-      })).data;
-      console.log('plainStream:', plainStream);
+      // Plain ReadableStream
+      const plainStream = await (async () => {
+        // If password protection is disabled
+        if (password === '') {
+          return res.body;
+        } else {
+          // Decrypt the response body
+          const decrypted = await openpgp.decrypt({
+            message: await openpgp.message.read(res.body),
+            passwords: [password],
+            format: 'binary'
+          });
+          return decrypted.data;
+        }
+      })();
       const downloadableRes = new Response(plainStream, {
         headers
       });
