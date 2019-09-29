@@ -509,7 +509,8 @@ export default class PipingUI extends Vue {
     this.dataViews.unshift({
       viewNo: this.viewCount,
       serverUrl: this.serverUrl,
-      secretPath: this.secretPath
+      secretPath: this.secretPath,
+      password: this.password,
     });
     // Open by default
     this.viewExpandedPanelIds.push(this.viewCount-1);
