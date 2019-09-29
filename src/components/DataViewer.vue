@@ -102,13 +102,13 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import urlJoin from 'url-join';
-import * as utils from '@/utils';
 import linkifyHtml from 'linkifyjs/html';
-import Clipboard from 'clipboard';
 import * as FileSaver from 'file-saver';
+import Clipboard from 'clipboard';
+
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
-import {readBlobAsText} from "@/utils";
+import * as utils from '@/utils';
 
 export type DataViewerProps = {
   viewNo: number,
@@ -240,7 +240,7 @@ export default class DataViewer extends Vue {
         // View blob if possible
         this.viewBlob();
       } else {
-        const responseText = await readBlobAsText(this.xhr.response);
+        const responseText = await utils.readBlobAsText(this.xhr.response);
         this.errorMessage = () => this.strings['xhr_status_error']({
           status: this.xhr.status,
           response: responseText,
@@ -261,7 +261,7 @@ export default class DataViewer extends Vue {
       this.videoSrc = blobUrl;
     } else if (this.blob.type.startsWith("text/")) {
       // Get text
-      this.text = await readBlobAsText(this.blob);
+      this.text = await utils.readBlobAsText(this.blob);
     }
   }
 
