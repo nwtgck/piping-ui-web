@@ -447,7 +447,7 @@ export default class PipingUI extends Vue {
       data: body,
       serverUrl: this.serverUrl,
       secretPath: this.secretPath,
-      password: this.password,
+      password: this.enablePasswordProtection ? this.password : '',
     });
     // Open by default
     this.uploadExpandedPanelIds.push(this.uploadCount-1);
@@ -507,14 +507,7 @@ export default class PipingUI extends Vue {
       aTag.click();
     } else {
       // If password-protection is disabled
-      if (this.password === '') {
-        // Download or show on browser sometimes
-        const aTag = document.createElement('a');
-        aTag.href = downloadUrl;
-        aTag.target = "_blank";
-        aTag.download = this.secretPath;
-        aTag.click();
-      } else {
+      if (this.enablePasswordProtection) {
         // Get response
         const res = await fetch(downloadUrl);
         const resBody = await blobToUint8Array(await res.blob());
@@ -526,6 +519,13 @@ export default class PipingUI extends Vue {
         })).data as Uint8Array;
         // Save
         FileSaver.saveAs(uint8ArrayToBlob(plain), this.secretPath);
+      } else {
+        // Download or show on browser sometimes
+        const aTag = document.createElement('a');
+        aTag.href = downloadUrl;
+        aTag.target = "_blank";
+        aTag.download = this.secretPath;
+        aTag.click();
       }
     }
   }
@@ -552,7 +552,7 @@ export default class PipingUI extends Vue {
       viewNo: this.viewCount,
       serverUrl: this.serverUrl,
       secretPath: this.secretPath,
-      password: this.password,
+      password: this.enablePasswordProtection ? this.password : '',
     });
     // Open by default
     this.viewExpandedPanelIds.push(this.viewCount-1);
