@@ -33,9 +33,25 @@ self.addEventListener('fetch', (event) => {
       })
     ));
   } else if (url.pathname === '/sw-download') {
-    const targetUrl = url.searchParams.get('url');
-    let filename = url.searchParams.get('filename');
-    const password = url.searchParams.get('password');
+    // Get download info
+    const downloadInfo = JSON.parse(decodeURIComponent(url.hash.substring(1)));
+    if (!("url" in downloadInfo)) {
+      console.error('downloadInfo.url is missing');
+      return;
+    }
+    if (!("filename" in downloadInfo)) {
+      console.error('downloadInfo.filename is missing');
+      return;
+    }
+    // NOTE: .password should always be required
+    //       .password === '' means non-password protection
+    if (!("password" in downloadInfo)) {
+      console.error('downloadInfo.password is missing');
+      return;
+    }
+    const targetUrl = downloadInfo.url;
+    let filename = downloadInfo.filename;
+    const password = downloadInfo.password;
 
     event.respondWith((async () => {
       const res = await fetch(targetUrl);
