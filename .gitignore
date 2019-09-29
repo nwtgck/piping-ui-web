@@ -3,6 +3,7 @@ node_modules
 /dist
 /src/version.ts
 /src/licenses.json
+/public/openpgp
 
 # local env files
 .env.local
