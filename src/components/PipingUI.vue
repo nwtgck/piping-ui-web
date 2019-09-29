@@ -474,6 +474,12 @@ export default class PipingUI extends Vue {
     }
 
     const urlJoin = await urlJoinAsync();
+    // If enabling password protection and password is empty
+    if (this.enablePasswordProtection && this.password === '') {
+      // Show error message
+      this.showSnackbar(this.strings['password_is_required']);
+      return;
+    }
     const downloadUrl = urlJoin(this.serverUrl, encodeURI(this.secretPath));
 
     const swDownload = await swDownloadAsync();
@@ -502,6 +508,13 @@ export default class PipingUI extends Vue {
     if (this.secretPath === '') {
       // Show error message
       this.showSnackbar(this.strings['error_secret_path_not_specified']);
+      return;
+    }
+
+    // If enabling password protection and password is empty
+    if (this.enablePasswordProtection && this.password === '') {
+      // Show error message
+      this.showSnackbar(this.strings['password_is_required']);
       return;
     }
 
