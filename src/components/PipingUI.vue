@@ -184,7 +184,7 @@ import {keys} from "../local-storage-keys";
 import {supportsSwDownload} from "@/sw-download";
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
-import * as filepond from "filepond";
+import {File as FilePondFile} from "filepond";
 import {baseAndExt} from "@/utils";
 
 const DataUploader = () => import('@/components/DataUploader.vue');
@@ -237,7 +237,7 @@ export default class PipingUI extends Vue {
   private secretPath: string = "";
   private isTextMode: boolean = false;
   private inputText: string = '';
-  private files: filepond.File[] = [];
+  private files: FilePondFile[] = [];
   private serverUrlHistory: string[] = [];
   private secretPathHistory: string[] = [];
   private enablePasswordProtection: boolean = false;
