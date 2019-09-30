@@ -178,7 +178,7 @@ import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
 import {uint8ArrayToBlob} from 'binconv/dist/src/uint8ArrayToBlob';
 import * as openpgp from 'openpgp';
 
-import vueFilePond from 'vue-filepond';
+// import vueFilePond from 'vue-filepond';
 import 'filepond/dist/filepond.min.css';
 import {keys} from "../local-storage-keys";
 import {supportsSwDownload} from "@/sw-download";
@@ -192,8 +192,7 @@ const DataViewer =  () => import( "@/components/DataViewer.vue");
 
 
 // Create component
-const FilePond = vueFilePond();
-
+const FilePond = () => import('vue-filepond').then(vueFilePond => vueFilePond.default());
 
 const defaultServerUrls: ReadonlyArray<string> = [
   "https://ppng.ml",
