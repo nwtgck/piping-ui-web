@@ -1,4 +1,4 @@
-import JSZip from "jszip";
+const JSZipAsync = () => import("jszip").then(p => p.default);
 
 export function readableBytesString(bytes: number, fractionDigits: number): string {
   const units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
@@ -35,7 +35,8 @@ export function baseAndExt(name: string): {baseName: string, ext: string} {
   }
 }
 
-export function zipFilesAsBlob(files: File[]): Promise<Blob> {
+export async function zipFilesAsBlob(files: File[]): Promise<Blob> {
+  const JSZip = await JSZipAsync();
   const zip = JSZip();
   const directory = zip.folder('files');
   for (const file of files) {
