@@ -173,7 +173,7 @@ import urlJoin from 'url-join';
 import { DataUploaderProps } from '@/components/DataUploader.vue';
 import {DataViewerProps} from "@/components/DataViewer.vue";
 import {str, arr, validatingParse, Json, TsType} from 'ts-json-validator';
-import * as FileSaver from 'file-saver';
+const FileSaverAsync = () => import('file-saver');
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
 import {uint8ArrayToBlob} from 'binconv/dist/src/uint8ArrayToBlob';
 const openpgp = () => import('openpgp');
@@ -507,6 +507,7 @@ export default class PipingUI extends Vue {
           format: 'binary'
         })).data as Uint8Array;
         // Save
+        const FileSaver = await FileSaverAsync();
         FileSaver.saveAs(uint8ArrayToBlob(plain), this.secretPath);
       } else {
         // Download or show on browser sometimes
