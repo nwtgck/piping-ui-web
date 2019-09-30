@@ -170,8 +170,8 @@
 <script lang="ts">
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import urlJoin from 'url-join';
-import DataUploader, { DataUploaderProps } from '@/components/DataUploader.vue';
-import DataViewer, {DataViewerProps} from "@/components/DataViewer.vue";
+import { DataUploaderProps } from '@/components/DataUploader.vue';
+import {DataViewerProps} from "@/components/DataViewer.vue";
 import {str, arr, validatingParse, Json, TsType} from 'ts-json-validator';
 import * as FileSaver from 'file-saver';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
@@ -186,6 +186,10 @@ import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import * as filepond from "filepond";
 import {baseAndExt} from "@/utils";
+
+const DataUploader = () => import('@/components/DataUploader.vue');
+const DataViewer =  () => import( "@/components/DataViewer.vue");
+
 
 // Create component
 const FilePond = vueFilePond();
