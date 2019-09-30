@@ -105,7 +105,7 @@ import urlJoin from 'url-join';
 import linkifyHtml from 'linkifyjs/html';
 const FileSaverAsync = () => import('file-saver');
 import Clipboard from 'clipboard';
-import fileType from 'file-type';
+const fileTypeAsync = () => import('file-type').then(p => p.default);
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
 import {uint8ArrayToBlob} from 'binconv/dist/src/uint8ArrayToBlob';
 const openpgp = () => import('openpgp');
@@ -277,6 +277,7 @@ export default class DataViewer extends Vue {
   }
 
   private async viewBlob() {
+    const fileType = await fileTypeAsync();
     // Get first bytes from blob
     const firstChunk: Uint8Array = await blobToUint8Array(this.blob.slice(0, fileType.minimumBytes));
     // Detect type of blob
