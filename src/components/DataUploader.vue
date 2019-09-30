@@ -68,7 +68,7 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import urlJoin from 'url-join';
-import * as openpgp from 'openpgp';
+const openpgp = () => import('openpgp');
 import {blobToReadableStream} from 'binconv/dist/src/blobToReadableStream';
 import {readableStreamToUint8Array} from 'binconv/dist/src/readableStreamToUint8Array';
 
@@ -196,8 +196,9 @@ export default class DataUploader extends Vue {
         // Convert plain body blob to ReadableStream
         const plainBodyStream: ReadableStream<Uint8Array> = await blobToReadableStream(plainBody);
         // Encrypt with PGP streamingly
-        const encryptResult = await openpgp.encrypt({
-          message: openpgp.message.fromBinary(plainBodyStream),
+        const pgp = await openpgp();
+        const encryptResult = await pgp.encrypt({
+          message: pgp.message.fromBinary(plainBodyStream),
           passwords: [password],
           armor: false
         });

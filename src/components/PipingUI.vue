@@ -176,7 +176,7 @@ import {str, arr, validatingParse, Json, TsType} from 'ts-json-validator';
 import * as FileSaver from 'file-saver';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
 import {uint8ArrayToBlob} from 'binconv/dist/src/uint8ArrayToBlob';
-import * as openpgp from 'openpgp';
+const openpgp = () => import('openpgp');
 
 // import vueFilePond from 'vue-filepond';
 import 'filepond/dist/filepond.min.css';
@@ -500,8 +500,9 @@ export default class PipingUI extends Vue {
         const res = await fetch(downloadUrl);
         const resBody = await blobToUint8Array(await res.blob());
         // Decrypt the response body
-        const plain = (await openpgp.decrypt({
-          message: await openpgp.message.read(resBody),
+        const pgp = await openpgp();
+        const plain = (await pgp.decrypt({
+          message: await pgp.message.read(resBody),
           passwords: [this.password],
           format: 'binary'
         })).data as Uint8Array;
