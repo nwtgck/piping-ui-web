@@ -49,6 +49,7 @@ const en = {
   view_in_viewer: 'View',
   download_url: 'Download URL',
   copied: 'Copied',
+  password_might_be_wrong: 'The password might be wrong',
   xhr_status_error: (p: {status: number, response: string}) => {
     return `Error (${p.status}): "${p.response}"`;
   },
@@ -96,6 +97,7 @@ const ja: typeof defaultStr = {
   view_in_viewer: '表示',
   download_url: 'ダウンロードURL',
   copied: 'コピーされました',
+  password_might_be_wrong: 'パスワードが間違っている可能性があります',
   xhr_status_error: (p: {status: number, response: string}) => {
     return `エラー (${p.status}): "${p.response}"`;
   },

@@ -79,7 +79,7 @@
       </div>
 
       <!-- Save button -->
-      <v-btn v-if="isDoneDownload"
+      <v-btn v-if="isDoneDownload && !hasError"
              color="primary"
              block
              @click="save()"
@@ -90,7 +90,7 @@
 
       <v-alert type="error"
                outlined
-               :value="errorMessage() !== ''">
+               :value="hasError">
         {{ errorMessage() }}
       </v-alert>
 
@@ -259,13 +259,19 @@ export default class DataViewer extends Vue {
           } else {
             // Get response body
             const resBody = await blobToUint8Array(this.xhr.response);
-            // Decrypt the response body
-            const plain = (await openpgp.decrypt({
-              message: await openpgp.message.read(resBody),
-              passwords: [this.props.password],
-              format: 'binary'
-            })).data as Uint8Array;
-            return uint8ArrayToBlob(plain);
+            try {
+              // Decrypt the response body
+              const plain = (await openpgp.decrypt({
+                message: await openpgp.message.read(resBody),
+                passwords: [this.props.password],
+                format: 'binary'
+              })).data as Uint8Array;
+              return uint8ArrayToBlob(plain);
+            } catch (err) {
+              // TODO: Hard code
+              this.errorMessage = () => this.strings['password_might_be_wrong'];
+              throw err;
+            }
           }
         })();
 
