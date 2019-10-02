@@ -35,6 +35,34 @@
         </tbody>
       </v-simple-table>
 
+      <div v-if="isDoneDownload">
+        <v-layout>
+          <v-switch v-model="enablePasswordReinput"
+                    inset
+                    :label="strings['reinput_password']"
+                    color="blue"
+                    style="padding-left: 0.5em;"/>
+
+          <v-text-field v-if="enablePasswordReinput"
+                        v-model="props.password"
+                        :type="showsPassword ? 'text' : 'password'"
+                        :label="strings['password']"
+                        :append-icon="showsPassword ? 'visibility' : 'visibility_off'"
+                        @click:append="showsPassword = !showsPassword"
+                        single-line
+                        style="margin-left: 0.5em;"
+                        outlined/>
+        </v-layout>
+        <div v-if="enablePasswordReinput" style="text-align: right">
+          <v-btn color="primary"
+                 text
+                 @click="decrypt()">
+            <v-icon >mdi-key</v-icon>
+            {{ strings['unlock'] }}
+          </v-btn>
+        </div>
+      </div>
+
       <!-- Image viewer -->
       <div v-show="imgSrc !== ''" style="text-align: center">
         <img :src="imgSrc"
@@ -146,6 +174,8 @@ export default class DataViewer extends Vue {
   private imgSrc: string = '';
   private videoSrc: string = '';
   private text: string = '';
+  private enablePasswordReinput: boolean = false;
+  private showsPassword: boolean = false;
 
   private blob: Blob = new Blob();
 
@@ -266,9 +296,10 @@ export default class DataViewer extends Vue {
                 passwords: [this.props.password],
                 format: 'binary'
               })).data as Uint8Array;
+              this.enablePasswordReinput = false;
               return uint8ArrayToBlob(plain);
             } catch (err) {
-              // TODO: Hard code
+              this.enablePasswordReinput = true;
               this.errorMessage = () => this.strings['password_might_be_wrong'];
               throw err;
             }

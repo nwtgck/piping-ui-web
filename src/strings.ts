@@ -50,6 +50,8 @@ const en = {
   download_url: 'Download URL',
   copied: 'Copied',
   password_might_be_wrong: 'The password might be wrong',
+  reinput_password: 'Reinput password',
+  unlock: 'Unlock',
   xhr_status_error: (p: {status: number, response: string}) => {
     return `Error (${p.status}): "${p.response}"`;
   },
@@ -98,6 +100,8 @@ const ja: typeof defaultStr = {
   download_url: 'ダウンロードURL',
   copied: 'コピーされました',
   password_might_be_wrong: 'パスワードが間違っている可能性があります',
+  reinput_password: 'パスワードを再入力',
+  unlock: '解除',
   xhr_status_error: (p: {status: number, response: string}) => {
     return `エラー (${p.status}): "${p.response}"`;
   },
