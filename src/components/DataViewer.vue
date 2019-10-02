@@ -56,7 +56,7 @@
         <div v-if="enablePasswordReinput" style="text-align: right">
           <v-btn color="primary"
                  text
-                 @click="decrypt()">
+                 @click="decryptIfNeedAndViewBlob()">
             <v-icon >mdi-key</v-icon>
             {{ strings['unlock'] }}
           </v-btn>
@@ -177,6 +177,7 @@ export default class DataViewer extends Vue {
   private enablePasswordReinput: boolean = false;
   private showsPassword: boolean = false;
 
+  private rawBlob: Blob = new Blob();
   private blob: Blob = new Blob();
 
   private showsCopied: boolean = false;
@@ -282,32 +283,10 @@ export default class DataViewer extends Vue {
     this.xhr.onload = async (ev) => {
       if (this.xhr.status === 200) {
         this.isDoneDownload = true;
-
-        this.blob = await (async () => {
-          if (this.props.password === '') {
-            return this.xhr.response;
-          } else {
-            // Get response body
-            const resBody = await blobToUint8Array(this.xhr.response);
-            try {
-              // Decrypt the response body
-              const plain = (await openpgp.decrypt({
-                message: await openpgp.message.read(resBody),
-                passwords: [this.props.password],
-                format: 'binary'
-              })).data as Uint8Array;
-              this.enablePasswordReinput = false;
-              return uint8ArrayToBlob(plain);
-            } catch (err) {
-              this.enablePasswordReinput = true;
-              this.errorMessage = () => this.strings['password_might_be_wrong'];
-              throw err;
-            }
-          }
-        })();
-
-        // View blob if possible
-        this.viewBlob();
+        // Get raw response body
+        this.rawBlob = this.xhr.response;
+        // Decrypt and view blob if possible
+        this.decryptIfNeedAndViewBlob();
       } else {
         const responseText = await utils.readBlobAsText(this.xhr.response);
         this.errorMessage = () => this.strings['xhr_status_error']({
@@ -345,6 +324,36 @@ export default class DataViewer extends Vue {
       }
     }
 
+  }
+
+  private async decryptIfNeedAndViewBlob() {
+    this.blob = await (async () => {
+      if (this.props.password === '') {
+        return this.rawBlob;
+      } else {
+        // Get response body
+        const resBody = await blobToUint8Array(this.rawBlob);
+        try {
+          // Decrypt the response body
+          const plain = (await openpgp.decrypt({
+            message: await openpgp.message.read(resBody),
+            passwords: [this.props.password],
+            format: 'binary'
+          })).data as Uint8Array;
+          this.enablePasswordReinput = false;
+          this.errorMessage = () => '';
+          return uint8ArrayToBlob(plain);
+        } catch (err) {
+          this.enablePasswordReinput = true;
+          this.errorMessage = () => this.strings['password_might_be_wrong'];
+          console.log('Decrypt error:', err);
+          return new Blob();
+        }
+      }
+    })();
+
+    // View blob if possible
+    this.viewBlob();
   }
 
   private cancelDownload(): void {
