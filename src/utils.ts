@@ -1,5 +1,6 @@
 const JSZipAsync = () => import('jszip').then(p => p.default);
 const sanitizeHtmlAsync  = () => import("sanitize-html").then(p => p.default);
+const openpgpAsync = () => import('openpgp');
 
 export function readableBytesString(bytes: number, fractionDigits: number): string {
   const units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
@@ -79,4 +80,18 @@ export async function sanitizeHtmlAllowingATag(dirtyHtml: string): Promise<strin
       'a': ['href', 'target']
     }
   });
+}
+
+export async function encrypt(bytes: ReadableStream<Uint8Array>, password: string): Promise<ReadableStream<Uint8Array>> {
+  const openpgp = await openpgpAsync();
+  // Encrypt with PGP streamingly
+  const encryptResult = await openpgp.encrypt({
+    message: openpgp.message.fromBinary(bytes),
+    passwords: [password],
+    armor: false
+  });
+  // Get encrypted stream
+  const encryptedStream: ReadableStream<Uint8Array> =
+    encryptResult.message.packets.write() as any;
+  return encryptedStream;
 }

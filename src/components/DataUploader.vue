@@ -67,7 +67,6 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import urlJoin from 'url-join';
-import * as openpgp from 'openpgp';
 import {blobToReadableStream} from 'binconv/dist/src/blobToReadableStream';
 import {readableStreamToUint8Array} from 'binconv/dist/src/readableStreamToUint8Array';
 
@@ -207,16 +206,8 @@ export default class DataUploader extends Vue {
       } else {
         // Convert plain body blob to ReadableStream
         const plainBodyStream: ReadableStream<Uint8Array> = await blobToReadableStream(plainBody);
-        // Encrypt with PGP streamingly
-        const encryptResult = await openpgp.encrypt({
-          message: openpgp.message.fromBinary(plainBodyStream),
-          passwords: [password],
-          armor: false
-        });
         // Get encrypted stream
-        const encryptedStream: ReadableStream<Uint8Array> =
-            encryptResult.message.packets.write() as any;
-
+        const encryptedStream = await utils.encrypt(plainBodyStream, password);
         // Convert ReadableStream to Uint8Array
         // NOTE: In the future, ReadableStream can be uploaded.
         // (see: https://github.com/whatwg/fetch/pull/425#issuecomment-518899855)
