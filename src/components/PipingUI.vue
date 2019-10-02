@@ -497,6 +497,7 @@ export default class PipingUI extends Vue {
         url: downloadUrl,
         filename: this.secretPath,
         password: this.enablePasswordProtection ? this.password : '',
+        decryptErrorMessage: this.strings['password_might_be_wrong'],
       };
       // Download via Service Worker
       const aTag = document.createElement('a');

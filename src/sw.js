@@ -49,9 +49,14 @@ self.addEventListener('fetch', (event) => {
       console.error('downloadInfo.password is missing');
       return;
     }
+    if (!("decryptErrorMessage" in downloadInfo)) {
+      console.error('downloadInfo.decryptErrorMessage is missing');
+      return;
+    }
     const targetUrl = downloadInfo.url;
     let filename = downloadInfo.filename;
     const password = downloadInfo.password;
+    const decryptErrorMessage = downloadInfo.decryptErrorMessage;
 
     event.respondWith((async () => {
       const res = await fetch(targetUrl);
@@ -61,20 +66,26 @@ self.addEventListener('fetch', (event) => {
       filename = encodeURIComponent(filename).replace(/['()]/g, escape).replace(/\*/g, '%2A');
       headers.set('Content-Disposition', "attachment; filename*=UTF-8''" + filename);
       // Plain ReadableStream
-      const plainStream = await (async () => {
-        // If password protection is disabled
-        if (password === '') {
-          return res.body;
-        } else {
+      let plainStream = res.body;
+      // If password protection is enabled
+      if (password !== '') {
+        try {
           // Decrypt the response body
           const decrypted = await openpgp.decrypt({
             message: await openpgp.message.read(res.body),
             passwords: [password],
             format: 'binary'
           });
-          return decrypted.data;
+          plainStream = decrypted.data;
+        } catch (err) {
+          // Show "Password might be wrong" message
+          // This message should be displayed in browser
+          return new Response(decryptErrorMessage, {
+            status: 400,
+          });
         }
-      })();
+      }
+
       const downloadableRes = new Response(plainStream, {
         headers
       });
