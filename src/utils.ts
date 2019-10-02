@@ -54,3 +54,16 @@ export function zipFilesAsBlob(files: File[]): Promise<Blob> {
   }
   return directory.generateAsync({type : "blob"});
 }
+
+function* range(start: number, end: number): Generator<number> {
+  for(let i = start; i <= end; i++) {
+    yield i;
+  }
+}
+
+// Whether text or not. Besed on file (1) behavior
+// (from: https://stackoverflow.com/a/7392391/2885946)
+export function isText(array: Uint8Array): boolean {
+  const textChars: ReadonlyArray<number> = [7, 8, 9, 10, 12, 13, 27, ...range(0x20, 0xff)];
+  return array.every(e => textChars.includes(e));
+}

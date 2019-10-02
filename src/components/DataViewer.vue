@@ -258,19 +258,26 @@ export default class DataViewer extends Vue {
   private async viewBlob() {
     // Get first bytes from blob
     const firstChunk: Uint8Array = await blobToUint8Array(this.blob.slice(0, fileType.minimumBytes));
-    // Detect type of blob
-    const fileTypeResult = fileType(firstChunk);
-    if (fileTypeResult !== undefined) {
-      const blobUrl = URL.createObjectURL(this.blob);
-      if (fileTypeResult.mime.startsWith("image/")) {
-        this.imgSrc = blobUrl;
-      } else if (fileTypeResult.mime.startsWith("video/")) {
-        this.videoSrc = blobUrl;
-      } else if (fileTypeResult.mime.startsWith("text/")) {
-        // Get text
-        this.text = await utils.readBlobAsText(this.blob);
+    // If body is text
+    if (utils.isText(firstChunk)) {
+      // Set text
+      this.text = await utils.readBlobAsText(this.blob);
+    } else {
+      // Detect type of blob
+      const fileTypeResult = fileType(firstChunk);
+      if (fileTypeResult !== undefined) {
+        const blobUrl = URL.createObjectURL(this.blob);
+        if (fileTypeResult.mime.startsWith("image/")) {
+          this.imgSrc = blobUrl;
+        } else if (fileTypeResult.mime.startsWith("video/")) {
+          this.videoSrc = blobUrl;
+        } else if (fileTypeResult.mime.startsWith("text/")) {
+          // Set text
+          this.text = await utils.readBlobAsText(this.blob);
+        }
       }
     }
+
   }
 
   private cancelDownload(): void {
