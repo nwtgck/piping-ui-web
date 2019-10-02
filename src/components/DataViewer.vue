@@ -335,11 +335,7 @@ export default class DataViewer extends Vue {
         const resBody = await blobToUint8Array(this.rawBlob);
         try {
           // Decrypt the response body
-          const plain = (await openpgp.decrypt({
-            message: await openpgp.message.read(resBody),
-            passwords: [this.props.password],
-            format: 'binary'
-          })).data as Uint8Array;
+          const plain = await utils.decrypt(resBody, this.props.password);
           this.enablePasswordReinput = false;
           this.errorMessage = () => '';
           return uint8ArrayToBlob(plain);

@@ -190,6 +190,7 @@ import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import {File as FilePondFile} from "filepond";
 import {baseAndExt} from "@/utils";
+const utilsAsync = () => import("@/utils");
 
 (async () => require('filepond/dist/filepond.min.css'))();
 
@@ -513,11 +514,7 @@ export default class PipingUI extends Vue {
         const res = await fetch(downloadUrl);
         const resBody = await blobToUint8Array(await res.blob());
         // Decrypt the response body
-        const plain = (await openpgp.decrypt({
-          message: await openpgp.message.read(resBody),
-          passwords: [this.password],
-          format: 'binary'
-        })).data as Uint8Array;
+        const plain = await (await utilsAsync()).decrypt(resBody, this.password);
         // Save
         FileSaver.saveAs(uint8ArrayToBlob(plain), this.secretPath);
       } else {

@@ -95,3 +95,13 @@ export async function encrypt(bytes: ReadableStream<Uint8Array>, password: strin
     encryptResult.message.packets.write() as any;
   return encryptedStream;
 }
+
+export async function decrypt(bytes: Uint8Array, password: string): Promise<Uint8Array> {
+  const openpgp = await openpgpAsync();
+  const plain = (await openpgp.decrypt({
+    message: await openpgp.message.read(bytes),
+    passwords: [password],
+    format: 'binary'
+  })).data as Uint8Array;
+  return plain;
+}
