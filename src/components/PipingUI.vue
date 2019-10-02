@@ -300,7 +300,7 @@ export default class PipingUI extends Vue {
         //       Not show suggested secret path on initial status
         return [];
       } else if (this.isTextMode) {
-        return this.randomStrs.map(s => `${s}.txt`);
+        return [...this.randomStrs.map(s => `${s}.txt`), ...this.randomStrs];
       } else if (this.files.length === 1) {
         const fileName = this.files[0].filename;
         const {ext} = baseAndExt(fileName);
