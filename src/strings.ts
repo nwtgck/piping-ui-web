@@ -35,7 +35,8 @@ const en = {
   upload_url: 'Upload URL',
   compressing: 'Compressing...',
   data_uploader_xhr_onerror: (p: {serverUrl: string}) => {
-    return `An error occurred. The server might be < 0.9.4. Please check ${urlJoin(p.serverUrl, "/version")}`;
+    const versionUrl = urlJoin(p.serverUrl, "/version");
+    return `An error occurred. The server might be < 0.9.4. Please check <a href="${versionUrl}" target="_blank">${versionUrl}</a>`;
   },
   data_uploader_xhr_upload_onerror: 'An error occurred while uploading',
   cancel: 'Cancel',
@@ -76,7 +77,8 @@ const ja: typeof defaultStr = {
   upload_url: 'アップロードURL',
   compressing: '圧縮中...',
   data_uploader_xhr_onerror: (p: {serverUrl: string}) => {
-    return `エラーが発生しました。サーバーが0.9.4より低い可能性があります。 ${urlJoin(p.serverUrl, "/version")}でバージョンの確認できます。`;
+    const versionUrl = urlJoin(p.serverUrl, "/version");
+    return `エラーが発生しました。サーバーが0.9.4より低い可能性があります。 <a href="${versionUrl}" target="_blank">${versionUrl}</a> でバージョンの確認できます。`;
   },
   data_uploader_xhr_upload_onerror: 'アップロード中にエラが発生しました',
   cancel: 'キャンセル',

@@ -56,9 +56,8 @@
 
       <v-alert type="error"
                outlined
-               :value="errorMessage() !== ''">
-        {{ errorMessage() }}
-      </v-alert>
+               v-html="errorMessage()"
+               :value="errorMessage() !== ''" />
 
     </v-expansion-panel-content>
   </v-expansion-panel>
