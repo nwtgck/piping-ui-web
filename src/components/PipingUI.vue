@@ -30,6 +30,8 @@
           <v-textarea v-if="isTextMode"
                       :label="strings['text_placeholder']"
                       v-model="inputText"
+                      clearable
+                      clear-icon="cancel"
                       outlined
           ></v-textarea>
         </div>
