@@ -78,15 +78,16 @@
 
         <!-- Secret path suggestion  -->
         <div v-if="sendOrGet === 'send' && suggestedSecretPaths.length !== 0" style="text-align: right; margin-bottom: 1.5em;">
-          <v-btn v-for="suggestedSecretPath in suggestedSecretPaths"
-                 :key="suggestedSecretPath"
-                 color="blue"
-                 @click="secretPath = suggestedSecretPath"
-                 outlined
-                 class="ma-2"
-                 style="text-transform: none;">
+          <v-chip v-for="suggestedSecretPath in suggestedSecretPaths"
+                  :key="suggestedSecretPath"
+                  @click="secretPath = suggestedSecretPath"
+                  class="ma-1"
+                  label
+                  outlined
+                  style="font-size: 1em;"
+          >
             {{ suggestedSecretPath }}
-          </v-btn>
+          </v-chip>
         </div>
 
         <v-btn v-if="sendOrGet === 'send'"
