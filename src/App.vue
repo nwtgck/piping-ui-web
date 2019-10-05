@@ -138,8 +138,7 @@
 
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
-import HelloWorld from '@/components/HelloWorld.vue';
-import PipingUI from '@/components/PipingUI.vue';
+const PipingUI = () => import('@/components/PipingUI.vue');
 import {keys} from "@/local-storage-keys";
 import {VERSION} from '@/version';
 import {globalStore} from "@/vue-global";
@@ -151,7 +150,6 @@ type Language = 'en' | 'ja';
 
 @Component({
   components: {
-    HelloWorld,
     PipingUI,
   }
 })

@@ -155,22 +155,22 @@
 <script lang="ts">
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import urlJoin from 'url-join';
-import DataUploader, { DataUploaderProps } from '@/components/DataUploader.vue';
-import DataViewer, {DataViewerProps} from "@/components/DataViewer.vue";
+import {DataUploaderProps} from '@/components/DataUploader.vue';
+const DataUploader = () => import('@/components/DataUploader.vue');
+import {DataViewerProps} from "@/components/DataViewer.vue";
+const DataViewer = () => import("@/components/DataViewer.vue");
 import {str, arr, validatingParse, Json, TsType} from 'ts-json-validator';
 
-import vueFilePond from 'vue-filepond';
 import 'filepond/dist/filepond.min.css';
 import {keys} from "../local-storage-keys";
 import {supportsSwDownload} from "@/sw-download";
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
-import * as filepond from "filepond";
+import {File as FilePondFile} from "filepond";
 import {baseAndExt} from "@/utils";
 
 // Create component
-const FilePond = vueFilePond();
-
+const FilePond = () => import('vue-filepond').then(vueFilePond => vueFilePond.default());
 
 const defaultServerUrls: ReadonlyArray<string> = [
   "https://ppng.ml",
@@ -215,7 +215,7 @@ export default class PipingUI extends Vue {
   private secretPath: string = "";
   private isTextMode: boolean = false;
   private inputText: string = '';
-  private files: filepond.File[] = [];
+  private files: FilePondFile[] = [];
   private serverUrlHistory: string[] = [];
   private secretPathHistory: string[] = [];
 
