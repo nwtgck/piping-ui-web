@@ -1,4 +1,5 @@
 import JSZip from "jszip";
+import sanitizeHtml from "sanitize-html";
 
 export function readableBytesString(bytes: number, fractionDigits: number): string {
   const units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
@@ -66,4 +67,14 @@ function* range(start: number, end: number): Generator<number> {
 export function isText(array: Uint8Array): boolean {
   const textChars: ReadonlyArray<number> = [7, 8, 9, 10, 12, 13, 27, ...range(0x20, 0xff)];
   return array.every(e => textChars.includes(e));
+}
+
+// Sanitize html, allowing <a> tag
+export function sanitizeHtmlAllowingATag(dirtyHtml: string): string {
+  return sanitizeHtml(dirtyHtml, {
+    allowedTags: ['a'],
+    allowedAttributes: {
+      'a': ['href', 'target']
+    }
+  });
 }

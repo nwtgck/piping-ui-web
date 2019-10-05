@@ -197,9 +197,9 @@ export default class DataViewer extends Vue {
   }
 
   private get linkifiedText(): string {
-    return linkifyHtml(this.text, {
+    return utils.sanitizeHtmlAllowingATag(linkifyHtml(this.text, {
       defaultProtocol: 'https'
-    });
+    }));
   }
 
   constructor() {
