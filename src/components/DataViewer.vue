@@ -107,6 +107,7 @@ import * as FileSaver from 'file-saver';
 import Clipboard from 'clipboard';
 import fileType from 'file-type';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
+import {mdiAlert, mdiCheck} from "@mdi/js";
 
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
@@ -166,11 +167,11 @@ export default class DataViewer extends Vue {
 
   private get headerIcon(): string {
     if (this.hasError) {
-      return "mdi-alert";
+      return mdiAlert;
     } else if (this.canceled) {
       return "cancel";
     } else if (this.isDoneDownload) {
-      return "mdi-check";
+      return mdiCheck;
     } else {
       return "keyboard_arrow_down";
     }

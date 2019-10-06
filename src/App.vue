@@ -18,7 +18,7 @@
       <v-btn v-if="pwa.updateExists"
              @click="refreshApp"
              depressed color="blue" dark small outlined>
-        <v-icon dark left>mdi-cached</v-icon>{{ strings['pwa_update'] }}
+        <v-icon dark left>{{ icons.mdiCached }}</v-icon>{{ strings['pwa_update'] }}
       </v-btn>
       <v-spacer></v-spacer>
 
@@ -26,7 +26,7 @@
       <v-menu :close-on-content-click="false">
         <template v-slot:activator="{ on }">
           <v-btn icon v-on="on">
-            <v-icon>mdi-dots-vertical</v-icon>
+            <v-icon>{{ icons.mdiDotsVertical }}</v-icon>
           </v-btn>
         </template>
 
@@ -110,6 +110,7 @@ import {keys} from "@/local-storage-keys";
 import {VERSION} from '@/version';
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
+import {mdiCached, mdiDotsVertical} from "@mdi/js";
 
 // Available languages
 type Language = 'en' | 'ja';
@@ -123,6 +124,10 @@ type Language = 'en' | 'ja';
 export default class App extends Vue {
   private enableDarkTheme: boolean = false;
   private licenseDialog: boolean = false;
+  private icons = {
+    mdiCached,
+    mdiDotsVertical,
+  };
   private get recordsServerUrlHistory(): boolean {
     return globalStore.recordsServerUrlHistory;
   }

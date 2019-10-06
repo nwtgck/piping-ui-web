@@ -70,6 +70,7 @@ import urlJoin from 'url-join';
 import * as utils from '@/utils';
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
+import {mdiAlert, mdiCheck} from "@mdi/js";
 
 export type DataUploaderProps = {
   uploadNo: number,
@@ -121,11 +122,11 @@ export default class DataUploader extends Vue {
 
   private get headerIcon(): string {
     if (this.hasError) {
-      return "mdi-alert";
+      return mdiAlert;
     } else if (this.canceled) {
       return "cancel";
     } else if (this.isDoneUpload) {
-      return "mdi-check";
+      return mdiCheck;
     } else {
       return "keyboard_arrow_down";
     }

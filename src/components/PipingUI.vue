@@ -51,7 +51,7 @@
               <v-btn icon
                      @click.stop.prevent="deleteServerUrl(item)"
               >
-                <v-icon>mdi-delete</v-icon>
+                <v-icon>{{ icons.mdiDelete }}</v-icon>
               </v-btn>
             </v-list-item-action>
           </template>
@@ -70,7 +70,7 @@
               <v-btn icon
                      @click.stop.prevent="deleteSecretPath(item)"
               >
-                <v-icon>mdi-delete</v-icon>
+                <v-icon>{{ icons.mdiDelete }}</v-icon>
               </v-btn>
             </v-list-item-action>
           </template>
@@ -104,7 +104,7 @@
                    @click="view()"
                    block>
               {{ strings['view'] }}
-              <v-icon right dark>mdi-file-find</v-icon>
+              <v-icon right dark>{{ icons.mdiFileFind }}</v-icon>
             </v-btn>
           </v-flex>
           <v-flex xs6>
@@ -160,6 +160,7 @@ const DataUploader = () => import('@/components/DataUploader.vue');
 import {DataViewerProps} from "@/components/DataViewer.vue";
 const DataViewer = () => import("@/components/DataViewer.vue");
 import {str, arr, validatingParse, Json, TsType} from 'ts-json-validator';
+import {mdiDelete, mdiFileFind} from "@mdi/js";
 
 import 'filepond/dist/filepond.min.css';
 import {keys} from "../local-storage-keys";
@@ -245,6 +246,11 @@ export default class PipingUI extends Vue {
   private uploadExpandedPanelIds: number[] = [];
   // Indexes of expanded expansion-panel for view
   private viewExpandedPanelIds: number[] = [];
+
+  private icons = {
+    mdiDelete,
+    mdiFileFind,
+  };
 
   // for language support
   private get strings() {
