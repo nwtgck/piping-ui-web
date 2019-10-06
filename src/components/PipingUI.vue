@@ -146,7 +146,7 @@
       {{ snackbarMessage }}
       <v-btn text
              @click="showsSnackbar = false">
-        <v-icon>close</v-icon>
+        <v-icon>{{ icons.mdiClose }}</v-icon>
       </v-btn>
     </v-snackbar>
   </v-layout>
@@ -160,7 +160,7 @@ const DataUploader = () => import('@/components/DataUploader.vue');
 import {DataViewerProps} from "@/components/DataViewer.vue";
 const DataViewer = () => import("@/components/DataViewer.vue");
 import {str, arr, validatingParse, Json, TsType} from 'ts-json-validator';
-import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiCloseCircle} from "@mdi/js";
+import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiCloseCircle, mdiClose} from "@mdi/js";
 
 import 'filepond/dist/filepond.min.css';
 import {keys} from "../local-storage-keys";
@@ -253,6 +253,7 @@ export default class PipingUI extends Vue {
     mdiDelete,
     mdiFileFind,
     mdiCloseCircle,
+    mdiClose,
   };
 
   // for language support
