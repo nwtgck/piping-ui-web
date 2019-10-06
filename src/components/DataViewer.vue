@@ -73,7 +73,7 @@
                outlined
                class="ma-2 justify-end"
                @click="cancelDownload()">
-          <v-icon >cancel</v-icon>
+          <v-icon >{{ icons.mdiCloseCircle }}</v-icon>
           {{ strings['cancel'] }}
         </v-btn>
       </div>
@@ -84,7 +84,7 @@
              block
              @click="save()"
              style="margin-top: 1em;">
-        <v-icon >save</v-icon>
+        <v-icon >{{ icons.mdiContentSave }}</v-icon>
         {{ strings['save'] }}
       </v-btn>
 
@@ -107,7 +107,7 @@ import * as FileSaver from 'file-saver';
 import Clipboard from 'clipboard';
 import fileType from 'file-type';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
-import {mdiAlert, mdiCheck} from "@mdi/js";
+import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle} from "@mdi/js";
 
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
@@ -144,6 +144,11 @@ export default class DataViewer extends Vue {
 
   private showsCopied: boolean = false;
 
+  private icons = {
+    mdiContentSave,
+    mdiCloseCircle,
+  };
+
   // for language support
   private get strings() {
     return strings(globalStore.language);
@@ -169,11 +174,11 @@ export default class DataViewer extends Vue {
     if (this.hasError) {
       return mdiAlert;
     } else if (this.canceled) {
-      return "cancel";
+      return mdiCloseCircle;
     } else if (this.isDoneDownload) {
       return mdiCheck;
     } else {
-      return "keyboard_arrow_down";
+      return mdiChevronDown;
     }
   }
 

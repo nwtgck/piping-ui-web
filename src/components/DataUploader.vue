@@ -6,7 +6,7 @@
       {{ progressPercentage && progressPercentage.toFixed(2) }} %
       <template v-slot:actions>
         <v-icon :color="headerIconColor" style="margin-left: 0.3em">
-          {{ headerIcon}}
+          {{ headerIcon }}
         </v-icon>
       </template>
     </v-expansion-panel-header>
@@ -49,7 +49,7 @@
                outlined
                class="ma-2 justify-end"
                @click="cancelUpload()">
-          <v-icon >cancel</v-icon>
+          <v-icon >{{ icons.mdiCloseCircle }}</v-icon>
           {{ strings['cancel'] }}
         </v-btn>
       </div>
@@ -70,7 +70,7 @@ import urlJoin from 'url-join';
 import * as utils from '@/utils';
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
-import {mdiAlert, mdiCheck} from "@mdi/js";
+import {mdiAlert, mdiCheck, mdiCloseCircle, mdiChevronDown} from "@mdi/js";
 
 export type DataUploaderProps = {
   uploadNo: number,
@@ -98,6 +98,10 @@ export default class DataUploader extends Vue {
   private canceled: boolean = false;
   private isCompressing: boolean = false;
 
+  private icons = {
+    mdiCloseCircle,
+  };
+
   private get progressPercentage(): number | null {
     if (this.progressSetting.totalBytes === undefined) {
       return null;
@@ -124,11 +128,11 @@ export default class DataUploader extends Vue {
     if (this.hasError) {
       return mdiAlert;
     } else if (this.canceled) {
-      return "cancel";
+      return mdiCloseCircle;
     } else if (this.isDoneUpload) {
       return mdiCheck;
     } else {
-      return "keyboard_arrow_down";
+      return mdiChevronDown;
     }
   }
 

@@ -7,11 +7,11 @@
           <v-btn-toggle v-model="sendOrGet" mandatory>
             <v-btn text value="send">
               {{ strings['send'] }}
-              <v-icon right dark>file_upload</v-icon>
+              <v-icon right dark>{{ icons.mdiUpload }}</v-icon>
             </v-btn>
             <v-btn text value="get">
               {{ strings['get'] }}
-              <v-icon right dark>file_download</v-icon>
+              <v-icon right dark>{{ icons.mdiDownload }}</v-icon>
             </v-btn>
           </v-btn-toggle>
         </div>
@@ -31,7 +31,7 @@
                       :label="strings['text_placeholder']"
                       v-model="inputText"
                       clearable
-                      clear-icon="cancel"
+                      :clear-icon="icons.mdiCloseCircle"
                       outlined
           ></v-textarea>
         </div>
@@ -95,7 +95,7 @@
                v-on:click="send()"
                block>
           {{ strings['send'] }}
-          <v-icon right dark>file_upload</v-icon>
+          <v-icon right dark>{{ icons.mdiUpload }}</v-icon>
         </v-btn>
         <v-layout v-if="sendOrGet === 'get'">
           <v-flex xs6>
@@ -113,7 +113,7 @@
                    dark
                    block>
               {{ strings['download'] }}
-              <v-icon right dark>file_download</v-icon>
+              <v-icon right dark>{{ icons.mdiDownload }}</v-icon>
             </v-btn>
           </v-flex>
         </v-layout>
@@ -160,7 +160,7 @@ const DataUploader = () => import('@/components/DataUploader.vue');
 import {DataViewerProps} from "@/components/DataViewer.vue";
 const DataViewer = () => import("@/components/DataViewer.vue");
 import {str, arr, validatingParse, Json, TsType} from 'ts-json-validator';
-import {mdiDelete, mdiFileFind} from "@mdi/js";
+import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiCloseCircle} from "@mdi/js";
 
 import 'filepond/dist/filepond.min.css';
 import {keys} from "../local-storage-keys";
@@ -206,7 +206,7 @@ function randomStr(len: number, chars: ReadonlyArray<string>){
   components: {
     DataUploader,
     DataViewer,
-    FilePond
+    FilePond,
   },
 })
 export default class PipingUI extends Vue {
@@ -248,8 +248,11 @@ export default class PipingUI extends Vue {
   private viewExpandedPanelIds: number[] = [];
 
   private icons = {
+    mdiUpload,
+    mdiDownload,
     mdiDelete,
     mdiFileFind,
+    mdiCloseCircle,
   };
 
   // for language support
