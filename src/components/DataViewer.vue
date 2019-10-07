@@ -103,7 +103,7 @@
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import urlJoin from 'url-join';
 import linkifyHtml from 'linkifyjs/html';
-import * as FileSaver from 'file-saver';
+const FileSaverAsync = () => import('file-saver');
 import Clipboard from 'clipboard';
 import fileType from 'file-type';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
@@ -112,6 +112,7 @@ import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle} from
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import * as utils from '@/utils';
+import {AsyncComputed} from "@/AsyncComputed";
 
 export type DataViewerProps = {
   viewNo: number,
@@ -202,7 +203,8 @@ export default class DataViewer extends Vue {
     return urlJoin(this.props.serverUrl, this.props.secretPath);
   }
 
-  private get linkifiedText(): string {
+  @AsyncComputed()
+  private async linkifiedText(): Promise<string> {
     return utils.sanitizeHtmlAllowingATag(linkifyHtml(this.text, {
       defaultProtocol: 'https'
     }));
@@ -291,7 +293,8 @@ export default class DataViewer extends Vue {
     this.canceled = true;
   }
 
-  private save(): void {
+  private async save(): Promise<void> {
+    const FileSaver = await FileSaverAsync();
     FileSaver.saveAs(this.blob, this.props.secretPath);
   }
 }

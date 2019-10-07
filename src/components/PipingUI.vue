@@ -154,7 +154,7 @@
 
 <script lang="ts">
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
-import urlJoin from 'url-join';
+const urlJoinAsync = () => import('url-join').then(p => p.default);
 import {DataUploaderProps} from '@/components/DataUploader.vue';
 const DataUploader = () => import('@/components/DataUploader.vue');
 import {DataViewerProps} from "@/components/DataViewer.vue";
@@ -162,7 +162,6 @@ const DataViewer = () => import("@/components/DataViewer.vue");
 import {str, arr, validatingParse, Json, TsType} from 'ts-json-validator';
 import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiCloseCircle, mdiClose} from "@mdi/js";
 
-import 'filepond/dist/filepond.min.css';
 import {keys} from "../local-storage-keys";
 import {supportsSwDownload} from "@/sw-download";
 import {globalStore} from "@/vue-global";
@@ -446,6 +445,7 @@ export default class PipingUI extends Vue {
       return;
     }
 
+    const urlJoin = await urlJoinAsync();
     const downloadUrl = urlJoin(this.serverUrl, encodeURI(this.secretPath));
 
     // If supporting stream-download via Service Worker
@@ -517,4 +517,6 @@ export default class PipingUI extends Vue {
     window.localStorage.setItem(keys.secretPathHistory, JSON.stringify(this.secretPathHistory));
   }
 }
+
+import 'filepond/dist/filepond.min.css';
 </script>
