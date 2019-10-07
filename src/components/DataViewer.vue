@@ -112,6 +112,7 @@ import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle} from
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import * as utils from '@/utils';
+import {AsyncComputed} from "@/AsyncComputed";
 
 export type DataViewerProps = {
   viewNo: number,
@@ -202,7 +203,8 @@ export default class DataViewer extends Vue {
     return urlJoin(this.props.serverUrl, this.props.secretPath);
   }
 
-  private get linkifiedText(): string {
+  @AsyncComputed()
+  private async linkifiedText(): Promise<string> {
     return utils.sanitizeHtmlAllowingATag(linkifyHtml(this.text, {
       defaultProtocol: 'https'
     }));

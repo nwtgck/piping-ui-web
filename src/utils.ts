@@ -1,5 +1,5 @@
 const JSZipAsync = () => import('jszip').then(p => p.default);
-import sanitizeHtml from "sanitize-html";
+const sanitizeHtmlAsync  = () => import("sanitize-html").then(p => p.default);
 
 export function readableBytesString(bytes: number, fractionDigits: number): string {
   const units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
@@ -71,7 +71,8 @@ export function isText(array: Uint8Array): boolean {
 }
 
 // Sanitize html, allowing <a> tag
-export function sanitizeHtmlAllowingATag(dirtyHtml: string): string {
+export async function sanitizeHtmlAllowingATag(dirtyHtml: string): Promise<string> {
+  const sanitizeHtml = await sanitizeHtmlAsync();
   return sanitizeHtml(dirtyHtml, {
     allowedTags: ['a'],
     allowedAttributes: {

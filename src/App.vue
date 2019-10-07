@@ -111,7 +111,6 @@ import {VERSION} from '@/version';
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import {mdiCached, mdiDotsVertical} from "@mdi/js";
-import {AsyncComputed} from "@/AsyncComputed";
 
 // Available languages
 type Language = 'en' | 'ja';
