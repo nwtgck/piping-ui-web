@@ -1,4 +1,4 @@
-import JSZip from "jszip";
+const JSZipAsync = () => import('jszip').then(p => p.default);
 import sanitizeHtml from "sanitize-html";
 
 export function readableBytesString(bytes: number, fractionDigits: number): string {
@@ -36,7 +36,8 @@ export function baseAndExt(name: string): {baseName: string, ext: string} {
   }
 }
 
-export function zipFilesAsBlob(files: File[]): Promise<Blob> {
+export async function zipFilesAsBlob(files: File[]): Promise<Blob> {
+  const JSZip = await JSZipAsync();
   const zip = JSZip();
   const directory = zip.folder('files');
   for (const file of files) {
