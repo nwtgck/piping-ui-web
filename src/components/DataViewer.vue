@@ -103,7 +103,7 @@
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import urlJoin from 'url-join';
 import linkifyHtml from 'linkifyjs/html';
-import * as FileSaver from 'file-saver';
+const FileSaverAsync = () => import('file-saver');
 import Clipboard from 'clipboard';
 import fileType from 'file-type';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
@@ -291,7 +291,8 @@ export default class DataViewer extends Vue {
     this.canceled = true;
   }
 
-  private save(): void {
+  private async save(): Promise<void> {
+    const FileSaver = await FileSaverAsync();
     FileSaver.saveAs(this.blob, this.props.secretPath);
   }
 }
