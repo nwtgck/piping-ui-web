@@ -18,6 +18,9 @@
   "author": "Ryo Ota <nwtgck@gmail.com> (https://github.com/nwtgck)",
   "license": "MIT",
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^1.2.25",
+    "@fortawesome/free-brands-svg-icons": "^5.11.2",
+    "@fortawesome/vue-fontawesome": "^0.1.7",
     "binconv": "github:nwtgck/binconv-npm#v0.1.0",
     "clipboard": "^2.0.4",
     "core-js": "^2.6.5",
@@ -38,8 +41,6 @@
     "vuetify": "^2.1.1"
   },
   "devDependencies": {
-    "@fortawesome/fontawesome": "^1.1.8",
-    "@fortawesome/fontawesome-free-brands": "^5.0.13",
     "@mdi/js": "^4.4.95",
     "@types/chai": "^4.2.3",
     "@types/clipboard": "^2.0.1",

@@ -42,7 +42,8 @@
                   <v-list-item-title>Piping UI</v-list-item-title>
                   <v-list-item-subtitle>{{ strings['version'] }}</v-list-item-subtitle>
                   <a href="https://github.com/nwtgck/piping-ui-web" target="_blank">
-                    <v-icon small style="margin-right: 0.3em;">fab fa-github</v-icon>{{ strings['view_on_github'] }}
+                    <font-awesome-icon :icon="['fab', 'github']" />
+                    {{ strings['view_on_github'] }}
                   </a>
                 </v-list-item-content>
               </v-list-item>

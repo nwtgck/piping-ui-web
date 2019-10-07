@@ -4,12 +4,16 @@ import '@/registerServiceWorker'
 import vuetify from '@/plugins/vuetify';
 // @ts-ignore
 import AsyncComputed from 'vue-async-computed';
-
-// (from: https://e-joint.jp/474/)
-import '@fortawesome/fontawesome';
-import '@fortawesome/fontawesome-free-brands';
 import {supportsSwDownload} from "@/sw-download";
 
+// (from: https://github.com/FortAwesome/vue-fontawesome/tree/700a86cb1a3726364de7137d0cbee2e00fcfd30d#usage)
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { faGithub } from '@fortawesome/free-brands-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+
+
+library.add(faGithub);
+Vue.component('font-awesome-icon', FontAwesomeIcon);
 Vue.config.productionTip = false;
 Vue.use(AsyncComputed);
 
