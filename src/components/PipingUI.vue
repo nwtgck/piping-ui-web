@@ -162,7 +162,6 @@ const DataViewer = () => import("@/components/DataViewer.vue");
 import {str, arr, validatingParse, Json, TsType} from 'ts-json-validator';
 import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiCloseCircle, mdiClose} from "@mdi/js";
 
-import 'filepond/dist/filepond.min.css';
 import {keys} from "../local-storage-keys";
 import {supportsSwDownload} from "@/sw-download";
 import {globalStore} from "@/vue-global";
@@ -518,4 +517,6 @@ export default class PipingUI extends Vue {
     window.localStorage.setItem(keys.secretPathHistory, JSON.stringify(this.secretPathHistory));
   }
 }
+
+import 'filepond/dist/filepond.min.css';
 </script>
