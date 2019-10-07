@@ -8,7 +8,7 @@
       <v-list-item two-line v-for="(lib, libName) in licenses" :key="libName">
         <v-list-item-content>
           <v-list-item-title>
-            <a :href="lib.repository" target="_blank">{{ libName.replace(/@.*?$/, '') }}</a>
+            <a :href="lib.repository" target="_blank">{{ removeLibVersion(libName) }}</a>
             ({{ lib.licenses }})
           </v-list-item-title>
           <v-list-item-subtitle>{{ lib.publisher }}</v-list-item-subtitle>
@@ -55,6 +55,15 @@ export default class Licenses extends Vue {
   // for language support
   private get strings() {
     return strings(globalStore.language);
+  }
+
+  private removeLibVersion(libName: string): string {
+    const idx = libName.lastIndexOf('@');
+    if (idx === -1) {
+      return libName;
+    } else {
+      return libName.substring(0, idx);
+    }
   }
 }
 </script>
