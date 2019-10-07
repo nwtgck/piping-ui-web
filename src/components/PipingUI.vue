@@ -154,7 +154,7 @@
 
 <script lang="ts">
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
-import urlJoin from 'url-join';
+const urlJoinAsync = () => import('url-join').then(p => p.default);
 import {DataUploaderProps} from '@/components/DataUploader.vue';
 const DataUploader = () => import('@/components/DataUploader.vue');
 import {DataViewerProps} from "@/components/DataViewer.vue";
@@ -446,6 +446,7 @@ export default class PipingUI extends Vue {
       return;
     }
 
+    const urlJoin = await urlJoinAsync();
     const downloadUrl = urlJoin(this.serverUrl, encodeURI(this.secretPath));
 
     // If supporting stream-download via Service Worker
