@@ -56,6 +56,8 @@ import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import {mdiCached, mdiDotsVertical} from "@mdi/js";
 const swDownloadAsync = () => import("@/sw-download");
+import enableDarkTheme from "@/enable-dark-theme";
+
 
 @Component({
   components: {
@@ -95,6 +97,9 @@ export default class App extends Vue {
         window.location.reload();
       }
     );
+
+    // Dark theme setting
+    this.$vuetify.theme.dark = enableDarkTheme();
   }
 
   // TODO: Remove any

@@ -64,6 +64,7 @@ import { Component, Vue, Watch, Prop, Emit } from 'vue-property-decorator';
 import {globalStore} from "@/vue-global";
 import {keys} from "@/local-storage-keys";
 import {strings} from "@/strings";
+import enableDarkTheme from "@/enable-dark-theme";
 
 
 // Available languages
@@ -111,14 +112,7 @@ export default class MenuContent extends Vue {
   }
 
   mounted () {
-    // Load environmental dark theme setting
-    this.enableDarkTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-    // Load dark theme setting
-    const darkThemeStr = window.localStorage.getItem(keys.darkTheme);
-    if (darkThemeStr !== null) {
-      this.enableDarkTheme = darkThemeStr === "true";
-    }
+    this.enableDarkTheme = enableDarkTheme();
 
     // Load server url recording setting
     const recordsServerUrlHistory = window.localStorage.getItem((keys.recordsServerUrlHistory));
