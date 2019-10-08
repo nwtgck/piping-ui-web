@@ -169,6 +169,8 @@ import {strings} from "@/strings";
 import {File as FilePondFile} from "filepond";
 import {baseAndExt} from "@/utils";
 
+(async () => require('filepond/dist/filepond.min.css'))();
+
 // Create component
 const FilePond = () => import('vue-filepond').then(vueFilePond => vueFilePond.default());
 
@@ -518,5 +520,4 @@ export default class PipingUI extends Vue {
   }
 }
 
-import 'filepond/dist/filepond.min.css';
 </script>
