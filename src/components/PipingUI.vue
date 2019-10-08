@@ -163,7 +163,7 @@ import {str, arr, validatingParse, Json, TsType} from 'ts-json-validator';
 import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiCloseCircle, mdiClose} from "@mdi/js";
 
 import {keys} from "../local-storage-keys";
-import {supportsSwDownload} from "@/sw-download";
+const swDownloadAsync = () => import("@/sw-download");
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import {File as FilePondFile} from "filepond";
@@ -450,8 +450,9 @@ export default class PipingUI extends Vue {
     const urlJoin = await urlJoinAsync();
     const downloadUrl = urlJoin(this.serverUrl, encodeURI(this.secretPath));
 
+    const swDownload = await swDownloadAsync();
     // If supporting stream-download via Service Worker
-    if (await supportsSwDownload) {
+    if (await swDownload.supportsSwDownload) {
       // Download via Service Worker
       const aTag = document.createElement('a');
       // NOTE: '/sw-download' can be received by Service Worker in src/sw.js

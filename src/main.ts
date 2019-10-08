@@ -4,7 +4,6 @@ import '@/registerServiceWorker'
 import vuetify from '@/plugins/vuetify';
 // @ts-ignore
 import AsyncComputed from 'vue-async-computed';
-import {supportsSwDownload} from "@/sw-download";
 
 // (from: https://github.com/FortAwesome/vue-fontawesome/tree/700a86cb1a3726364de7137d0cbee2e00fcfd30d#usage)
 import { library } from '@fortawesome/fontawesome-svg-core'
@@ -22,6 +21,3 @@ new Vue({
   render: h => h(App)
 }).$mount('#app');
 
-(async () => {
-  console.log('Support streaming download:', await supportsSwDownload);
-})();

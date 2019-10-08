@@ -55,6 +55,7 @@ import {VERSION} from '@/version';
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import {mdiCached, mdiDotsVertical} from "@mdi/js";
+const swDownloadAsync = () => import("@/sw-download");
 
 @Component({
   components: {
@@ -111,8 +112,9 @@ export default class App extends Vue {
     this.pwa.registration.waiting.postMessage('skipWaiting');
   }
 
-  mounted () {
-
+  async mounted () {
+    const swDownload = await swDownloadAsync();
+    console.log('Support streaming download:', await swDownload.supportsSwDownload);
   }
 }
 </script>
