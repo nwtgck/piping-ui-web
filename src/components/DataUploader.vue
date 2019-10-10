@@ -6,7 +6,7 @@
       {{ progressPercentage && progressPercentage.toFixed(2) }} %
       <template v-slot:actions>
         <v-icon :color="headerIconColor" style="margin-left: 0.3em">
-          {{ headerIcon}}
+          {{ headerIcon }}
         </v-icon>
       </template>
     </v-expansion-panel-header>
@@ -49,16 +49,15 @@
                outlined
                class="ma-2 justify-end"
                @click="cancelUpload()">
-          <v-icon >cancel</v-icon>
+          <v-icon >{{ icons.mdiCloseCircle }}</v-icon>
           {{ strings['cancel'] }}
         </v-btn>
       </div>
 
       <v-alert type="error"
                outlined
-               :value="errorMessage() !== ''">
-        {{ errorMessage() }}
-      </v-alert>
+               v-html="errorMessage"
+               :value="hasError" />
 
     </v-expansion-panel-content>
   </v-expansion-panel>
@@ -71,6 +70,8 @@ import urlJoin from 'url-join';
 import * as utils from '@/utils';
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
+import {mdiAlert, mdiCheck, mdiCloseCircle, mdiChevronDown} from "@mdi/js";
+import {AsyncComputed} from "@/AsyncComputed";
 
 export type DataUploaderProps = {
   uploadNo: number,
@@ -93,10 +94,20 @@ export default class DataUploader extends Vue {
   private readableBytesString = utils.readableBytesString;
 
   // NOTE: Function makes dynamic language-switch support possible
-  private errorMessage: () => string = () => "";
+  //       Delegation is to reassign this value
+  private errorMessageDelegate: () => string | Promise<string> =
+    () => "";
+  @AsyncComputed()
+  async errorMessage(): Promise<string> {
+    return this.errorMessageDelegate();
+  }
   private xhr: XMLHttpRequest;
   private canceled: boolean = false;
   private isCompressing: boolean = false;
+
+  private icons = {
+    mdiCloseCircle,
+  };
 
   private get progressPercentage(): number | null {
     if (this.progressSetting.totalBytes === undefined) {
@@ -116,19 +127,20 @@ export default class DataUploader extends Vue {
     return urlJoin(this.props.serverUrl, this.props.secretPath);
   }
 
-  private get hasError(): boolean {
-    return this.errorMessage() !== "";
+  @AsyncComputed()
+  private async hasError(): Promise<boolean> {
+    return await this.errorMessageDelegate() !== "";
   }
 
   private get headerIcon(): string {
     if (this.hasError) {
-      return "mdi-alert";
+      return mdiAlert;
     } else if (this.canceled) {
-      return "cancel";
+      return mdiCloseCircle;
     } else if (this.isDoneUpload) {
-      return "mdi-check";
+      return mdiCheck;
     } else {
-      return "keyboard_arrow_down";
+      return mdiChevronDown;
     }
   }
 
@@ -197,17 +209,17 @@ export default class DataUploader extends Vue {
     };
     this.xhr.onload = () => {
       if (this.xhr.status !== 200) {
-        this.errorMessage = () => this.strings['xhr_status_error']({
+        this.errorMessageDelegate = () => this.strings['xhr_status_error']({
           status: this.xhr.status,
           response: this.xhr.responseText
         });
       }
     };
     this.xhr.onerror = (ev) => {
-      this.errorMessage = () => this.strings['data_uploader_xhr_onerror']({serverUrl: this.props.serverUrl});
+      this.errorMessageDelegate = () => this.strings['data_uploader_xhr_onerror']({serverUrl: this.props.serverUrl});
     };
     this.xhr.upload.onerror = () => {
-      this.errorMessage = () => this.strings['data_uploader_xhr_upload_onerror'];
+      this.errorMessageDelegate = () => this.strings['data_uploader_xhr_upload_onerror'];
     };
     this.xhr.send(body);
     // Initialize progress bar

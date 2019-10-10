@@ -7,11 +7,11 @@
           <v-btn-toggle v-model="sendOrGet" mandatory>
             <v-btn text value="send">
               {{ strings['send'] }}
-              <v-icon right dark>file_upload</v-icon>
+              <v-icon right dark>{{ icons.mdiUpload }}</v-icon>
             </v-btn>
             <v-btn text value="get">
               {{ strings['get'] }}
-              <v-icon right dark>file_download</v-icon>
+              <v-icon right dark>{{ icons.mdiDownload }}</v-icon>
             </v-btn>
           </v-btn-toggle>
         </div>
@@ -30,6 +30,8 @@
           <v-textarea v-if="isTextMode"
                       :label="strings['text_placeholder']"
                       v-model="inputText"
+                      clearable
+                      :clear-icon="icons.mdiCloseCircle"
                       outlined
           ></v-textarea>
         </div>
@@ -49,7 +51,7 @@
               <v-btn icon
                      @click.stop.prevent="deleteServerUrl(item)"
               >
-                <v-icon>mdi-delete</v-icon>
+                <v-icon>{{ icons.mdiDelete }}</v-icon>
               </v-btn>
             </v-list-item-action>
           </template>
@@ -68,7 +70,7 @@
               <v-btn icon
                      @click.stop.prevent="deleteSecretPath(item)"
               >
-                <v-icon>mdi-delete</v-icon>
+                <v-icon>{{ icons.mdiDelete }}</v-icon>
               </v-btn>
             </v-list-item-action>
           </template>
@@ -76,15 +78,16 @@
 
         <!-- Secret path suggestion  -->
         <div v-if="sendOrGet === 'send' && suggestedSecretPaths.length !== 0" style="text-align: right; margin-bottom: 1.5em;">
-          <v-btn v-for="suggestedSecretPath in suggestedSecretPaths"
-                 :key="suggestedSecretPath"
-                 color="blue"
-                 @click="secretPath = suggestedSecretPath"
-                 outlined
-                 class="ma-2"
-                 style="text-transform: none;">
+          <v-chip v-for="suggestedSecretPath in suggestedSecretPaths"
+                  :key="suggestedSecretPath"
+                  @click="secretPath = suggestedSecretPath"
+                  class="ma-1"
+                  label
+                  outlined
+                  style="font-size: 1em;"
+          >
             {{ suggestedSecretPath }}
-          </v-btn>
+          </v-chip>
         </div>
 
         <v-btn v-if="sendOrGet === 'send'"
@@ -92,7 +95,7 @@
                v-on:click="send()"
                block>
           {{ strings['send'] }}
-          <v-icon right dark>file_upload</v-icon>
+          <v-icon right dark>{{ icons.mdiUpload }}</v-icon>
         </v-btn>
         <v-layout v-if="sendOrGet === 'get'">
           <v-flex xs6>
@@ -101,7 +104,7 @@
                    @click="view()"
                    block>
               {{ strings['view'] }}
-              <v-icon right dark>mdi-file-find</v-icon>
+              <v-icon right dark>{{ icons.mdiFileFind }}</v-icon>
             </v-btn>
           </v-flex>
           <v-flex xs6>
@@ -110,7 +113,7 @@
                    dark
                    block>
               {{ strings['download'] }}
-              <v-icon right dark>file_download</v-icon>
+              <v-icon right dark>{{ icons.mdiDownload }}</v-icon>
             </v-btn>
           </v-flex>
         </v-layout>
@@ -143,7 +146,7 @@
       {{ snackbarMessage }}
       <v-btn text
              @click="showsSnackbar = false">
-        <v-icon>close</v-icon>
+        <v-icon>{{ icons.mdiClose }}</v-icon>
       </v-btn>
     </v-snackbar>
   </v-layout>
@@ -151,23 +154,25 @@
 
 <script lang="ts">
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
-import urlJoin from 'url-join';
-import DataUploader, { DataUploaderProps } from '@/components/DataUploader.vue';
-import DataViewer, {DataViewerProps} from "@/components/DataViewer.vue";
+const urlJoinAsync = () => import('url-join').then(p => p.default);
+import {DataUploaderProps} from '@/components/DataUploader.vue';
+const DataUploader = () => import('@/components/DataUploader.vue');
+import {DataViewerProps} from "@/components/DataViewer.vue";
+const DataViewer = () => import("@/components/DataViewer.vue");
 import {str, arr, validatingParse, Json, TsType} from 'ts-json-validator';
+import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiCloseCircle, mdiClose} from "@mdi/js";
 
-import vueFilePond from 'vue-filepond';
-import 'filepond/dist/filepond.min.css';
 import {keys} from "../local-storage-keys";
-import {supportsSwDownload} from "@/sw-download";
+const swDownloadAsync = () => import("@/sw-download");
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
-import * as filepond from "filepond";
+import {File as FilePondFile} from "filepond";
 import {baseAndExt} from "@/utils";
 
-// Create component
-const FilePond = vueFilePond();
+(async () => require('filepond/dist/filepond.min.css'))();
 
+// Create component
+const FilePond = () => import('vue-filepond').then(vueFilePond => vueFilePond.default());
 
 const defaultServerUrls: ReadonlyArray<string> = [
   "https://ppng.ml",
@@ -202,7 +207,7 @@ function randomStr(len: number, chars: ReadonlyArray<string>){
   components: {
     DataUploader,
     DataViewer,
-    FilePond
+    FilePond,
   },
 })
 export default class PipingUI extends Vue {
@@ -212,7 +217,7 @@ export default class PipingUI extends Vue {
   private secretPath: string = "";
   private isTextMode: boolean = false;
   private inputText: string = '';
-  private files: filepond.File[] = [];
+  private files: FilePondFile[] = [];
   private serverUrlHistory: string[] = [];
   private secretPathHistory: string[] = [];
 
@@ -242,6 +247,15 @@ export default class PipingUI extends Vue {
   private uploadExpandedPanelIds: number[] = [];
   // Indexes of expanded expansion-panel for view
   private viewExpandedPanelIds: number[] = [];
+
+  private icons = {
+    mdiUpload,
+    mdiDownload,
+    mdiDelete,
+    mdiFileFind,
+    mdiCloseCircle,
+    mdiClose,
+  };
 
   // for language support
   private get strings() {
@@ -300,7 +314,7 @@ export default class PipingUI extends Vue {
         //       Not show suggested secret path on initial status
         return [];
       } else if (this.isTextMode) {
-        return this.randomStrs.map(s => `${s}.txt`);
+        return [...this.randomStrs.map(s => `${s}.txt`), ...this.randomStrs];
       } else if (this.files.length === 1) {
         const fileName = this.files[0].filename;
         const {ext} = baseAndExt(fileName);
@@ -433,10 +447,12 @@ export default class PipingUI extends Vue {
       return;
     }
 
+    const urlJoin = await urlJoinAsync();
     const downloadUrl = urlJoin(this.serverUrl, encodeURI(this.secretPath));
 
+    const swDownload = await swDownloadAsync();
     // If supporting stream-download via Service Worker
-    if (await supportsSwDownload) {
+    if (await swDownload.supportsSwDownload) {
       // Download via Service Worker
       const aTag = document.createElement('a');
       // NOTE: '/sw-download' can be received by Service Worker in src/sw.js
@@ -504,4 +520,5 @@ export default class PipingUI extends Vue {
     window.localStorage.setItem(keys.secretPathHistory, JSON.stringify(this.secretPathHistory));
   }
 }
+
 </script>

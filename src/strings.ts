@@ -1,5 +1,6 @@
-import urlJoin from 'url-join';
+const urlJoinAsync = () => import('url-join').then(p => p.default);
 import {VERSION} from "@/version";
+const utilsAsync = () => import('@/utils');
 
 export function strings(language: string): typeof defaultStr {
   if(language.startsWith("en")) {
@@ -34,8 +35,11 @@ const en = {
   upload: 'Upload',
   upload_url: 'Upload URL',
   compressing: 'Compressing...',
-  data_uploader_xhr_onerror: (p: {serverUrl: string}) => {
-    return `An error occurred. The server might be < 0.9.4. Please check ${urlJoin(p.serverUrl, "/version")}`;
+  data_uploader_xhr_onerror: async (p: {serverUrl: string}) => {
+    const utils = await utilsAsync();
+    const urlJoin = await urlJoinAsync();
+    const versionUrl = urlJoin(p.serverUrl, "/version");
+    return utils.sanitizeHtmlAllowingATag(`An error occurred. The server might be < 0.9.4. Please check <a href="${versionUrl}" target="_blank">${versionUrl}</a>`);
   },
   data_uploader_xhr_upload_onerror: 'An error occurred while uploading',
   cancel: 'Cancel',
@@ -75,8 +79,11 @@ const ja: typeof defaultStr = {
   upload: 'アップロード',
   upload_url: 'アップロードURL',
   compressing: '圧縮中...',
-  data_uploader_xhr_onerror: (p: {serverUrl: string}) => {
-    return `エラーが発生しました。サーバーが0.9.4より低い可能性があります。 ${urlJoin(p.serverUrl, "/version")}でバージョンの確認できます。`;
+  data_uploader_xhr_onerror: async (p: {serverUrl: string}) => {
+    const utils = await utilsAsync();
+    const urlJoin = await urlJoinAsync();
+    const versionUrl = urlJoin(p.serverUrl, "/version");
+    return utils.sanitizeHtmlAllowingATag(`エラーが発生しました。サーバーが0.9.4より低い可能性があります。 <a href="${versionUrl}" target="_blank">${versionUrl}</a> でバージョンの確認できます。`);
   },
   data_uploader_xhr_upload_onerror: 'アップロード中にエラが発生しました',
   cancel: 'キャンセル',

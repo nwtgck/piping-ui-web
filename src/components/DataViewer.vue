@@ -73,7 +73,7 @@
                outlined
                class="ma-2 justify-end"
                @click="cancelDownload()">
-          <v-icon >cancel</v-icon>
+          <v-icon >{{ icons.mdiCloseCircle }}</v-icon>
           {{ strings['cancel'] }}
         </v-btn>
       </div>
@@ -84,7 +84,7 @@
              block
              @click="save()"
              style="margin-top: 1em;">
-        <v-icon >save</v-icon>
+        <v-icon >{{ icons.mdiContentSave }}</v-icon>
         {{ strings['save'] }}
       </v-btn>
 
@@ -102,13 +102,17 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import urlJoin from 'url-join';
-import * as utils from '@/utils';
 import linkifyHtml from 'linkifyjs/html';
+const FileSaverAsync = () => import('file-saver');
 import Clipboard from 'clipboard';
-import * as FileSaver from 'file-saver';
+import fileType from 'file-type';
+import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
+import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle} from "@mdi/js";
+
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
-import {readBlobAsText} from "@/utils";
+import * as utils from '@/utils';
+import {AsyncComputed} from "@/AsyncComputed";
 
 export type DataViewerProps = {
   viewNo: number,
@@ -141,6 +145,11 @@ export default class DataViewer extends Vue {
 
   private showsCopied: boolean = false;
 
+  private icons = {
+    mdiContentSave,
+    mdiCloseCircle,
+  };
+
   // for language support
   private get strings() {
     return strings(globalStore.language);
@@ -164,13 +173,13 @@ export default class DataViewer extends Vue {
 
   private get headerIcon(): string {
     if (this.hasError) {
-      return "mdi-alert";
+      return mdiAlert;
     } else if (this.canceled) {
-      return "cancel";
+      return mdiCloseCircle;
     } else if (this.isDoneDownload) {
-      return "mdi-check";
+      return mdiCheck;
     } else {
-      return "keyboard_arrow_down";
+      return mdiChevronDown;
     }
   }
 
@@ -194,10 +203,11 @@ export default class DataViewer extends Vue {
     return urlJoin(this.props.serverUrl, this.props.secretPath);
   }
 
-  private get linkifiedText(): string {
-    return linkifyHtml(this.text, {
+  @AsyncComputed()
+  private async linkifiedText(): Promise<string> {
+    return utils.sanitizeHtmlAllowingATag(linkifyHtml(this.text, {
       defaultProtocol: 'https'
-    });
+    }));
   }
 
   constructor() {
@@ -240,7 +250,7 @@ export default class DataViewer extends Vue {
         // View blob if possible
         this.viewBlob();
       } else {
-        const responseText = await readBlobAsText(this.xhr.response);
+        const responseText = await utils.readBlobAsText(this.xhr.response);
         this.errorMessage = () => this.strings['xhr_status_error']({
           status: this.xhr.status,
           response: responseText,
@@ -254,15 +264,28 @@ export default class DataViewer extends Vue {
   }
 
   private async viewBlob() {
-    const blobUrl = URL.createObjectURL(this.blob);
-    if (this.blob.type.startsWith("image/")) {
-      this.imgSrc = blobUrl;
-    } else if (this.blob.type.startsWith("video/")) {
-      this.videoSrc = blobUrl;
-    } else if (this.blob.type.startsWith("text/")) {
-      // Get text
-      this.text = await readBlobAsText(this.blob);
+    // Get first bytes from blob
+    const firstChunk: Uint8Array = await blobToUint8Array(this.blob.slice(0, fileType.minimumBytes));
+    // If body is text
+    if (utils.isText(firstChunk)) {
+      // Set text
+      this.text = await utils.readBlobAsText(this.blob);
+    } else {
+      // Detect type of blob
+      const fileTypeResult = fileType(firstChunk);
+      if (fileTypeResult !== undefined) {
+        const blobUrl = URL.createObjectURL(this.blob);
+        if (fileTypeResult.mime.startsWith("image/")) {
+          this.imgSrc = blobUrl;
+        } else if (fileTypeResult.mime.startsWith("video/")) {
+          this.videoSrc = blobUrl;
+        } else if (fileTypeResult.mime.startsWith("text/")) {
+          // Set text
+          this.text = await utils.readBlobAsText(this.blob);
+        }
+      }
     }
+
   }
 
   private cancelDownload(): void {
@@ -270,7 +293,8 @@ export default class DataViewer extends Vue {
     this.canceled = true;
   }
 
-  private save(): void {
+  private async save(): Promise<void> {
+    const FileSaver = await FileSaverAsync();
     FileSaver.saveAs(this.blob, this.props.secretPath);
   }
 }

@@ -1,4 +1,5 @@
-import JSZip from "jszip";
+const JSZipAsync = () => import('jszip').then(p => p.default);
+const sanitizeHtmlAsync  = () => import("sanitize-html").then(p => p.default);
 
 export function readableBytesString(bytes: number, fractionDigits: number): string {
   const units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
@@ -35,7 +36,8 @@ export function baseAndExt(name: string): {baseName: string, ext: string} {
   }
 }
 
-export function zipFilesAsBlob(files: File[]): Promise<Blob> {
+export async function zipFilesAsBlob(files: File[]): Promise<Blob> {
+  const JSZip = await JSZipAsync();
   const zip = JSZip();
   const directory = zip.folder('files');
   for (const file of files) {
@@ -53,4 +55,28 @@ export function zipFilesAsBlob(files: File[]): Promise<Blob> {
     directory.file(name, file);
   }
   return directory.generateAsync({type : "blob"});
+}
+
+function* range(start: number, end: number): Generator<number> {
+  for(let i = start; i <= end; i++) {
+    yield i;
+  }
+}
+
+// Whether text or not. Besed on file (1) behavior
+// (from: https://stackoverflow.com/a/7392391/2885946)
+export function isText(array: Uint8Array): boolean {
+  const textChars: ReadonlyArray<number> = [7, 8, 9, 10, 12, 13, 27, ...range(0x20, 0xff)];
+  return array.every(e => textChars.includes(e));
+}
+
+// Sanitize html, allowing <a> tag
+export async function sanitizeHtmlAllowingATag(dirtyHtml: string): Promise<string> {
+  const sanitizeHtml = await sanitizeHtmlAsync();
+  return sanitizeHtml(dirtyHtml, {
+    allowedTags: ['a'],
+    allowedAttributes: {
+      'a': ['href', 'target']
+    }
+  });
 }
