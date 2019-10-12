@@ -38,6 +38,7 @@ const en = {
   upload: 'Upload',
   upload_url: 'Upload URL',
   compressing: 'Compressing...',
+  encrypting: 'Encrypting...',
   data_uploader_xhr_onerror: async (p: {serverUrl: string}) => {
     const utils = await utilsAsync();
     const urlJoin = await urlJoinAsync();
@@ -89,6 +90,7 @@ const ja: typeof defaultStr = {
   upload: 'アップロード',
   upload_url: 'アップロードURL',
   compressing: '圧縮中...',
+  encrypting: '暗号化中...',
   data_uploader_xhr_onerror: async (p: {serverUrl: string}) => {
     const utils = await utilsAsync();
     const urlJoin = await urlJoinAsync();

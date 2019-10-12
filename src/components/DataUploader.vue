@@ -20,7 +20,15 @@
         <v-progress-linear indeterminate />
       </div>
 
-      <div v-show="!isCompressing">
+      <div v-show="isEncrypting">
+        <div style="text-align: center">
+          {{ strings['encrypting'] }}
+        </div>
+        <!-- Encryption progress bar -->
+        <v-progress-linear indeterminate />
+      </div>
+
+      <div v-show="!isCompressing && !isEncrypting">
         <!-- loaded of total -->
         <v-tooltip bottom>
           <template v-slot:activator="{ on }">
@@ -109,6 +117,7 @@ export default class DataUploader extends Vue {
   private xhr: XMLHttpRequest;
   private canceled: boolean = false;
   private isCompressing: boolean = false;
+  private isEncrypting: boolean = false;
 
   private icons = {
     mdiCloseCircle,
@@ -203,12 +212,14 @@ export default class DataUploader extends Vue {
         // Return as plain
         return {body: plainBody, bodyLength: plainBody.size};
       } else {
+        this.isEncrypting = true;
         // Convert plain body blob to Uint8Array
         const plainBodyArray: Uint8Array = await blobToUint8Array(plainBody);
         // Get encrypted
         // NOTE: In the future, ReadableStream can be uploaded.
         // (see: https://github.com/whatwg/fetch/pull/425#issuecomment-518899855)
         const encrypted: Uint8Array = await utils.encrypt(plainBodyArray, password);
+        this.isEncrypting = false;
         return {body: encrypted, bodyLength: encrypted.byteLength};
       }
     })();
