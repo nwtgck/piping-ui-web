@@ -67,8 +67,7 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import urlJoin from 'url-join';
-import {blobToReadableStream} from 'binconv/dist/src/blobToReadableStream';
-import {readableStreamToUint8Array} from 'binconv/dist/src/readableStreamToUint8Array';
+import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
 
 import * as utils from '@/utils';
 import {globalStore} from "@/vue-global";
@@ -204,14 +203,12 @@ export default class DataUploader extends Vue {
         // Return as plain
         return {body: plainBody, bodyLength: plainBody.size};
       } else {
-        // Convert plain body blob to ReadableStream
-        const plainBodyStream: ReadableStream<Uint8Array> = await blobToReadableStream(plainBody);
-        // Get encrypted stream
-        const encryptedStream = await utils.encrypt(plainBodyStream, password);
-        // Convert ReadableStream to Uint8Array
+        // Convert plain body blob to Uint8Array
+        const plainBodyArray: Uint8Array = await blobToUint8Array(plainBody);
+        // Get encrypted
         // NOTE: In the future, ReadableStream can be uploaded.
         // (see: https://github.com/whatwg/fetch/pull/425#issuecomment-518899855)
-        const encrypted: Uint8Array = await readableStreamToUint8Array(encryptedStream);
+        const encrypted: Uint8Array = await utils.encrypt(plainBodyArray, password);
         return {body: encrypted, bodyLength: encrypted.byteLength};
       }
     })();
