@@ -179,8 +179,7 @@ import {DataViewerProps} from "@/components/DataViewer.vue";
 const DataViewer = () => import("@/components/DataViewer.vue");
 import {str, arr, validatingParse, Json, TsType} from 'ts-json-validator';
 const FileSaverAsync = () => import('file-saver');
-import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
-import {uint8ArrayToBlob} from 'binconv/dist/src/uint8ArrayToBlob';
+const binconvAsync = () => import('binconv');
 import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiCloseCircle, mdiClose, mdiEye, mdiEyeOff} from "@mdi/js";
 
 import {keys} from "../local-storage-keys";
@@ -509,16 +508,17 @@ export default class PipingUI extends Vue {
       aTag.target = "_blank";
       aTag.click();
     } else {
+      const binconv = await binconvAsync();
       // If password-protection is disabled
       if (this.enablePasswordProtection) {
         // Get response
         const res = await fetch(downloadUrl);
-        const resBody = await blobToUint8Array(await res.blob());
+        const resBody = await binconv.blobToUint8Array(await res.blob());
         // Decrypt the response body
         const plain = await (await utilsAsync()).decrypt(resBody, this.password);
         // Save
         const FileSaver = await FileSaverAsync();
-        FileSaver.saveAs(uint8ArrayToBlob(plain), this.secretPath);
+        FileSaver.saveAs(binconv.uint8ArrayToBlob(plain), this.secretPath);
       } else {
         // Download or show on browser sometimes
         const aTag = document.createElement('a');
