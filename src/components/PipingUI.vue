@@ -101,7 +101,7 @@
                         v-model="password"
                         :type="showsPassword ? 'text' : 'password'"
                         :label="strings['password']"
-                        :append-icon="showsPassword ? 'visibility' : 'visibility_off'"
+                        :append-icon="showsPassword ? icons.mdiEye : icons.mdiEyeOff"
                         @click:append="showsPassword = !showsPassword"
                         single-line
                         outlined
@@ -181,8 +181,7 @@ import {str, arr, validatingParse, Json, TsType} from 'ts-json-validator';
 import * as FileSaver from 'file-saver';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
 import {uint8ArrayToBlob} from 'binconv/dist/src/uint8ArrayToBlob';
-import * as openpgp from 'openpgp';
-import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiCloseCircle, mdiClose} from "@mdi/js";
+import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiCloseCircle, mdiClose, mdiEye, mdiEyeOff} from "@mdi/js";
 
 import {keys} from "../local-storage-keys";
 const swDownloadAsync = () => import("@/sw-download");
@@ -281,6 +280,8 @@ export default class PipingUI extends Vue {
     mdiFileFind,
     mdiCloseCircle,
     mdiClose,
+    mdiEye,
+    mdiEyeOff,
   };
 
   // for language support

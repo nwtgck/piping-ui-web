@@ -47,7 +47,7 @@
                         v-model="props.password"
                         :type="showsPassword ? 'text' : 'password'"
                         :label="strings['password']"
-                        :append-icon="showsPassword ? 'visibility' : 'visibility_off'"
+                        :append-icon="showsPassword ? icons.mdiEye : icons.mdiEyeOff"
                         @click:append="showsPassword = !showsPassword"
                         single-line
                         style="margin-left: 0.5em;"
@@ -57,7 +57,7 @@
           <v-btn color="primary"
                  text
                  @click="decryptIfNeedAndViewBlob()">
-            <v-icon >mdi-key</v-icon>
+            <v-icon >{{ icons.mdiKey }}</v-icon>
             {{ strings['unlock'] }}
           </v-btn>
         </div>
@@ -138,8 +138,7 @@ import Clipboard from 'clipboard';
 import fileType from 'file-type';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
 import {uint8ArrayToBlob} from 'binconv/dist/src/uint8ArrayToBlob';
-import * as openpgp from 'openpgp';
-import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle} from "@mdi/js";
+import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle, mdiEye, mdiEyeOff, mdiKey} from "@mdi/js";
 
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
@@ -185,6 +184,9 @@ export default class DataViewer extends Vue {
   private icons = {
     mdiContentSave,
     mdiCloseCircle,
+    mdiEye,
+    mdiEyeOff,
+    mdiKey,
   };
 
   // for language support
