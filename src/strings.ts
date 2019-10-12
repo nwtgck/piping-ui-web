@@ -52,6 +52,7 @@ const en = {
   password_might_be_wrong: 'The password might be wrong',
   reinput_password: 'Reinput password',
   unlock: 'Unlock',
+  view_raw: 'View raw',
   xhr_status_error: (p: {status: number, response: string}) => {
     return `Error (${p.status}): "${p.response}"`;
   },
@@ -102,6 +103,7 @@ const ja: typeof defaultStr = {
   password_might_be_wrong: 'パスワードが間違っている可能性があります',
   reinput_password: 'パスワードを再入力',
   unlock: '解除',
+  view_raw: '解除せずに見る',
   xhr_status_error: (p: {status: number, response: string}) => {
     return `エラー (${p.status}): "${p.response}"`;
   },

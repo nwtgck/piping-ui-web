@@ -60,6 +60,12 @@
             <v-icon >{{ icons.mdiKey }}</v-icon>
             {{ strings['unlock'] }}
           </v-btn>
+          <v-btn color="primary"
+                 text
+                 @click="viewRaw()">
+            <v-icon >{{ icons.mdiFeatureSearchOutline }}</v-icon>
+            {{ strings['view_raw'] }}
+          </v-btn>
         </div>
       </div>
 
@@ -138,7 +144,7 @@ import Clipboard from 'clipboard';
 import fileType from 'file-type';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
 import {uint8ArrayToBlob} from 'binconv/dist/src/uint8ArrayToBlob';
-import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle, mdiEye, mdiEyeOff, mdiKey} from "@mdi/js";
+import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle, mdiEye, mdiEyeOff, mdiKey, mdiFeatureSearchOutline} from "@mdi/js";
 
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
@@ -187,6 +193,7 @@ export default class DataViewer extends Vue {
     mdiEye,
     mdiEyeOff,
     mdiKey,
+    mdiFeatureSearchOutline,
   };
 
   // for language support
@@ -306,6 +313,12 @@ export default class DataViewer extends Vue {
   private async viewBlob() {
     // Get first bytes from blob
     const firstChunk: Uint8Array = await blobToUint8Array(this.blob.slice(0, fileType.minimumBytes));
+
+    // Reset viewers
+    this.imgSrc = '';
+    this.videoSrc = '';
+    this.text = '';
+
     // If body is text
     if (utils.isText(firstChunk)) {
       // Set text
@@ -350,6 +363,14 @@ export default class DataViewer extends Vue {
       }
     })();
 
+    // View blob if possible
+    this.viewBlob();
+  }
+
+  private viewRaw() {
+    this.blob = this.rawBlob;
+    this.enablePasswordReinput = false;
+    this.errorMessage = () => '';
     // View blob if possible
     this.viewBlob();
   }
