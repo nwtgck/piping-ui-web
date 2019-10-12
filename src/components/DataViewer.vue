@@ -26,6 +26,14 @@
       <v-progress-linear :value="progressPercentage"
                          :indeterminate="progressPercentage === null && !canceled && errorMessage() === ''" />
 
+      <div v-show="isDecrypting">
+        <div style="text-align: center">
+          {{ strings['decrypting'] }}
+        </div>
+        <!-- Decryption progress bar -->
+        <v-progress-linear indeterminate />
+      </div>
+
       <v-simple-table class="text-left">
         <tbody>
         <tr class="text-left">
@@ -186,6 +194,7 @@ export default class DataViewer extends Vue {
   private blob: Blob = new Blob();
 
   private showsCopied: boolean = false;
+  private isDecrypting: boolean = false;
 
   private icons = {
     mdiContentSave,
@@ -349,6 +358,7 @@ export default class DataViewer extends Vue {
         // Get response body
         const resBody = await blobToUint8Array(this.rawBlob);
         try {
+          this.isDecrypting = true;
           // Decrypt the response body
           const plain = await utils.decrypt(resBody, this.props.password);
           this.enablePasswordReinput = false;
@@ -359,6 +369,8 @@ export default class DataViewer extends Vue {
           this.errorMessage = () => this.strings['password_might_be_wrong'];
           console.log('Decrypt error:', err);
           return new Blob();
+        } finally {
+          this.isDecrypting = false;
         }
       }
     })();
