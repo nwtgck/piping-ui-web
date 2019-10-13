@@ -70,6 +70,9 @@ self.addEventListener('fetch', (event) => {
       // If password protection is enabled
       if (password !== '') {
         try {
+          // Allow unauthenticated stream
+          // (see: https://github.com/openpgpjs/openpgpjs/releases/tag/v4.0.0)
+          openpgp.config.allow_unauthenticated_stream = true;
           // Decrypt the response body
           const decrypted = await openpgp.decrypt({
             message: await openpgp.message.read(res.body),
