@@ -1,6 +1,12 @@
+import {memorizeFunc} from "@/memorize-func";
+
 const JSZipAsync = () => import('jszip').then(p => p.default);
 const sanitizeHtmlAsync  = () => import("sanitize-html").then(p => p.default);
-const openpgpAsync = () => import('openpgp');
+const openpgpAsync = memorizeFunc(async () => {
+  const openpgp = await import('openpgp');
+  await openpgp.initWorker({ path: 'openpgp/openpgp.worker.min.js' });
+  return openpgp;
+});
 
 export function readableBytesString(bytes: number, fractionDigits: number): string {
   const units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
