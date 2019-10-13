@@ -97,7 +97,9 @@ export default class App extends Vue {
         window.location.reload();
       }
     );
+  }
 
+  beforeMount() {
     // Dark theme setting
     this.$vuetify.theme.dark = enableDarkTheme();
   }
