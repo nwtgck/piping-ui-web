@@ -1,7 +1,6 @@
 const JSZipAsync = () => import('jszip').then(p => p.default);
 const sanitizeHtmlAsync  = () => import("sanitize-html").then(p => p.default);
 const openpgpAsync = () => import('openpgp');
-const binconvAsync = () => import('binconv');
 
 export function readableBytesString(bytes: number, fractionDigits: number): string {
   const units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
