@@ -90,14 +90,9 @@ export default class App extends Vue {
     document.addEventListener(
       'swUpdated', this.showRefreshUI, { once: true }
     );
-    navigator.serviceWorker.addEventListener(
-      'controllerchange', () => {
-        if (this.pwa.refreshing) return;
-        this.pwa.refreshing = true;
-        window.location.reload();
-      }
-    );
+  }
 
+  beforeMount() {
     // Dark theme setting
     this.$vuetify.theme.dark = enableDarkTheme();
   }
@@ -115,6 +110,14 @@ export default class App extends Vue {
       return;
     }
     this.pwa.registration.waiting.postMessage('skipWaiting');
+    navigator.serviceWorker.addEventListener(
+      'controllerchange', () => {
+        if (this.pwa.refreshing) return;
+        this.pwa.refreshing = true;
+        window.location.reload();
+      },
+      {once: true}
+    );
   }
 
   async mounted () {

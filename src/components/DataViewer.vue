@@ -50,7 +50,7 @@
 
       <!-- Text viewer -->
       <!-- NOTE: Don't use v-if because the inner uses "ref" and the ref is loaded in mounted()-->
-      <div v-show="text !== ''" style="text-align: center">
+      <div v-show="linkifiedText !== ''" style="text-align: center">
         <div style="text-align: right">
           <v-tooltip v-model="showsCopied" bottom>
             <template v-slot:activator="{ on }">
