@@ -55,7 +55,6 @@ import {VERSION} from '@/version';
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import {mdiCached, mdiDotsVertical} from "@mdi/js";
-const swDownloadAsync = () => import("@/sw-download");
 import enableDarkTheme from "@/enable-dark-theme";
 
 
@@ -118,11 +117,6 @@ export default class App extends Vue {
       },
       {once: true}
     );
-  }
-
-  async mounted () {
-    const swDownload = await swDownloadAsync();
-    console.log('Support streaming download:', await swDownload.supportsSwDownload);
   }
 }
 </script>
