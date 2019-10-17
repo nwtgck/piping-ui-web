@@ -52,7 +52,7 @@
     "@vue/cli-plugin-babel": "^3.12.0",
     "@vue/cli-plugin-eslint": "^3.12.0",
     "@vue/cli-plugin-pwa": "^3.12.0",
-    "@vue/cli-plugin-typescript": "^3.12.0",
+    "@vue/cli-plugin-typescript": "^4.0.2",
     "@vue/cli-plugin-unit-mocha": "^3.12.0",
     "@vue/cli-service": "^3.12.0",
     "@vue/eslint-config-typescript": "^4.0.0",
