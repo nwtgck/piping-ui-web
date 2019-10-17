@@ -98,7 +98,7 @@ export async function encrypt(bytes: Uint8Array, password: string): Promise<Uint
   });
   // Get encrypted
   const encrypted: Uint8Array =
-    encryptResult.message.packets.write();
+    encryptResult.message.packets.write() as Uint8Array;
   return encrypted;
 }
 
