@@ -100,6 +100,8 @@
 </template>
 
 <script lang="ts">
+/* eslint-disable no-console */
+
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import urlJoin from 'url-join';
 import linkifyHtml from 'linkifyjs/html';
