@@ -10,7 +10,7 @@ module.exports = {
       swSrc: './src/sw.js',
       swDest: 'service-worker.js',
       importWorkboxFrom: 'local',
-      exclude: ['_redirects'],
+      exclude: [/\.map$/, '_redirects'],
     },
   }
 };
