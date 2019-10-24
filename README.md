@@ -17,6 +17,7 @@ Web UI for [Piping Server](https://github.com/nwtgck/piping-server)
 - Multi-file sending with zip
 - Auto completes for server URLs and secret paths
 - Image/video preview
+- Password protection powered by [OpenPGP.js](https://github.com/openpgpjs/openpgpjs)
 
 ## Logo
 <div>Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
