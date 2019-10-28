@@ -1,5 +1,12 @@
+import {memorizeFunc} from "@/memorize-func";
+
 const JSZipAsync = () => import('jszip').then(p => p.default);
 const sanitizeHtmlAsync  = () => import("sanitize-html").then(p => p.default);
+const openpgpAsync = memorizeFunc(async () => {
+  const openpgp = await import('openpgp');
+  await openpgp.initWorker({ path: 'openpgp/openpgp.worker.min.js' });
+  return openpgp;
+});
 
 export function readableBytesString(bytes: number, fractionDigits: number): string {
   const units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
@@ -79,4 +86,28 @@ export async function sanitizeHtmlAllowingATag(dirtyHtml: string): Promise<strin
       'a': ['href', 'target']
     }
   });
+}
+
+export async function encrypt(bytes: Uint8Array, password: string): Promise<Uint8Array> {
+  const openpgp = await openpgpAsync();
+  // Encrypt with PGP
+  const encryptResult = await openpgp.encrypt({
+    message: openpgp.message.fromBinary(bytes),
+    passwords: [password],
+    armor: false
+  });
+  // Get encrypted
+  const encrypted: Uint8Array =
+    encryptResult.message.packets.write() as Uint8Array;
+  return encrypted;
+}
+
+export async function decrypt(bytes: Uint8Array, password: string): Promise<Uint8Array> {
+  const openpgp = await openpgpAsync();
+  const plain = (await openpgp.decrypt({
+    message: await openpgp.message.read(bytes),
+    passwords: [password],
+    format: 'binary'
+  })).data as Uint8Array;
+  return plain;
 }

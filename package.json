@@ -4,13 +4,14 @@
   "private": true,
   "author": "Ryo Ota <nwtgck@gmail.com> (https://github.com/nwtgck)",
   "scripts": {
-    "serve": "npm run generate-version && vue-cli-service serve",
-    "build": "npm run generate-version && vue-cli-service build",
-    "test:unit": "vue-cli-service test:unit",
+    "copy-openpgp": "copyfiles --flat node_modules/openpgp/dist/*.min.js public/openpgp",
+    "serve": "npm run generate-version && npm run copy-openpgp && vue-cli-service serve",
+    "real-serve": "watch-build-serve -i=dist -i=.idea -i=./node_modules -i=.git -i=src/version.ts -i src/licenses.json -i public/openpgp/openpgp.min.js -i public/openpgp/openpgp.worker.min.js",
+    "build": "npm run generate-version && npm run copy-openpgp && vue-cli-service build",
     "lint": "vue-cli-service lint",
+    "test:unit": "vue-cli-service test:unit",
     "generate-version": "cross-var echo \"export const VERSION = \\\"$npm_package_version\\\";\" > src/version.ts",
-    "postinstall": "license-checker --production --json > src/licenses.json",
-    "real-serve": "watch-build-serve -i=dist -i=.idea -i=./node_modules -i=.git -i=src/version.ts -i src/licenses.json"
+    "postinstall": "license-checker --production --json > src/licenses.json"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.25",
@@ -24,6 +25,7 @@
     "filepond": "^4.7.3",
     "jszip": "^3.2.2",
     "linkifyjs": "^2.1.8",
+    "openpgp": "^4.6.2",
     "register-service-worker": "^1.6.2",
     "sanitize-html": "^1.20.1",
     "ts-json-validator": "git+https://github.com/nwtgck/ts-json-validator.git#v0.1.2",
@@ -43,6 +45,7 @@
     "@types/jszip": "^3.1.6",
     "@types/mocha": "^5.2.7",
     "@types/sanitize-html": "^1.20.2",
+    "@types/openpgp": "^4.4.6",
     "@types/url-join": "^4.0.0",
     "@vue/cli-plugin-babel": "^4.0.5",
     "@vue/cli-plugin-eslint": "^4.0.5",
@@ -54,6 +57,7 @@
     "@vue/test-utils": "^1.0.0-beta.29",
     "babel-eslint": "^10.0.3",
     "chai": "^4.2.0",
+    "copyfiles": "^2.1.1",
     "cross-var": "^1.1.0",
     "eslint": "^5.16.0",
     "eslint-plugin-vue": "^5.2.3",

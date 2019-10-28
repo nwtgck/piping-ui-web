@@ -1,5 +1,7 @@
 // (from: https://medium.com/@dougallrich/give-users-control-over-app-updates-in-vue-cli-3-pwas-20453aedc1f2)
 
+importScripts('openpgp/openpgp.min.js');
+
 // This is the code piece that GenerateSW mode can't provide for us.
 // This code listens for the user's confirmation to update the app.
 self.addEventListener('message', (e) => {
@@ -31,8 +33,30 @@ self.addEventListener('fetch', (event) => {
       })
     ));
   } else if (url.pathname === '/sw-download') {
-    const targetUrl = url.searchParams.get('url');
-    let filename = url.searchParams.get('filename');
+    // Get download info
+    const downloadInfo = JSON.parse(decodeURIComponent(url.hash.substring(1)));
+    if (!("url" in downloadInfo)) {
+      console.error('downloadInfo.url is missing');
+      return;
+    }
+    if (!("filename" in downloadInfo)) {
+      console.error('downloadInfo.filename is missing');
+      return;
+    }
+    // NOTE: .password should always be required
+    //       .password === '' means non-password protection
+    if (!("password" in downloadInfo)) {
+      console.error('downloadInfo.password is missing');
+      return;
+    }
+    if (!("decryptErrorMessage" in downloadInfo)) {
+      console.error('downloadInfo.decryptErrorMessage is missing');
+      return;
+    }
+    const targetUrl = downloadInfo.url;
+    let filename = downloadInfo.filename;
+    const password = downloadInfo.password;
+    const decryptErrorMessage = downloadInfo.decryptErrorMessage;
 
     event.respondWith((async () => {
       const res = await fetch(targetUrl);
@@ -41,7 +65,31 @@ self.addEventListener('fetch', (event) => {
       // Make filename RFC5987 compatible
       filename = encodeURIComponent(filename).replace(/['()]/g, escape).replace(/\*/g, '%2A');
       headers.set('Content-Disposition', "attachment; filename*=UTF-8''" + filename);
-      const downloadableRes = new Response(res.body, {
+      // Plain ReadableStream
+      let plainStream = res.body;
+      // If password protection is enabled
+      if (password !== '') {
+        try {
+          // Allow unauthenticated stream
+          // (see: https://github.com/openpgpjs/openpgpjs/releases/tag/v4.0.0)
+          openpgp.config.allow_unauthenticated_stream = true;
+          // Decrypt the response body
+          const decrypted = await openpgp.decrypt({
+            message: await openpgp.message.read(res.body),
+            passwords: [password],
+            format: 'binary'
+          });
+          plainStream = decrypted.data;
+        } catch (err) {
+          // Show "Password might be wrong" message
+          // This message should be displayed in browser
+          return new Response(decryptErrorMessage, {
+            status: 400,
+          });
+        }
+      }
+
+      const downloadableRes = new Response(plainStream, {
         headers
       });
       return downloadableRes;

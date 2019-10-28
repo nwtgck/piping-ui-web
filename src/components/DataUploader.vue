@@ -20,7 +20,15 @@
         <v-progress-linear indeterminate />
       </div>
 
-      <div v-show="!isCompressing">
+      <div v-show="isEncrypting">
+        <div style="text-align: center">
+          {{ strings['encrypting'] }}
+        </div>
+        <!-- Encryption progress bar -->
+        <v-progress-linear indeterminate />
+      </div>
+
+      <div v-show="!isCompressing && !isEncrypting">
         <!-- loaded of total -->
         <v-tooltip bottom>
           <template v-slot:activator="{ on }">
@@ -67,17 +75,22 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import urlJoin from 'url-join';
+import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
+
 import * as utils from '@/utils';
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import {mdiAlert, mdiCheck, mdiCloseCircle, mdiChevronDown} from "@mdi/js";
 import {AsyncComputed} from "@/AsyncComputed";
 
+
 export type DataUploaderProps = {
   uploadNo: number,
   data: File[] | string,
   serverUrl: string,
-  secretPath: string
+  secretPath: string,
+  // NOTE: empty string means non-encryption
+  password: string,
 };
 
 // NOTE: Automatically upload when mounted
@@ -104,6 +117,7 @@ export default class DataUploader extends Vue {
   private xhr: XMLHttpRequest;
   private canceled: boolean = false;
   private isCompressing: boolean = false;
+  private isEncrypting: boolean = false;
 
   private icons = {
     mdiCloseCircle,
@@ -173,13 +187,13 @@ export default class DataUploader extends Vue {
   async mounted() {
     const data: File[] | string = this.props.data;
 
-    const {body, bodyLength} = await (async () => {
+    const plainBody: Blob = await (async () => {
       // Text
       if (typeof data === "string") {
-        return {body: data, bodyLength: data.length};
+        return new Blob([data]);
       // One file
       } else if (data.length === 1) {
-        return {body: data[0], bodyLength: data[0].size};
+        return data[0];
       // Multiple files
       } else {
         const files: File[] = data;
@@ -187,7 +201,26 @@ export default class DataUploader extends Vue {
         // Zip files
         const zipBlob: Blob = await utils.zipFilesAsBlob(files);
         this.isCompressing = false;
-        return {body: zipBlob, bodyLength: zipBlob.size};
+        return zipBlob;
+      }
+    })();
+
+    const {body, bodyLength} = await (async () => {
+      const password: string = this.props.password;
+      // If password protection is disabled
+      if (password === '') {
+        // Return as plain
+        return {body: plainBody, bodyLength: plainBody.size};
+      } else {
+        this.isEncrypting = true;
+        // Convert plain body blob to Uint8Array
+        const plainBodyArray: Uint8Array = await blobToUint8Array(plainBody);
+        // Get encrypted
+        // NOTE: In the future, ReadableStream can be uploaded.
+        // (see: https://github.com/whatwg/fetch/pull/425#issuecomment-518899855)
+        const encrypted: Uint8Array = await utils.encrypt(plainBodyArray, password);
+        this.isEncrypting = false;
+        return {body: encrypted, bodyLength: encrypted.byteLength};
       }
     })();
 
