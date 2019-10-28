@@ -90,6 +90,24 @@
           </v-chip>
         </div>
 
+        <v-layout>
+          <v-switch v-model="enablePasswordProtection"
+                    inset
+                    :label="strings['protect_with_password']"
+                    color="blue"
+                    style="padding-left: 0.5em;"/>
+
+          <v-text-field :style="{visibility: enablePasswordProtection ? 'visible' : 'hidden'}"
+                        v-model="password"
+                        :type="showsPassword ? 'text' : 'password'"
+                        :label="strings['password']"
+                        :append-icon="showsPassword ? icons.mdiEye : icons.mdiEyeOff"
+                        @click:append="showsPassword = !showsPassword"
+                        single-line
+                        outlined
+                        style="margin-left: 0.5em;" />
+        </v-layout>
+
         <v-btn v-if="sendOrGet === 'send'"
                color="primary"
                v-on:click="send()"
@@ -160,7 +178,9 @@ const DataUploader = () => import('@/components/DataUploader.vue');
 import {DataViewerProps} from "@/components/DataViewer.vue";
 const DataViewer = () => import("@/components/DataViewer.vue");
 import {str, arr, validatingParse, Json, TsType} from 'ts-json-validator';
-import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiCloseCircle, mdiClose} from "@mdi/js";
+const FileSaverAsync = () => import('file-saver');
+const binconvAsync = () => import('binconv');
+import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiCloseCircle, mdiClose, mdiEye, mdiEyeOff} from "@mdi/js";
 
 import {keys} from "../local-storage-keys";
 const swDownloadAsync = () => import("@/sw-download");
@@ -168,6 +188,7 @@ import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import {File as FilePondFile} from "filepond";
 import {baseAndExt} from "@/utils";
+const utilsAsync = () => import("@/utils");
 
 (async () => require('filepond/dist/filepond.min.css'))();
 
@@ -220,6 +241,9 @@ export default class PipingUI extends Vue {
   private files: FilePondFile[] = [];
   private serverUrlHistory: string[] = [];
   private secretPathHistory: string[] = [];
+  private enablePasswordProtection: boolean = false;
+  private password: string = '';
+  private showsPassword: boolean = false;
 
   // Random strings for suggested secret paths
   private randomStrs: [string] = [
@@ -255,6 +279,8 @@ export default class PipingUI extends Vue {
     mdiFileFind,
     mdiCloseCircle,
     mdiClose,
+    mdiEye,
+    mdiEyeOff,
   };
 
   // for language support
@@ -405,6 +431,13 @@ export default class PipingUI extends Vue {
       return;
     }
 
+    // If enabling password protection and password is empty
+    if (this.enablePasswordProtection && this.password === '') {
+      // Show error message
+      this.showSnackbar(this.strings['password_is_required']);
+      return;
+    }
+
     const body: File[] | string = this.isTextMode ? this.inputText : this.files.map(f => f.file);
 
     // Increment upload counter
@@ -415,6 +448,7 @@ export default class PipingUI extends Vue {
       data: body,
       serverUrl: this.serverUrl,
       secretPath: this.secretPath,
+      password: this.enablePasswordProtection ? this.password : '',
     });
     // Open by default
     this.uploadExpandedPanelIds.push(this.uploadCount-1);
@@ -448,24 +482,51 @@ export default class PipingUI extends Vue {
     }
 
     const urlJoin = await urlJoinAsync();
+    // If enabling password protection and password is empty
+    if (this.enablePasswordProtection && this.password === '') {
+      // Show error message
+      this.showSnackbar(this.strings['password_is_required']);
+      return;
+    }
     const downloadUrl = urlJoin(this.serverUrl, encodeURI(this.secretPath));
 
     const swDownload = await swDownloadAsync();
     // If supporting stream-download via Service Worker
     if (await swDownload.supportsSwDownload) {
+      // Create download info to tell to Service Worker
+      const downloadInfo = {
+        url: downloadUrl,
+        filename: this.secretPath,
+        password: this.enablePasswordProtection ? this.password : '',
+        decryptErrorMessage: this.strings['password_might_be_wrong'],
+      };
       // Download via Service Worker
       const aTag = document.createElement('a');
       // NOTE: '/sw-download' can be received by Service Worker in src/sw.js
-      aTag.href = `/sw-download?url=${encodeURIComponent(downloadUrl)}&filename=${encodeURIComponent(this.secretPath)}`;
+      // NOTE: URL fragment is passed to Service Worker but not passed to Web server
+      aTag.href = `/sw-download#${encodeURIComponent(JSON.stringify(downloadInfo))}`;
       aTag.target = "_blank";
       aTag.click();
     } else {
-      // Download or show on browser sometimes
-      const aTag = document.createElement('a');
-      aTag.href = downloadUrl;
-      aTag.target = "_blank";
-      aTag.download = this.secretPath;
-      aTag.click();
+      const binconv = await binconvAsync();
+      // If password-protection is disabled
+      if (this.enablePasswordProtection) {
+        // Get response
+        const res = await fetch(downloadUrl);
+        const resBody = await binconv.blobToUint8Array(await res.blob());
+        // Decrypt the response body
+        const plain = await (await utilsAsync()).decrypt(resBody, this.password);
+        // Save
+        const FileSaver = await FileSaverAsync();
+        FileSaver.saveAs(binconv.uint8ArrayToBlob(plain), this.secretPath);
+      } else {
+        // Download or show on browser sometimes
+        const aTag = document.createElement('a');
+        aTag.href = downloadUrl;
+        aTag.target = "_blank";
+        aTag.download = this.secretPath;
+        aTag.click();
+      }
     }
   }
 
@@ -479,11 +540,19 @@ export default class PipingUI extends Vue {
       return;
     }
 
+    // If enabling password protection and password is empty
+    if (this.enablePasswordProtection && this.password === '') {
+      // Show error message
+      this.showSnackbar(this.strings['password_is_required']);
+      return;
+    }
+
     this.viewCount++;
     this.dataViews.unshift({
       viewNo: this.viewCount,
       serverUrl: this.serverUrl,
-      secretPath: this.secretPath
+      secretPath: this.secretPath,
+      password: this.enablePasswordProtection ? this.password : '',
     });
     // Open by default
     this.viewExpandedPanelIds.push(this.viewCount-1);

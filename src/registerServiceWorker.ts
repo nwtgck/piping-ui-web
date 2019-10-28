@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 
-import { register } from 'register-service-worker'
+import { register } from 'register-service-worker';
+const swDownloadAsync = () => import("@/sw-download");
 
 if (process.env.NODE_ENV === 'production') {
   register(`${process.env.BASE_URL}service-worker.js`, {
@@ -10,8 +11,11 @@ if (process.env.NODE_ENV === 'production') {
         'For more details, visit https://goo.gl/AFskqB'
       )
     },
-    registered () {
-      console.log('Service worker has been registered.')
+    async registered () {
+      console.log('Service worker has been registered.');
+      // NOTE: Timing to load and evaluate supportsSwDownload is important because the support flag is cached.
+      const swDownload = await swDownloadAsync();
+      console.log('Support streaming download:', await swDownload.supportsSwDownload);
     },
     cached () {
       console.log('Content has been cached for offline use.')

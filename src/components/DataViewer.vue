@@ -26,6 +26,14 @@
       <v-progress-linear :value="progressPercentage"
                          :indeterminate="progressPercentage === null && !canceled && errorMessage() === ''" />
 
+      <div v-show="isDecrypting">
+        <div style="text-align: center">
+          {{ strings['decrypting'] }}
+        </div>
+        <!-- Decryption progress bar -->
+        <v-progress-linear indeterminate />
+      </div>
+
       <v-simple-table class="text-left">
         <tbody>
         <tr class="text-left">
@@ -34,6 +42,40 @@
         </tr>
         </tbody>
       </v-simple-table>
+
+      <div v-if="isDoneDownload">
+        <v-layout>
+          <v-switch v-model="enablePasswordReinput"
+                    inset
+                    :label="strings['reinput_password']"
+                    color="blue"
+                    style="padding-left: 0.5em;"/>
+
+          <v-text-field v-if="enablePasswordReinput"
+                        v-model="props.password"
+                        :type="showsPassword ? 'text' : 'password'"
+                        :label="strings['password']"
+                        :append-icon="showsPassword ? icons.mdiEye : icons.mdiEyeOff"
+                        @click:append="showsPassword = !showsPassword"
+                        single-line
+                        style="margin-left: 0.5em;"
+                        outlined/>
+        </v-layout>
+        <div v-if="enablePasswordReinput" style="text-align: right">
+          <v-btn color="primary"
+                 text
+                 @click="decryptIfNeedAndViewBlob()">
+            <v-icon >{{ icons.mdiKey }}</v-icon>
+            {{ strings['unlock'] }}
+          </v-btn>
+          <v-btn color="primary"
+                 text
+                 @click="viewRaw()">
+            <v-icon >{{ icons.mdiFeatureSearchOutline }}</v-icon>
+            {{ strings['view_raw'] }}
+          </v-btn>
+        </div>
+      </div>
 
       <!-- Image viewer -->
       <div v-show="imgSrc !== ''" style="text-align: center">
@@ -79,7 +121,7 @@
       </div>
 
       <!-- Save button -->
-      <v-btn v-if="isDoneDownload"
+      <v-btn v-if="isDoneDownload && !hasError"
              color="primary"
              block
              @click="save()"
@@ -90,7 +132,7 @@
 
       <v-alert type="error"
                outlined
-               :value="errorMessage() !== ''">
+               :value="hasError">
         {{ errorMessage() }}
       </v-alert>
 
@@ -100,6 +142,8 @@
 </template>
 
 <script lang="ts">
+/* eslint-disable no-console */
+
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import urlJoin from 'url-join';
 import linkifyHtml from 'linkifyjs/html';
@@ -107,7 +151,8 @@ const FileSaverAsync = () => import('file-saver');
 import Clipboard from 'clipboard';
 import fileType from 'file-type';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
-import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle} from "@mdi/js";
+import {uint8ArrayToBlob} from 'binconv/dist/src/uint8ArrayToBlob';
+import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle, mdiEye, mdiEyeOff, mdiKey, mdiFeatureSearchOutline} from "@mdi/js";
 
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
@@ -117,7 +162,9 @@ import {AsyncComputed} from "@/AsyncComputed";
 export type DataViewerProps = {
   viewNo: number,
   serverUrl: string,
-  secretPath: string
+  secretPath: string,
+  // NOTE: empty string means non-encryption
+  password: string,
 };
 
 // NOTE: Automatically download when mounted
@@ -140,14 +187,22 @@ export default class DataViewer extends Vue {
   private imgSrc: string = '';
   private videoSrc: string = '';
   private text: string = '';
+  private enablePasswordReinput: boolean = false;
+  private showsPassword: boolean = false;
 
+  private rawBlob: Blob = new Blob();
   private blob: Blob = new Blob();
 
   private showsCopied: boolean = false;
+  private isDecrypting: boolean = false;
 
   private icons = {
     mdiContentSave,
     mdiCloseCircle,
+    mdiEye,
+    mdiEyeOff,
+    mdiKey,
+    mdiFeatureSearchOutline,
   };
 
   // for language support
@@ -246,9 +301,10 @@ export default class DataViewer extends Vue {
     this.xhr.onload = async (ev) => {
       if (this.xhr.status === 200) {
         this.isDoneDownload = true;
-        this.blob = this.xhr.response;
-        // View blob if possible
-        this.viewBlob();
+        // Get raw response body
+        this.rawBlob = this.xhr.response;
+        // Decrypt and view blob if possible
+        this.decryptIfNeedAndViewBlob();
       } else {
         const responseText = await utils.readBlobAsText(this.xhr.response);
         this.errorMessage = () => this.strings['xhr_status_error']({
@@ -266,6 +322,12 @@ export default class DataViewer extends Vue {
   private async viewBlob() {
     // Get first bytes from blob
     const firstChunk: Uint8Array = await blobToUint8Array(this.blob.slice(0, fileType.minimumBytes));
+
+    // Reset viewers
+    this.imgSrc = '';
+    this.videoSrc = '';
+    this.text = '';
+
     // If body is text
     if (utils.isText(firstChunk)) {
       // Set text
@@ -286,6 +348,43 @@ export default class DataViewer extends Vue {
       }
     }
 
+  }
+
+  private async decryptIfNeedAndViewBlob() {
+    this.blob = await (async () => {
+      if (this.props.password === '') {
+        return this.rawBlob;
+      } else {
+        // Get response body
+        const resBody = await blobToUint8Array(this.rawBlob);
+        try {
+          this.isDecrypting = true;
+          // Decrypt the response body
+          const plain = await utils.decrypt(resBody, this.props.password);
+          this.enablePasswordReinput = false;
+          this.errorMessage = () => '';
+          return uint8ArrayToBlob(plain);
+        } catch (err) {
+          this.enablePasswordReinput = true;
+          this.errorMessage = () => this.strings['password_might_be_wrong'];
+          console.log('Decrypt error:', err);
+          return new Blob();
+        } finally {
+          this.isDecrypting = false;
+        }
+      }
+    })();
+
+    // View blob if possible
+    this.viewBlob();
+  }
+
+  private viewRaw() {
+    this.blob = this.rawBlob;
+    this.enablePasswordReinput = false;
+    this.errorMessage = () => '';
+    // View blob if possible
+    this.viewBlob();
   }
 
   private cancelDownload(): void {
