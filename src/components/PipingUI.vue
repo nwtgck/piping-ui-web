@@ -26,6 +26,7 @@
                      v-model="files"
                      :label-idle="filePondLabelIdle"
                      :allow-multiple="true"
+                     :allow-paste="true"
           />
           <v-textarea v-if="isTextMode"
                       :label="strings['text_placeholder']"
@@ -462,12 +463,23 @@ export default class PipingUI extends Vue {
     }
 
     // If history is enable and user-input secret path is new
-    if (globalStore.recordsSecretPathHistory && !this.secretPathHistory.includes(this.secretPath)) {
-      // Enrol secret path
-      this.secretPathHistory.push(this.secretPath);
+    if (globalStore.recordsSecretPathHistory) {
+      // Add secret path
+      this.addSecretPath();
       // Save to local storage
       window.localStorage.setItem(keys.secretPathHistory, JSON.stringify(this.secretPathHistory));
     }
+  }
+
+  // Add secret path: latest-used path is the top
+  private addSecretPath(): void {
+    // Remove element
+    const idx = this.secretPathHistory.indexOf((this.secretPath));
+    if (idx !== -1) {
+      this.secretPathHistory.splice(idx, 1);
+    }
+    // Enrol secret path
+    this.secretPathHistory.unshift(this.secretPath);
   }
 
   // NOTE: Some file types are displayed inline

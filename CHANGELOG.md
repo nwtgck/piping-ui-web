@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [0.3.0] - 2019-11-01
+### Changed
+- Update dependencies
+- Add secret path so that the most recently used one is at the top
+
+### Added
+- Allow user to paste a file in clipboard
+
 ## [0.2.0] - 2019-10-28
 ### Changed
 - Update dependencies
@@ -45,7 +53,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 ### Added
 - First release
 
-[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/nwtgck/piping-ui-web/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/nwtgck/piping-ui-web/compare/v0.1.5...v0.2.0
 [0.1.5]: https://github.com/nwtgck/piping-ui-web/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/nwtgck/piping-ui-web/compare/v0.1.3...v0.1.4
