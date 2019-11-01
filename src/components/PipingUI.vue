@@ -26,6 +26,7 @@
                      v-model="files"
                      :label-idle="filePondLabelIdle"
                      :allow-multiple="true"
+                     :allow-paste="true"
           />
           <v-textarea v-if="isTextMode"
                       :label="strings['text_placeholder']"
