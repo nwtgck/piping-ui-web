@@ -22,7 +22,7 @@
     "core-js": "^3.3.6",
     "file-saver": "^2.0.2",
     "file-type": "^12.4.0",
-    "filepond": "^4.7.3",
+    "filepond": "^4.7.4",
     "jszip": "^3.2.2",
     "linkifyjs": "^2.1.8",
     "openpgp": "^4.6.2",
