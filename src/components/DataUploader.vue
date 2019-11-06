@@ -147,7 +147,9 @@ export default class DataUploader extends Vue {
   }
 
   private get headerIcon(): string {
-    if (this.hasError) {
+    // NOTE: getter `hasError` is created by @AsyncComputed
+    const self = (this as unknown as {hasError: boolean});
+    if (self.hasError) {
       return mdiAlert;
     } else if (this.canceled) {
       return mdiCloseCircle;
@@ -159,7 +161,9 @@ export default class DataUploader extends Vue {
   }
 
   private get headerIconColor(): string | undefined {
-    if (this.hasError) {
+    // NOTE: Getter `hasError` is created by @AsyncComputed
+    const self = (this as unknown as {hasError: boolean});
+    if (self.hasError) {
       return "error";
     } else if (this.canceled) {
       return "warning";
