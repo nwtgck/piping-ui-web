@@ -179,17 +179,14 @@ const DataUploader = () => import('@/components/DataUploader.vue');
 import {DataViewerProps} from "@/components/DataViewer.vue";
 const DataViewer = () => import("@/components/DataViewer.vue");
 import {str, arr, validatingParse, Json, TsType} from 'ts-json-validator';
-const FileSaverAsync = () => import('file-saver');
-const binconvAsync = () => import('binconv');
 import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiCloseCircle, mdiClose, mdiEye, mdiEyeOff} from "@mdi/js";
 
-import {keys} from "../local-storage-keys";
-const swDownloadAsync = () => import("@/sw-download");
+import {keys} from "@/local-storage-keys";
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import {File as FilePondFile} from "filepond";
 import {baseAndExt} from "@/utils";
-const utilsAsync = () => import("@/utils");
+const pipingUiUtilsAsync = () => import("@/piping-ui-utils");
 
 (async () => require('filepond/dist/filepond.min.css'))();
 
@@ -502,44 +499,15 @@ export default class PipingUI extends Vue {
     }
     const downloadUrl = urlJoin(this.serverUrl, encodeURI(this.secretPath));
 
-    const swDownload = await swDownloadAsync();
-    // If supporting stream-download via Service Worker
-    if (await swDownload.supportsSwDownload) {
-      // Create download info to tell to Service Worker
-      const downloadInfo = {
-        url: downloadUrl,
-        filename: this.secretPath,
-        password: this.enablePasswordProtection ? this.password : '',
-        decryptErrorMessage: this.strings['password_might_be_wrong'],
-      };
-      // Download via Service Worker
-      const aTag = document.createElement('a');
-      // NOTE: '/sw-download' can be received by Service Worker in src/sw.js
-      // NOTE: URL fragment is passed to Service Worker but not passed to Web server
-      aTag.href = `/sw-download#${encodeURIComponent(JSON.stringify(downloadInfo))}`;
-      aTag.target = "_blank";
-      aTag.click();
-    } else {
-      const binconv = await binconvAsync();
-      // If password-protection is disabled
-      if (this.enablePasswordProtection) {
-        // Get response
-        const res = await fetch(downloadUrl);
-        const resBody = await binconv.blobToUint8Array(await res.blob());
-        // Decrypt the response body
-        const plain = await (await utilsAsync()).decrypt(resBody, this.password);
-        // Save
-        const FileSaver = await FileSaverAsync();
-        FileSaver.saveAs(binconv.uint8ArrayToBlob(plain), this.secretPath);
-      } else {
-        // Download or show on browser sometimes
-        const aTag = document.createElement('a');
-        aTag.href = downloadUrl;
-        aTag.target = "_blank";
-        aTag.download = this.secretPath;
-        aTag.click();
-      }
-    }
+    const pipingUiUtils = await pipingUiUtilsAsync();
+    // Decrypting & Download
+    await pipingUiUtils.decryptingDownload({
+      downloadUrl: downloadUrl,
+      fileName: this.secretPath,
+      enablePasswordProtection: this.enablePasswordProtection,
+      password: this.password,
+      decryptErrorMessage: this.strings['password_might_be_wrong'],
+    });
   }
 
   private view() {
