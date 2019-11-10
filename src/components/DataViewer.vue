@@ -43,7 +43,8 @@
         </tbody>
       </v-simple-table>
 
-      <div v-if="isDoneDownload">
+      <!-- NOTE: The reason why don't use .protection.type === 'password' is that a user may forget to check "Protect with password" despite the data is encrypted with a password -->
+      <div v-if="props.protection.type !== 'passwordless' && isDoneDownload">
         <v-layout>
           <v-switch v-model="enablePasswordReinput"
                     inset
