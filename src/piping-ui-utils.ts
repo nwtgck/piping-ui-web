@@ -53,7 +53,7 @@ export async function decryptingDownload(
 }
 
 
-export async function keyExchangePath(type: 'sender' | 'receiver', secretPath: string): Promise<string> {
+async function keyExchangePath(type: 'sender' | 'receiver', secretPath: string): Promise<string> {
   const utils = await utilsAsync();
   return utils.sha256(`${secretPath}/key_exchange/${type}`);
 }
@@ -80,7 +80,7 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
   };
   const urlJoin = await urlJoinAsync();
   const myPath = await keyExchangePath(type, secretPath);
-  const peerPath = await keyExchangePath(type, secretPath === 'sender' ? 'receiver' : 'sender');
+  const peerPath = await keyExchangePath(type === 'sender' ? 'receiver' : 'sender', secretPath);
   // Exchange
   const [_, peerRes] = await Promise.all([
     fetch(urlJoin(serverUrl, myPath), {method: 'POST', body: JSON.stringify(keyExchangeParcel)}),

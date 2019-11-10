@@ -439,7 +439,7 @@ export default class PipingUI extends Vue {
     this.secretPath = this.shouldBeRemoved.latestSecretPath;
   }
 
-  private send() {
+  private async send() {
     this.applyLatestServerUrlAndSecretPath();
 
     if (!this.isTextMode && this.files.length === 0) {
@@ -463,15 +463,24 @@ export default class PipingUI extends Vue {
 
     const body: File[] | string = this.isTextMode ? this.inputText : this.files.map(f => f.file);
 
-    const protection: Protection = (() => {
+    const protection: Protection = await (async () => {
       switch (this.protectionType) {
         case 'raw':
           return {type: this.protectionType};
         case 'password':
           return {type: this.protectionType, password: this.password};
-        case 'passwordless':
-          // TODO: impl password
-          return {type: this.protectionType, password: new Uint8Array([1, 2, 3])};
+        case 'passwordless': {
+          const pipingUiUtils = await pipingUiUtilsAsync();
+          // Key exchange
+          const key = await pipingUiUtils.keyExchange(this.serverUrl, 'sender', this.secretPath);
+          if (!(key instanceof Uint8Array)) {
+            const errorMessage = key.errorMessage;
+            // TODO: Do something, not to throw error
+            throw new Error(errorMessage);
+          }
+          // TODO: impl: verification step
+          return {type: this.protectionType, password: key};
+        }
       }
     })();
 
@@ -549,7 +558,7 @@ export default class PipingUI extends Vue {
     });
   }
 
-  private view() {
+  private async view() {
     this.applyLatestServerUrlAndSecretPath();
 
     // If secret path is empty
@@ -566,15 +575,24 @@ export default class PipingUI extends Vue {
       return;
     }
 
-    const protection: Protection = (() => {
+    const protection: Protection = await (async () => {
       switch (this.protectionType) {
         case 'raw':
           return {type: this.protectionType};
         case 'password':
           return {type: this.protectionType, password: this.password};
-        case 'passwordless':
+        case 'passwordless': {
+          const pipingUiUtils = await pipingUiUtilsAsync();
+          // Key exchange
+          const key = await pipingUiUtils.keyExchange(this.serverUrl, 'receiver', this.secretPath);
+          if (!(key instanceof Uint8Array)) {
+            const errorMessage = key.errorMessage;
+            // TODO: Do something, not to throw error
+            throw new Error(errorMessage);
+          }
           // TODO: impl password
-          return {type: this.protectionType, password: new Uint8Array([1, 2, 3])};
+          return {type: this.protectionType, password: key};
+        }
       }
     })();
 
