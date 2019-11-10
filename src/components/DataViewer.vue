@@ -158,13 +158,13 @@ import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import * as utils from '@/utils';
 import {AsyncComputed} from "@/AsyncComputed";
+import {Protection} from "@/datatypes";
 
 export type DataViewerProps = {
   viewNo: number,
   serverUrl: string,
   secretPath: string,
-  // NOTE: empty string means non-encryption
-  password: string,
+  protection: Protection,
 };
 
 // NOTE: Automatically download when mounted
@@ -352,7 +352,8 @@ export default class DataViewer extends Vue {
 
   private async decryptIfNeedAndViewBlob() {
     this.blob = await (async () => {
-      if (this.props.password === '') {
+      const password: string | Uint8Array | undefined = this.props.protection.type === 'raw' ? undefined : this.props.protection.password;
+      if (password === undefined) {
         return this.rawBlob;
       } else {
         // Get response body
@@ -360,7 +361,7 @@ export default class DataViewer extends Vue {
         try {
           this.isDecrypting = true;
           // Decrypt the response body
-          const plain = await utils.decrypt(resBody, this.props.password);
+          const plain = await utils.decrypt(resBody, password);
           this.enablePasswordReinput = false;
           this.errorMessage = () => '';
           return uint8ArrayToBlob(plain);

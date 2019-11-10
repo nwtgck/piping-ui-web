@@ -82,6 +82,7 @@ import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import {mdiAlert, mdiCheck, mdiCloseCircle, mdiChevronDown} from "@mdi/js";
 import {AsyncComputed} from "@/AsyncComputed";
+import {Protection} from "@/datatypes";
 
 
 export type DataUploaderProps = {
@@ -89,8 +90,7 @@ export type DataUploaderProps = {
   data: File[] | string,
   serverUrl: string,
   secretPath: string,
-  // NOTE: empty string means non-encryption
-  password: string,
+  protection: Protection,
 };
 
 // NOTE: Automatically upload when mounted
@@ -210,9 +210,10 @@ export default class DataUploader extends Vue {
     })();
 
     const {body, bodyLength} = await (async () => {
-      const password: string = this.props.password;
+      const protection: Protection = this.props.protection;
+      const password: string | Uint8Array | undefined = protection.type === 'raw' ? undefined : protection.password;
       // If password protection is disabled
-      if (password === '') {
+      if (password === undefined) {
         // Return as plain
         return {body: plainBody, bodyLength: plainBody.size};
       } else {

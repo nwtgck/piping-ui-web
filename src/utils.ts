@@ -88,7 +88,7 @@ export async function sanitizeHtmlAllowingATag(dirtyHtml: string): Promise<strin
   });
 }
 
-export async function encrypt(bytes: Uint8Array, password: string): Promise<Uint8Array> {
+export async function encrypt(bytes: Uint8Array, password: string | Uint8Array): Promise<Uint8Array> {
   const openpgp = await openpgpAsync();
   // Encrypt with PGP
   const encryptResult = await openpgp.encrypt({
@@ -102,11 +102,11 @@ export async function encrypt(bytes: Uint8Array, password: string): Promise<Uint
   return encrypted;
 }
 
-export async function decrypt(bytes: Uint8Array, password: string): Promise<Uint8Array> {
+export async function decrypt(bytes: Uint8Array, password: string | Uint8Array): Promise<Uint8Array> {
   const openpgp = await openpgpAsync();
   const plain = (await openpgp.decrypt({
     message: await openpgp.message.read(bytes),
-    passwords: [password],
+    passwords: [password] as any, // TODO: Not use any
     format: 'binary'
   })).data as Uint8Array;
   return plain;
