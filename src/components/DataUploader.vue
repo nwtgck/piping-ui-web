@@ -78,6 +78,7 @@ import urlJoin from 'url-join';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
 
 import * as utils from '@/utils';
+import * as pipingUiUtils from "@/piping-ui-utils";
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import {mdiAlert, mdiCheck, mdiCloseCircle, mdiChevronDown} from "@mdi/js";
@@ -209,9 +210,27 @@ export default class DataUploader extends Vue {
       }
     })();
 
+    const password: string | Uint8Array | undefined = await (async () => {
+      switch (this.props.protection.type) {
+        case 'raw':
+          return undefined;
+        case 'password':
+          return this.props.protection.password;
+        case 'passwordless': {
+          // Key exchange
+          const key = await pipingUiUtils.keyExchange(this.props.serverUrl, 'sender', this.props.secretPath);
+          if (!(key instanceof Uint8Array)) {
+            const errorMessage = key.errorMessage;
+            // TODO: Do something, not to throw error
+            throw new Error(errorMessage);
+          }
+          // TODO: impl: verification step
+          return key;
+        }
+      }
+    })();
+
     const {body, bodyLength} = await (async () => {
-      const protection: Protection = this.props.protection;
-      const password: string | Uint8Array | undefined = protection.type === 'raw' ? undefined : protection.password;
       // If password protection is disabled
       if (password === undefined) {
         // Return as plain

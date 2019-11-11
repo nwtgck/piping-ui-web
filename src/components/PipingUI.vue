@@ -348,6 +348,17 @@ export default class PipingUI extends Vue {
     return this.protectionType === 'password';
   }
 
+  // eslint-disable-next-line getter-return
+  private get protection(): Protection {
+    switch (this.protectionType) {
+      case 'raw':
+      case 'passwordless':
+        return {type: this.protectionType};
+      case 'password':
+        return {type: this.protectionType, password: this.password};
+    }
+  }
+
   private updateRandomStrs() {
     this.randomStrs[0] = randomStr(3, chars.nonConfusing);
   }
@@ -467,27 +478,6 @@ export default class PipingUI extends Vue {
 
     const body: File[] | string = this.isTextMode ? this.inputText : this.files.map(f => f.file);
 
-    const protection: Protection = await (async () => {
-      switch (this.protectionType) {
-        case 'raw':
-          return {type: this.protectionType};
-        case 'password':
-          return {type: this.protectionType, password: this.password};
-        case 'passwordless': {
-          const pipingUiUtils = await pipingUiUtilsAsync();
-          // Key exchange
-          const key = await pipingUiUtils.keyExchange(this.serverUrl, 'sender', this.secretPath);
-          if (!(key instanceof Uint8Array)) {
-            const errorMessage = key.errorMessage;
-            // TODO: Do something, not to throw error
-            throw new Error(errorMessage);
-          }
-          // TODO: impl: verification step
-          return {type: this.protectionType, password: key};
-        }
-      }
-    })();
-
     // Increment upload counter
     this.uploadCount++;
     // Delegate data uploading
@@ -496,7 +486,7 @@ export default class PipingUI extends Vue {
       data: body,
       serverUrl: this.serverUrl,
       secretPath: this.secretPath,
-      protection,
+      protection: this.protection,
     });
     // Open by default
     this.uploadExpandedPanelIds.push(this.uploadCount-1);
@@ -579,33 +569,12 @@ export default class PipingUI extends Vue {
       return;
     }
 
-    const protection: Protection = await (async () => {
-      switch (this.protectionType) {
-        case 'raw':
-          return {type: this.protectionType};
-        case 'password':
-          return {type: this.protectionType, password: this.password};
-        case 'passwordless': {
-          const pipingUiUtils = await pipingUiUtilsAsync();
-          // Key exchange
-          const key = await pipingUiUtils.keyExchange(this.serverUrl, 'receiver', this.secretPath);
-          if (!(key instanceof Uint8Array)) {
-            const errorMessage = key.errorMessage;
-            // TODO: Do something, not to throw error
-            throw new Error(errorMessage);
-          }
-          // TODO: impl password
-          return {type: this.protectionType, password: key};
-        }
-      }
-    })();
-
     this.viewCount++;
     this.dataViews.unshift({
       viewNo: this.viewCount,
       serverUrl: this.serverUrl,
       secretPath: this.secretPath,
-      protection,
+      protection: this.protection,
     });
     // Open by default
     this.viewExpandedPanelIds.push(this.viewCount-1);

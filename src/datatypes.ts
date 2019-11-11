@@ -11,8 +11,6 @@ type PasswordProtection = {
 // Password-inputless protection
 type PasswordlessProtection = {
   type: 'passwordless',
-  // Ephemeral password
-  password: Uint8Array,
 };
 
 const rsaOtherPrimesInfoFormat = obj({

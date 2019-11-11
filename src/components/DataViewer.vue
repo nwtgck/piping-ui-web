@@ -65,7 +65,7 @@
         <div v-if="enablePasswordReinput" style="text-align: right">
           <v-btn color="primary"
                  text
-                 @click="decryptIfNeedAndViewBlob()">
+                 @click="decryptIfNeedAndViewBlob(props.protection.password)">
             <v-icon >{{ icons.mdiKey }}</v-icon>
             {{ strings['unlock'] }}
           </v-btn>
@@ -158,6 +158,7 @@ import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle, mdiE
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import * as utils from '@/utils';
+import * as pipingUiUtils from "@/piping-ui-utils";
 import {AsyncComputed} from "@/AsyncComputed";
 import {Protection} from "@/datatypes";
 
@@ -271,7 +272,7 @@ export default class DataViewer extends Vue {
     this.xhr = new XMLHttpRequest();
   }
 
-  mounted() {
+  async mounted() {
     // Setting for copying to clipboard
     new Clipboard((this.$refs.text_copy_button as Vue).$el, {
       target: () => {
@@ -282,6 +283,26 @@ export default class DataViewer extends Vue {
         return this.$refs.text_viewer as Element
       }
     });
+
+    const password: string | Uint8Array | undefined = await (async () => {
+      switch (this.props.protection.type) {
+        case 'raw':
+          return undefined;
+        case 'password':
+          return this.props.protection.password;
+        case 'passwordless': {
+          // Key exchange
+          const key = await pipingUiUtils.keyExchange(this.props.serverUrl, 'receiver', this.props.secretPath);
+          if (!(key instanceof Uint8Array)) {
+            const errorMessage = key.errorMessage;
+            // TODO: Do something, not to throw error
+            throw new Error(errorMessage);
+          }
+          // TODO: impl: verification step
+          return key;
+        }
+      }
+    })();
 
     this.xhr.open('GET', this.downloadPath);
     this.xhr.responseType = 'blob';
@@ -305,7 +326,7 @@ export default class DataViewer extends Vue {
         // Get raw response body
         this.rawBlob = this.xhr.response;
         // Decrypt and view blob if possible
-        this.decryptIfNeedAndViewBlob();
+        this.decryptIfNeedAndViewBlob(password);
       } else {
         const responseText = await utils.readBlobAsText(this.xhr.response);
         this.errorMessage = () => this.strings['xhr_status_error']({
@@ -351,9 +372,8 @@ export default class DataViewer extends Vue {
 
   }
 
-  private async decryptIfNeedAndViewBlob() {
+  private async decryptIfNeedAndViewBlob(password: string | Uint8Array | undefined) {
     this.blob = await (async () => {
-      const password: string | Uint8Array | undefined = this.props.protection.type === 'raw' ? undefined : this.props.protection.password;
       if (password === undefined) {
         return this.rawBlob;
       } else {
