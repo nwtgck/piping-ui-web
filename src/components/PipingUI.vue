@@ -44,6 +44,7 @@
                     @blur="attachProtocolToUrl()"
                     ref="server_url_ref"
                     clearable
+                    style="margin-bottom: 0.8em;"
         >
           <template v-slot:item="{ index, item }">
             {{ item }}
