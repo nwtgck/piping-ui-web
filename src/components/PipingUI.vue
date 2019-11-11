@@ -257,7 +257,6 @@ export default class PipingUI extends Vue {
   private serverUrlHistory: string[] = [];
   private secretPathHistory: string[] = [];
   private protectionType: Protection["type"] = 'raw';
-  private enablePasswordProtection: boolean = false;
   private password: string = '';
   private showsPassword: boolean = false;
 
@@ -343,6 +342,10 @@ export default class PipingUI extends Vue {
     } else {
       return this.strings['drop_a_file_here_or_browse'];
     }
+  }
+
+  private get enablePasswordProtection(): boolean {
+    return this.protectionType === 'password';
   }
 
   private updateRandomStrs() {
