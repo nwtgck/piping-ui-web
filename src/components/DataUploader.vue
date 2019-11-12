@@ -218,14 +218,14 @@ export default class DataUploader extends Vue {
           return this.props.protection.password;
         case 'passwordless': {
           // Key exchange
-          const key = await pipingUiUtils.keyExchange(this.props.serverUrl, 'sender', this.props.secretPath);
-          if (!(key instanceof Uint8Array)) {
-            const errorMessage = key.errorMessage;
+          const keyExchangeRes = await pipingUiUtils.keyExchange(this.props.serverUrl, 'sender', this.props.secretPath);
+          if (keyExchangeRes.type === 'error') {
+            const errorMessage = keyExchangeRes.errorMessage;
             // TODO: Do something, not to throw error
             throw new Error(errorMessage);
           }
           // TODO: impl: verification step
-          return key;
+          return keyExchangeRes.key;
         }
       }
     })();

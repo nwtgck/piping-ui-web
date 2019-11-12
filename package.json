@@ -24,6 +24,7 @@
     "file-type": "^12.4.0",
     "filepond": "^4.7.4",
     "jszip": "^3.2.2",
+    "jwk-thumbprint": "^0.1.2",
     "linkifyjs": "^2.1.8",
     "openpgp": "^4.6.2",
     "register-service-worker": "^1.6.2",

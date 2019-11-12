@@ -6,6 +6,7 @@ const urlJoinAsync = () => import('url-join').then(p => p.default);
 const binconvAsync = () => import('binconv');
 const swDownloadAsync = () => import("@/sw-download");
 const utilsAsync = () => import("@/utils");
+const jwkThumbprintAsync  = () => import("jwk-thumbprint");
 
 // Decrypt & Download
 export async function decryptingDownload(
@@ -58,7 +59,9 @@ async function keyExchangePath(type: 'sender' | 'receiver', secretPath: string):
   return utils.sha256(`${secretPath}/key_exchange/${type}`);
 }
 
-export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver', secretPath: string): Promise<Uint8Array | {errorMessage: string}> {
+type KeyExchangeResult = {type: "key", key: Uint8Array, verificationCode: string} | {type: "error", errorMessage: string};
+
+export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver', secretPath: string): Promise<KeyExchangeResult> {
   const KEY_EXCHANGE_VERSION = 1;
   // 256 is max value for deriveBits()
   const KEY_BITS = 256;
@@ -89,11 +92,11 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
   const peerPublicKeyExchange: KeyExchangeParcel | undefined = validatingParse(keyExchangeParcelFormat, await peerRes.text());
   if (peerPublicKeyExchange === undefined) {
     // TODO: i8n
-    return {errorMessage: 'Key exchange format is invalid'};
+    return {type: "error", errorMessage: 'Key exchange format is invalid'};
   }
   if (KEY_EXCHANGE_VERSION !== peerPublicKeyExchange.version) {
     // TODO: i8n
-    return {errorMessage: 'Key exchange versions are not same'};
+    return {type: "error", errorMessage: 'Key exchange versions are not same'};
   }
   const peerPublicKey = await crypto.subtle.importKey(
     'jwk',
@@ -107,5 +110,20 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
     keyPair.privateKey,
     KEY_BITS,
   );
-  return new Uint8Array(keyBits);
+  const verificationCode = await generateVerificationCode(publicKeyJwk, peerPublicKeyExchange.encryptPublicJwk);
+  return {
+    type: 'key',
+    key: new Uint8Array(keyBits),
+    verificationCode,
+  };
+}
+
+async function generateVerificationCode(publicJwk1: JsonWebKey, publicJwk2: JsonWebKey) {
+  const {jwkThumbprintByEncoding} = await jwkThumbprintAsync();
+  const hashes = [
+    jwkThumbprintByEncoding(publicJwk1, 'SHA-256', 'hex'),
+    jwkThumbprintByEncoding(publicJwk2, 'SHA-256', 'hex'),
+  ];
+  const utils = await utilsAsync();
+  return (await utils.sha256(hashes.sort().join('-'))).substring(0, 32);
 }
