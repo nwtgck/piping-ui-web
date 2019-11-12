@@ -109,12 +109,8 @@ import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import {mdiAlert, mdiCancel, mdiCheck, mdiChevronDown, mdiCloseCircle} from "@mdi/js";
 import {AsyncComputed} from "@/AsyncComputed";
-import {Protection, VerifiedParcel} from "@/datatypes";
+import {Protection, VerificationStep, VerifiedParcel} from "@/datatypes";
 
-type VerificationStep =
-  {type: 'initial'} |
-  {type: 'verification_code_arrived', verificationCode: string, key: Uint8Array} |
-  {type: 'verified', verified: boolean};
 
 export type DataUploaderProps = {
   uploadNo: number,

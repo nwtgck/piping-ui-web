@@ -49,3 +49,8 @@ export const verifiedParcelFormat = obj({
   verified: bool,
 });
 export type VerifiedParcel = TsType<typeof verifiedParcelFormat>;
+
+export type VerificationStep =
+  {type: 'initial'} |
+  {type: 'verification_code_arrived', verificationCode: string, key: Uint8Array} |
+  {type: 'verified', verified: boolean};

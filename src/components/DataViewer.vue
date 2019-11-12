@@ -168,12 +168,8 @@ import {strings} from "@/strings";
 import * as utils from '@/utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
 import {AsyncComputed} from "@/AsyncComputed";
-import {Protection, VerifiedParcel, verifiedParcelFormat} from "@/datatypes";
+import {Protection, VerificationStep, VerifiedParcel, verifiedParcelFormat} from "@/datatypes";
 
-type VerificationStep =
-  {type: 'initial'} |
-  {type: 'verification_code_arrived', verificationCode: string, key: Uint8Array} |
-  {type: 'verified', verified: boolean};
 
 export type DataViewerProps = {
   viewNo: number,
@@ -325,7 +321,9 @@ export default class DataViewer extends Vue {
             // TODO: Do something, not to throw error
             throw new Error('Invalid parcel format');
           }
-          if (!verifiedParcel.verified) {
+          const {verified} = verifiedParcel;
+          this.verificationStep = {type: 'verified', verified};
+          if (!verified) {
             // TODO: Do something, not to throw error
             throw new Error('Not verified from the sender');
           }
