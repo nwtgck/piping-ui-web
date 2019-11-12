@@ -12,6 +12,12 @@
     </v-expansion-panel-header>
     <v-expansion-panel-content>
 
+      <span v-if="props.protection.type === 'passwordless' && verificationStep.type === 'verification_code_arrived'">
+        <v-alert type="info">
+          <span style="font-size: 1.2em">{{ strings['verification_code'] }}: <b>{{ verificationStep.verificationCode }}</b></span>
+        </v-alert>
+      </span>
+
       <!-- loaded of total -->
       <v-tooltip bottom>
         <template v-slot:activator="{ on }">
@@ -154,13 +160,19 @@ import fileType from 'file-type';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
 import {uint8ArrayToBlob} from 'binconv/dist/src/uint8ArrayToBlob';
 import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle, mdiEye, mdiEyeOff, mdiKey, mdiFeatureSearchOutline} from "@mdi/js";
+import {validatingParse} from 'ts-json-validator';
 
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import * as utils from '@/utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
 import {AsyncComputed} from "@/AsyncComputed";
-import {Protection} from "@/datatypes";
+import {Protection, VerifiedParcel, verifiedParcelFormat} from "@/datatypes";
+
+type VerificationStep =
+  {type: 'initial'} |
+  {type: 'verification_code_arrived', verificationCode: string, key: Uint8Array} |
+  {type: 'verified', verified: boolean};
 
 export type DataViewerProps = {
   viewNo: number,
@@ -191,6 +203,7 @@ export default class DataViewer extends Vue {
   private text: string = '';
   private enablePasswordReinput: boolean = false;
   private showsPassword: boolean = false;
+  private verificationStep: VerificationStep = {type: 'initial'};
 
   private rawBlob: Blob = new Blob();
   private blob: Blob = new Blob();
@@ -298,8 +311,22 @@ export default class DataViewer extends Vue {
             // TODO: Do something, not to throw error
             throw new Error(errorMessage);
           }
-          // TODO: impl: verification step
-          return keyExchangeRes.key;
+          const {key, verificationCode} = keyExchangeRes;
+          this.verificationStep = {type: 'verification_code_arrived', verificationCode, key};
+          const path = urlJoin(this.props.serverUrl, await pipingUiUtils.verifiedPath(this.props.secretPath));
+          // Get verified or not
+          const res = await fetch(path);
+          // Parse
+          const verifiedParcel: VerifiedParcel | undefined = validatingParse(verifiedParcelFormat, await res.text());
+          if (verifiedParcel === undefined) {
+            // TODO: Do something, not to throw error
+            throw new Error('Invalid parcel format');
+          }
+          if (!verifiedParcel.verified) {
+            // TODO: Do something, not to throw error
+            throw new Error('Not verified from the sender');
+          }
+          return key;
         }
       }
     })();

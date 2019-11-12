@@ -59,6 +59,11 @@ async function keyExchangePath(type: 'sender' | 'receiver', secretPath: string):
   return utils.sha256(`${secretPath}/key_exchange/${type}`);
 }
 
+export async function verifiedPath(secretPath: string): Promise<string> {
+  const utils = await utilsAsync();
+  return utils.sha256(`${secretPath}/verified`);
+}
+
 type KeyExchangeResult = {type: "key", key: Uint8Array, verificationCode: string} | {type: "error", errorMessage: string};
 
 export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver', secretPath: string): Promise<KeyExchangeResult> {

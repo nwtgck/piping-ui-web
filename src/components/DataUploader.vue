@@ -98,7 +98,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import {Component, Prop, Vue} from 'vue-property-decorator';
 import urlJoin from 'url-join';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
 
@@ -106,9 +106,9 @@ import * as utils from '@/utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
-import {mdiAlert, mdiCheck, mdiCloseCircle, mdiChevronDown, mdiCancel} from "@mdi/js";
+import {mdiAlert, mdiCancel, mdiCheck, mdiChevronDown, mdiCloseCircle} from "@mdi/js";
 import {AsyncComputed} from "@/AsyncComputed";
-import {Protection} from "@/datatypes";
+import {Protection, VerifiedParcel} from "@/datatypes";
 
 type VerificationStep =
   {type: 'initial'} |
@@ -252,6 +252,18 @@ export default class DataUploader extends Vue {
     }
     const {key} = this.verificationStep;
     this.verificationStep = {type: 'verified', verified};
+
+
+    const verifiedParcel: VerifiedParcel = {
+      verified,
+    };
+    const path = urlJoin(this.props.serverUrl, await pipingUiUtils.verifiedPath(this.props.secretPath));
+    // Send verified or not
+    await fetch(path, {
+      method: 'POST',
+      // TODO: Encrypt JSON
+      body: JSON.stringify(verifiedParcel),
+    });
 
     // If verified, send
     if (verified) {

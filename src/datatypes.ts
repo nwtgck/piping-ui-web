@@ -44,3 +44,8 @@ export const keyExchangeParcelFormat = obj({
   encryptPublicJwk: ecJsonWebKeyFormat,
 });
 export type KeyExchangeParcel = TsType<typeof keyExchangeParcelFormat>;
+
+export const verifiedParcelFormat = obj({
+  verified: bool,
+});
+export type VerifiedParcel = TsType<typeof verifiedParcelFormat>;
