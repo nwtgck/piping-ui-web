@@ -101,6 +101,7 @@
 import {Component, Prop, Vue} from 'vue-property-decorator';
 import urlJoin from 'url-join';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
+import {stringToUint8Array} from 'binconv/dist/src/stringToUint8Array';
 
 import * as utils from '@/utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
@@ -257,12 +258,15 @@ export default class DataUploader extends Vue {
     const verifiedParcel: VerifiedParcel = {
       verified,
     };
+    const encryptedVerifiedParcel = await utils.encrypt(
+      stringToUint8Array(JSON.stringify(verifiedParcel)),
+      key,
+    );
     const path = urlJoin(this.props.serverUrl, await pipingUiUtils.verifiedPath(this.props.secretPath));
     // Send verified or not
     await fetch(path, {
       method: 'POST',
-      // TODO: Encrypt JSON
-      body: JSON.stringify(verifiedParcel),
+      body: encryptedVerifiedParcel,
     });
 
     // If verified, send

@@ -159,6 +159,7 @@ import Clipboard from 'clipboard';
 import fileType from 'file-type';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
 import {uint8ArrayToBlob} from 'binconv/dist/src/uint8ArrayToBlob';
+import {uint8ArrayToString} from 'binconv/dist/src/uint8ArrayToString';
 import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle, mdiEye, mdiEyeOff, mdiKey, mdiFeatureSearchOutline} from "@mdi/js";
 import {validatingParse} from 'ts-json-validator';
 
@@ -316,8 +317,10 @@ export default class DataViewer extends Vue {
           const path = urlJoin(this.props.serverUrl, await pipingUiUtils.verifiedPath(this.props.secretPath));
           // Get verified or not
           const res = await fetch(path);
+          // Decrypt body
+          const decryptedBody: Uint8Array = await utils.decrypt(new Uint8Array(await res.arrayBuffer()), key);
           // Parse
-          const verifiedParcel: VerifiedParcel | undefined = validatingParse(verifiedParcelFormat, await res.text());
+          const verifiedParcel: VerifiedParcel | undefined = validatingParse(verifiedParcelFormat, uint8ArrayToString(decryptedBody));
           if (verifiedParcel === undefined) {
             // TODO: Do something, not to throw error
             throw new Error('Invalid parcel format');
