@@ -94,14 +94,22 @@
         </div>
 
         <v-col class="pa-0">
+          <v-row align="center" class="ma-0" style="padding-top: 0.4em;">
+            <v-switch :value="protectionType === 'passwordless'"
+                      @change="onEnablePasswordlessProtection"
+                      inset
+                      :label="strings['passwordless_protection']"
+                      color="blue"
+                      class="ma-0 pa-0"/>
+          </v-row>
+
           <v-row align="center" class="ma-0 pa-0">
             <v-switch :value="protectionType === 'password'"
                       @change="onEnablePasswordProtection"
                       inset
                       :label="strings['protect_with_password']"
                       color="blue"
-                      class="ma-0 pa-0"
-                      style="padding-left: 0.5em;"/>
+                      class="ma-0 pa-0" />
 
             <v-text-field :style="{visibility: protectionType === 'password' ? 'visible' : 'hidden'}"
                           v-model="password"
@@ -113,15 +121,6 @@
                           outlined
                           class="pa-0"
                           style="margin-left: 0.5em;" />
-          </v-row>
-
-          <v-row align="center" class="ma-0 pa-0">
-            <v-switch :value="protectionType === 'passwordless'"
-                      @change="onEnablePasswordlessProtection"
-                      inset
-                      :label="strings['passwordless_protection']"
-                      color="blue"
-                      class="ma-0 pa-0"/>
           </v-row>
         </v-col>
 
