@@ -12,6 +12,31 @@
     </v-expansion-panel-header>
     <v-expansion-panel-content>
 
+      <span v-if="props.protection.type === 'passwordless' && verificationStep.type === 'verification_code_arrived'">
+        <v-alert type="info">
+          <span style="font-size: 1.2em">{{ strings['verification_code'] }}: <b>{{ verificationStep.verificationCode }}</b></span>
+        </v-alert>
+
+        <v-layout>
+          <v-flex xs6>
+            <v-btn color="success"
+                   @click="verify(true)"
+                   block>
+              <v-icon left dark>{{ icons.mdiCheck }}</v-icon>
+              {{ strings['verify_and_send'] }}
+            </v-btn>
+          </v-flex>
+          <v-flex xs6>
+            <v-btn color="error"
+                   @click="verify(false)"
+                   block>
+              <v-icon left dark>{{ icons.mdiCancel }}</v-icon>
+              {{ strings['cancel'] }}
+            </v-btn>
+          </v-flex>
+        </v-layout>
+      </span>
+
       <div v-show="isCompressing">
         <div style="text-align: center">
           {{ strings['compressing'] }}
@@ -81,10 +106,14 @@ import * as utils from '@/utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
-import {mdiAlert, mdiCheck, mdiCloseCircle, mdiChevronDown} from "@mdi/js";
+import {mdiAlert, mdiCheck, mdiCloseCircle, mdiChevronDown, mdiCancel} from "@mdi/js";
 import {AsyncComputed} from "@/AsyncComputed";
 import {Protection} from "@/datatypes";
 
+type VerificationStep =
+  {type: 'initial'} |
+  {type: 'verification_code_arrived', verificationCode: string, key: Uint8Array} |
+  {type: 'verified', verified: boolean};
 
 export type DataUploaderProps = {
   uploadNo: number,
@@ -119,9 +148,12 @@ export default class DataUploader extends Vue {
   private canceled: boolean = false;
   private isCompressing: boolean = false;
   private isEncrypting: boolean = false;
+  private verificationStep: VerificationStep = {type: 'initial'};
 
   private icons = {
     mdiCloseCircle,
+    mdiCheck,
+    mdiCancel,
   };
 
   private get progressPercentage(): number | null {
@@ -190,16 +222,54 @@ export default class DataUploader extends Vue {
   }
 
   async mounted() {
+    switch (this.props.protection.type) {
+      case 'raw':
+        // Send
+        await this.send(undefined);
+        break;
+      case 'password':
+        // Send
+        await this.send(this.props.protection.password);
+        break;
+      case 'passwordless': {
+        // Key exchange
+        const keyExchangeRes = await pipingUiUtils.keyExchange(this.props.serverUrl, 'sender', this.props.secretPath);
+        if (keyExchangeRes.type === 'error') {
+          const errorMessage = keyExchangeRes.errorMessage;
+          // TODO: Do something, not to throw error
+          throw new Error(errorMessage);
+        }
+        const {key, verificationCode} = keyExchangeRes;
+        this.verificationStep = {type: 'verification_code_arrived', verificationCode, key};
+        break;
+      }
+    }
+  }
+
+  private async verify(verified: boolean) {
+    if (this.verificationStep.type !== 'verification_code_arrived') {
+      throw new Error("Unexpected state: this.verificationStep.type should be 'verification_code_arrived'");
+    }
+    const {key} = this.verificationStep;
+    this.verificationStep = {type: 'verified', verified};
+
+    // If verified, send
+    if (verified) {
+      await this.send(key);
+    }
+  }
+
+  private async send(password: string | Uint8Array | undefined) {
     const data: File[] | string = this.props.data;
 
     const plainBody: Blob = await (async () => {
       // Text
       if (typeof data === "string") {
         return new Blob([data]);
-      // One file
+        // One file
       } else if (data.length === 1) {
         return data[0];
-      // Multiple files
+        // Multiple files
       } else {
         const files: File[] = data;
         this.isCompressing = true;
@@ -207,26 +277,6 @@ export default class DataUploader extends Vue {
         const zipBlob: Blob = await utils.zipFilesAsBlob(files);
         this.isCompressing = false;
         return zipBlob;
-      }
-    })();
-
-    const password: string | Uint8Array | undefined = await (async () => {
-      switch (this.props.protection.type) {
-        case 'raw':
-          return undefined;
-        case 'password':
-          return this.props.protection.password;
-        case 'passwordless': {
-          // Key exchange
-          const keyExchangeRes = await pipingUiUtils.keyExchange(this.props.serverUrl, 'sender', this.props.secretPath);
-          if (keyExchangeRes.type === 'error') {
-            const errorMessage = keyExchangeRes.errorMessage;
-            // TODO: Do something, not to throw error
-            throw new Error(errorMessage);
-          }
-          // TODO: impl: verification step
-          return keyExchangeRes.key;
-        }
       }
     })();
 
