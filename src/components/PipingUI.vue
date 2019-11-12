@@ -95,7 +95,7 @@
 
         <v-col class="pa-0">
           <v-row align="center" class="ma-0" style="padding-top: 0.4em;">
-            <v-switch :value="protectionType === 'passwordless'"
+            <v-switch :input-value="protectionType === 'passwordless'"
                       @change="onEnablePasswordlessProtection"
                       inset
                       :label="strings['passwordless_protection']"
@@ -104,7 +104,7 @@
           </v-row>
 
           <v-row align="center" class="ma-0 pa-0">
-            <v-switch :value="protectionType === 'password'"
+            <v-switch :input-value="protectionType === 'password'"
                       @change="onEnablePasswordProtection"
                       inset
                       :label="strings['protect_with_password']"
