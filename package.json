@@ -60,7 +60,7 @@
     "copyfiles": "^2.1.1",
     "cross-var": "^1.1.0",
     "eslint": "^5.16.0",
-    "eslint-plugin-vue": "^6.0.0",
+    "eslint-plugin-vue": "^6.0.1",
     "license-checker": "^25.0.1",
     "material-design-icons-iconfont": "^5.0.1",
     "sass": "^1.23.3",
