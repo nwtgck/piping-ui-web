@@ -12,25 +12,31 @@
     </v-expansion-panel-header>
     <v-expansion-panel-content>
 
+      <v-alert type="info" v-if="props.protection.type === 'passwordless' && verificationStep.type === 'initial'">
+        <span style="">{{ strings['waiting_for_sender'] }}</span>
+      </v-alert>
+
       <span v-if="props.protection.type === 'passwordless' && verificationStep.type === 'verification_code_arrived'">
         <v-alert type="info">
           <span style="font-size: 1.2em">{{ strings['verification_code'] }}: <b>{{ verificationStep.verificationCode }}</b></span>
         </v-alert>
       </span>
 
-      <!-- loaded of total -->
-      <v-tooltip bottom>
-        <template v-slot:activator="{ on }">
-          <div style="text-align: center" v-on="on">
-            {{ readableBytesString(progressSetting.loadedBytes, 1) }}{{ !progressSetting.totalBytes ? "" : ` of ${readableBytesString(progressSetting.totalBytes, 1)}` }}
-          </div>
-        </template>
-        <span>{{ progressSetting.loadedBytes }}{{ !progressSetting.totalBytes ? "" : ` of ${progressSetting.totalBytes}` }}</span>
-      </v-tooltip>
+      <span v-if="props.protection.type === 'passwordless' ? verificationStep.type === 'verified' && verificationStep.verified : true">
+        <!-- loaded of total -->
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on }">
+            <div style="text-align: center" v-on="on">
+              {{ readableBytesString(progressSetting.loadedBytes, 1) }}{{ !progressSetting.totalBytes ? "" : ` of ${readableBytesString(progressSetting.totalBytes, 1)}` }}
+            </div>
+          </template>
+          <span>{{ progressSetting.loadedBytes }}{{ !progressSetting.totalBytes ? "" : ` of ${progressSetting.totalBytes}` }}</span>
+        </v-tooltip>
 
-      <!-- Progress bar -->
-      <v-progress-linear :value="progressPercentage"
-                         :indeterminate="progressPercentage === null && !canceled && errorMessage() === ''" />
+          <!-- Progress bar -->
+        <v-progress-linear :value="progressPercentage"
+                           :indeterminate="progressPercentage === null && !canceled && errorMessage() === ''" />
+      </span>
 
       <div v-show="isDecrypting">
         <div style="text-align: center">
