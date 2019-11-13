@@ -12,6 +12,10 @@
     </v-expansion-panel-header>
     <v-expansion-panel-content>
 
+      <v-alert type="info" v-if="props.protection.type === 'passwordless' && verificationStep.type === 'initial'">
+        <span style="">{{ strings['waiting_for_receiver'] }}</span>
+      </v-alert>
+
       <span v-if="props.protection.type === 'passwordless' && verificationStep.type === 'verification_code_arrived'">
         <v-alert type="info">
           <span style="font-size: 1.2em">{{ strings['verification_code'] }}: <b>{{ verificationStep.verificationCode }}</b></span>
@@ -53,7 +57,7 @@
         <v-progress-linear indeterminate />
       </div>
 
-      <div v-show="!isCompressing && !isEncrypting">
+      <div v-show="isReadyToUpload">
         <!-- loaded of total -->
         <v-tooltip bottom>
           <template v-slot:activator="{ on }">
@@ -206,6 +210,15 @@ export default class DataUploader extends Vue {
 
   private get isCancelable(): boolean {
     return !this.isDoneUpload && !this.hasError && !this.canceled;
+  }
+
+  private get isReadyToUpload(): boolean {
+    const notCompressingAndEncrypting = !this.isCompressing && !this.isEncrypting;
+    if (this.props.protection.type === 'passwordless') {
+      return this.verificationStep.type === 'verified' && this.verificationStep.verified && notCompressingAndEncrypting;
+    } else {
+      return notCompressingAndEncrypting;
+    }
   }
 
   // for language support
