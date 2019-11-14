@@ -314,7 +314,8 @@ export default class DataViewer extends Vue {
           // Key exchange
           const keyExchangeRes = await pipingUiUtils.keyExchange(this.props.serverUrl, 'receiver', this.props.secretPath);
           if (keyExchangeRes.type === 'error') {
-            const errorMessage = keyExchangeRes.errorMessage;
+            // TODO: i18n
+            const errorMessage = `Error code: ${keyExchangeRes.errorCode}`;
             // TODO: Do something, not to throw error
             throw new Error(errorMessage);
           }

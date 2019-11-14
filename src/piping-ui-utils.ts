@@ -64,7 +64,9 @@ export async function verifiedPath(secretPath: string): Promise<string> {
   return utils.sha256(`${secretPath}/verified`);
 }
 
-type KeyExchangeResult = {type: "key", key: Uint8Array, verificationCode: string} | {type: "error", errorMessage: string};
+type KeyExchangeResult =
+  {type: "key", key: Uint8Array, verificationCode: string} |
+  {type: "error", errorCode: 'invalid_parcel_format' | 'different_key_exchange_version'};
 
 export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver', secretPath: string): Promise<KeyExchangeResult> {
   const KEY_EXCHANGE_VERSION = 1;
@@ -96,12 +98,10 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
   ]);
   const peerPublicKeyExchange: KeyExchangeParcel | undefined = validatingParse(keyExchangeParcelFormat, await peerRes.text());
   if (peerPublicKeyExchange === undefined) {
-    // TODO: i8n
-    return {type: "error", errorMessage: 'Key exchange format is invalid'};
+    return {type: "error", errorCode: 'invalid_parcel_format'};
   }
   if (KEY_EXCHANGE_VERSION !== peerPublicKeyExchange.version) {
-    // TODO: i8n
-    return {type: "error", errorMessage: 'Key exchange versions are not same'};
+    return {type: "error", errorCode: 'different_key_exchange_version'};
   }
   const peerPublicKey = await crypto.subtle.importKey(
     'jwk',
