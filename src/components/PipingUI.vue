@@ -163,6 +163,9 @@
             <template v-if="expandedPanel.type === 'data_viewer'">
               <DataViewer :props="expandedPanel.props" :key="`view-${expandedPanel.props.viewNo}`"/>
             </template>
+            <template v-if="expandedPanel.type === 'data_downloader'">
+              <DataDownloader :props="expandedPanel.props" :key="`view-${expandedPanel.props.downloadNo}`"/>
+            </template>
           </template>
         </v-expansion-panels>
       </div>
@@ -186,6 +189,8 @@ import {DataUploaderProps} from '@/components/DataUploader.vue';
 const DataUploader = () => import('@/components/DataUploader.vue');
 import {DataViewerProps} from "@/components/DataViewer.vue";
 const DataViewer = () => import("@/components/DataViewer.vue");
+const DataDownloader = () => import('@/components/DataDownloader.vue');
+import {DataDownloaderProps} from "@/components/DataDownloader.vue";
 import {str, arr, validatingParse, Json, TsType} from 'ts-json-validator';
 import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiCloseCircle, mdiClose, mdiEye, mdiEyeOff} from "@mdi/js";
 
@@ -235,6 +240,7 @@ function randomStr(len: number, chars: ReadonlyArray<string>){
   components: {
     DataUploader,
     DataViewer,
+    DataDownloader,
     FilePond,
   },
 })
@@ -267,9 +273,11 @@ export default class PipingUI extends Vue {
 
   private uploadCount = 0;
   private viewCount = 0;
+  private downloadCount = 0;
   private expandedPanels: (
     {type: 'data_uploader', props: DataUploaderProps} |
-    {type: 'data_viewer', props: DataViewerProps}
+    {type: 'data_viewer', props: DataViewerProps} |
+    {type: 'data_downloader', props: DataDownloaderProps}
   )[] = [];
   // Indexes of expanded expansion-panel
   private expandedPanelIds: number[] = [];
@@ -532,27 +540,19 @@ export default class PipingUI extends Vue {
       this.showSnackbar(this.strings['password_is_required']);
       return;
     }
-    const downloadUrl = urlJoin(this.serverUrl, encodeURI(this.secretPath));
 
-    const pipingUiUtils = await pipingUiUtilsAsync();
-    // Decrypting & Download
-    // TODO: impl for passwordless protection
-    await pipingUiUtils.decryptingDownload({
-      downloadUrl: downloadUrl,
-      fileName: this.secretPath,
-      key: (() => {
-        switch (this.protectionType) {
-          case "raw":
-            return undefined;
-          case "password":
-            return this.password;
-          case "passwordless":
-            // TODO: this is dummy value
-            return new Uint8Array([1, 2, 3]);
-        }
-      })(),
-      decryptErrorMessage: this.strings['password_might_be_wrong'],
+    this.downloadCount++;
+    // Delegate data downloading
+    this.expandedPanels.unshift({
+      type: 'data_downloader',
+      props: {
+        downloadNo: this.downloadCount,
+        serverUrl: this.serverUrl,
+        secretPath: this.secretPath,
+        protection: this.protection,
+      }
     });
+    this.expandedPanelIds.push(this.expandedPanels.length-1);
   }
 
   private async view() {

@@ -77,6 +77,7 @@ const en = {
   save: 'Save',
   record_server_url: 'Record server URL',
   record_secret_path: 'Record secret path',
+  download_in_downloader: 'Download',
 };
 const defaultStr = en;
 
@@ -143,4 +144,5 @@ const ja: typeof defaultStr = {
   save: '保存',
   record_server_url: 'サーバーURLを記憶',
   record_secret_path: '転送パスを記憶',
+  download_in_downloader: 'ダウンロード',
 } as const;
