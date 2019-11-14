@@ -22,7 +22,7 @@
         </v-alert>
       </span>
 
-      <span v-if="props.protection.type === 'passwordless' ? verificationStep.type === 'verified' && verificationStep.verified : true">
+      <span v-if="isReadyToDownload">
         <!-- loaded of total -->
         <v-tooltip bottom>
           <template v-slot:activator="{ on }">
@@ -269,7 +269,11 @@ export default class DataViewer extends Vue {
   }
 
   private get isCancelable(): boolean {
-    return !this.isDoneDownload && !this.hasError && !this.canceled;
+    return this.isReadyToDownload && !this.isDoneDownload && !this.hasError && !this.canceled;
+  }
+
+  private get isReadyToDownload(): boolean {
+    return this.props.protection.type === 'passwordless' ? this.verificationStep.type === 'verified' && this.verificationStep.verified : true
   }
 
   private get downloadPath(): string {

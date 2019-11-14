@@ -209,7 +209,7 @@ export default class DataUploader extends Vue {
   }
 
   private get isCancelable(): boolean {
-    return !this.isDoneUpload && !this.hasError && !this.canceled;
+    return this.isReadyToUpload && !this.isDoneUpload && !this.hasError && !this.canceled;
   }
 
   private get isReadyToUpload(): boolean {
