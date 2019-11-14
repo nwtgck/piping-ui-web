@@ -1,5 +1,7 @@
-const urlJoinAsync = () => import('url-join').then(p => p.default);
+import {KeyExchangeErrorCode} from "@/piping-ui-utils";
 import {VERSION} from "@/version";
+
+const urlJoinAsync = () => import('url-join').then(p => p.default);
 const utilsAsync = () => import('@/utils');
 
 export function strings(language: string): typeof defaultStr {
@@ -40,6 +42,14 @@ const en = {
   waiting_for_receiver: 'Waiting for receiver...',
   verification_code: 'Verification code',
   verify_and_send: 'Verify & Send',
+  key_exchange_error: (errorCode: KeyExchangeErrorCode): string => {
+    switch (errorCode) {
+      case "invalid_parcel_format":
+        return 'Parcel format is invalid';
+      case "different_key_exchange_version":
+        return 'Key exchange versions are different. Please update your app or peer\'s app'
+    }
+  },
   upload_url: 'Upload URL',
   compressing: 'Compressing...',
   encrypting: 'Encrypting...',
@@ -98,6 +108,14 @@ const ja: typeof defaultStr = {
   waiting_for_receiver: '受信者を待機中...',
   verification_code: '確認コード',
   verify_and_send: '確認完了',
+  key_exchange_error: (errorCode: KeyExchangeErrorCode): string => {
+    switch (errorCode) {
+      case "invalid_parcel_format":
+        return 'パーセルのフォーマットが不正です';
+      case "different_key_exchange_version":
+        return '鍵交換のバージョンが異なります。このアプリを更新するか通信相手のアプリを更新してください';
+    }
+  },
   upload_url: 'アップロードURL',
   compressing: '圧縮中...',
   encrypting: '暗号化中...',

@@ -64,9 +64,10 @@ export async function verifiedPath(secretPath: string): Promise<string> {
   return utils.sha256(`${secretPath}/verified`);
 }
 
+export type KeyExchangeErrorCode = 'invalid_parcel_format' | 'different_key_exchange_version';
 type KeyExchangeResult =
   {type: "key", key: Uint8Array, verificationCode: string} |
-  {type: "error", errorCode: 'invalid_parcel_format' | 'different_key_exchange_version'};
+  {type: "error", errorCode: KeyExchangeErrorCode};
 
 export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver', secretPath: string): Promise<KeyExchangeResult> {
   const KEY_EXCHANGE_VERSION = 1;
