@@ -3,7 +3,7 @@
     <v-expansion-panel-header :disable-icon-rotate="isDoneUpload || hasError">
       <span>{{ strings['upload'] }} #{{ props.uploadNo }}</span>
       <!-- Percentage -->
-      {{ progressPercentage && progressPercentage.toFixed(2) }} %
+      {{ isReadyToUpload ? progressPercentage && `${progressPercentage.toFixed(2)} %` : '' }}
       <template v-slot:actions>
         <v-icon :color="headerIconColor" style="margin-left: 0.3em">
           {{ headerIcon }}
