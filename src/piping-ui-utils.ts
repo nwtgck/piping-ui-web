@@ -1,5 +1,12 @@
-import {KeyExchangeParcel, keyExchangeParcelFormat} from "@/datatypes";
+import {
+  KeyExchangeParcel,
+  keyExchangeParcelFormat,
+  Protection, VerificationStep,
+  VerifiedParcel,
+  verifiedParcelFormat
+} from "@/datatypes";
 import {validatingParse} from 'ts-json-validator';
+import {strings} from "@/strings";
 
 const FileSaverAsync = () => import('file-saver');
 const urlJoinAsync = () => import('url-join').then(p => p.default);
@@ -7,6 +14,7 @@ const binconvAsync = () => import('binconv');
 const swDownloadAsync = () => import("@/sw-download");
 const utilsAsync = () => import("@/utils");
 const jwkThumbprintAsync  = () => import("jwk-thumbprint");
+const uint8ArrayToStringAsync = () => import('binconv/dist/src/uint8ArrayToString').then(p => p.uint8ArrayToString);
 
 // Decrypt & Download
 export async function decryptingDownload(
@@ -148,4 +156,70 @@ async function generateVerificationCode(publicJwk1: JsonWebKey, publicJwk2: Json
   ];
   const utils = await utilsAsync();
   return (await utils.sha256(hashes.sort().join('-'))).substring(0, 32);
+}
+
+export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPath: string, protection: Protection, setVerificationStep: (step: VerificationStep) => void):
+  Promise<
+    {type: 'key', key: string | Uint8Array | undefined} |
+    {type: 'error', errorMessage: (lang: string) => string}
+  > {
+  switch (protection.type) {
+    case 'raw':
+      return {
+        type: 'key',
+        key: undefined,
+      };
+    case 'password':
+      return {
+        type: 'key',
+        key: protection.password,
+      };
+    case 'passwordless': {
+      // Key exchange
+      const keyExchangeRes = await keyExchange(serverUrl, 'receiver', secretPath);
+      if (keyExchangeRes.type === 'error') {
+        setVerificationStep({type: 'error'});
+        return {
+          type: "error",
+          errorMessage(lang) {
+            return strings(lang)['key_exchange_error'](keyExchangeRes.errorCode);
+          }
+        };
+      }
+      const {key, verificationCode} = keyExchangeRes;
+      setVerificationStep({type: 'verification_code_arrived', verificationCode, key});
+      const uint8ArrayToString = await uint8ArrayToStringAsync();
+      const urlJoin = await urlJoinAsync();
+      const path = urlJoin(serverUrl, await verifiedPath(secretPath));
+      // Get verified or not
+      const res = await fetch(path);
+      const utils = await utilsAsync();
+      // Decrypt body
+      const decryptedBody: Uint8Array = await utils.decrypt(new Uint8Array(await res.arrayBuffer()), key);
+      // Parse
+      const verifiedParcel: VerifiedParcel | undefined = validatingParse(verifiedParcelFormat, uint8ArrayToString(decryptedBody));
+      if (verifiedParcel === undefined) {
+        return {
+          type: "error",
+          errorMessage(lang) {
+            return strings(lang)['key_exchange_error']('invalid_parcel_format');
+          }
+        };
+      }
+      const {verified} = verifiedParcel;
+      setVerificationStep({type: 'verified', verified});
+      if (!verified) {
+        return {
+          type: "error",
+          errorMessage(lang) {
+            return strings(lang)['sender_not_verified'];
+          }
+        };
+      }
+      return {
+        type: 'key',
+        key,
+      };
+    }
+  }
 }

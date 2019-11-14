@@ -50,6 +50,7 @@ const en = {
         return 'Key exchange versions are different. Please update your app or peer\'s app.'
     }
   },
+  sender_not_verified: 'Sender not verified',
   upload_url: 'Upload URL',
   compressing: 'Compressing...',
   encrypting: 'Encrypting...',
@@ -117,6 +118,7 @@ const ja: typeof defaultStr = {
         return '鍵交換のバージョンが異なります。このアプリを更新するか通信相手のアプリを更新してください。';
     }
   },
+  sender_not_verified: '送信者が拒否しました',
   upload_url: 'アップロードURL',
   compressing: '圧縮中...',
   encrypting: '暗号化中...',

@@ -103,49 +103,28 @@ export default class DataDownloader extends Vue {
   }
 
   async mounted() {
-    const password: string | Uint8Array | undefined = await (async () => {
-      switch (this.props.protection.type) {
-        case 'raw':
-          return undefined;
-        case 'password':
-          return this.props.protection.password;
-        case 'passwordless': {
-          // Key exchange
-          const keyExchangeRes = await pipingUiUtils.keyExchange(this.props.serverUrl, 'receiver', this.props.secretPath);
-          if (keyExchangeRes.type === 'error') {
-            this.verificationStep = {type: 'error'};
-            this.errorMessage = () => this.strings['key_exchange_error'](keyExchangeRes.errorCode);
-            return;
-          }
-          const {key, verificationCode} = keyExchangeRes;
-          this.verificationStep = {type: 'verification_code_arrived', verificationCode, key};
-          const path = urlJoin(this.props.serverUrl, await pipingUiUtils.verifiedPath(this.props.secretPath));
-          // Get verified or not
-          const res = await fetch(path);
-          // Decrypt body
-          const decryptedBody: Uint8Array = await utils.decrypt(new Uint8Array(await res.arrayBuffer()), key);
-          // Parse
-          const verifiedParcel: VerifiedParcel | undefined = validatingParse(verifiedParcelFormat, uint8ArrayToString(decryptedBody));
-          if (verifiedParcel === undefined) {
-            // TODO: Do something, not to throw error
-            throw new Error('Invalid parcel format');
-          }
-          const {verified} = verifiedParcel;
-          this.verificationStep = {type: 'verified', verified};
-          if (!verified) {
-            // TODO: Do something, not to throw error
-            throw new Error('Not verified from the sender');
-          }
-          return key;
-        }
+    // Key exchange
+    const keyExchangeRes = await pipingUiUtils.keyExchangeAndReceiveVerified(
+      this.props.serverUrl,
+      this.props.secretPath,
+      this.props.protection,
+      (step: VerificationStep) => {
+        this.verificationStep = step;
       }
-    })();
+    );
+
+    // If error
+    if (keyExchangeRes.type === "error") {
+      this.errorMessage = () => keyExchangeRes.errorMessage(globalStore.language);
+      return;
+    }
+    const {key} = keyExchangeRes;
 
     // Decrypting & Download
     await pipingUiUtils.decryptingDownload({
       downloadUrl: this.downloadPath,
       fileName: this.props.secretPath,
-      key: password,
+      key,
       decryptErrorMessage: this.strings['password_might_be_wrong'],
     });
   }
