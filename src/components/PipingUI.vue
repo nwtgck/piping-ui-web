@@ -20,8 +20,12 @@
           <v-switch
                   inset
                   v-model="isTextMode"
-                  :class="`justify-end`"
-                  :label="strings['text_mode']"/>
+                  :class="`justify-end`">
+            <template v-slot:label>
+              <v-icon class="icon-and-text-margin">{{ icons.mdiText }}</v-icon>
+              {{ strings['text_mode'] }}
+            </template>
+          </v-switch>
           <file-pond v-if="!isTextMode"
                      v-model="files"
                      :label-idle="filePondLabelIdle"
@@ -98,18 +102,26 @@
             <v-switch :input-value="protectionType === 'passwordless'"
                       @change="onEnablePasswordlessProtection"
                       inset
-                      :label="strings['passwordless_protection']"
                       color="blue"
-                      class="ma-0 pa-0"/>
+                      class="ma-0 pa-0">
+              <template v-slot:label>
+                <v-icon class="icon-and-text-margin" :color="protectionType === 'passwordless' ? 'blue' : ''">{{ icons.mdiShieldHalfFull }}</v-icon>
+                {{ strings['passwordless_protection'] }}
+              </template>
+            </v-switch>
           </v-row>
 
           <v-row align="center" class="ma-0 pa-0">
             <v-switch :input-value="protectionType === 'password'"
                       @change="onEnablePasswordProtection"
                       inset
-                      :label="strings['protect_with_password']"
                       color="blue"
-                      class="ma-0 pa-0" />
+                      class="ma-0 pa-0" >
+              <template v-slot:label>
+                <v-icon class="icon-and-text-margin" :color="protectionType === 'password' ? 'blue' : ''">{{ icons.mdiKey }}</v-icon>
+                {{ strings['protect_with_password'] }}
+              </template>
+            </v-switch>
 
             <v-text-field :style="{visibility: protectionType === 'password' ? 'visible' : 'hidden'}"
                           v-model="password"
@@ -192,7 +204,7 @@ const DataViewer = () => import("@/components/DataViewer.vue");
 const DataDownloader = () => import('@/components/DataDownloader.vue');
 import {DataDownloaderProps} from "@/components/DataDownloader.vue";
 import {str, arr, validatingParse, Json, TsType} from 'ts-json-validator';
-import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiCloseCircle, mdiClose, mdiEye, mdiEyeOff} from "@mdi/js";
+import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiCloseCircle, mdiClose, mdiEye, mdiEyeOff, mdiKey, mdiShieldHalfFull, mdiText} from "@mdi/js";
 
 import {keys} from "@/local-storage-keys";
 import {globalStore} from "@/vue-global";
@@ -200,7 +212,6 @@ import {strings} from "@/strings";
 import {File as FilePondFile} from "filepond";
 import {baseAndExt} from "@/utils";
 import {Protection} from "@/datatypes";
-const pipingUiUtilsAsync = () => import("@/piping-ui-utils");
 
 (async () => require('filepond/dist/filepond.min.css'))();
 
@@ -296,6 +307,9 @@ export default class PipingUI extends Vue {
     mdiClose,
     mdiEye,
     mdiEyeOff,
+    mdiKey,
+    mdiShieldHalfFull,
+    mdiText,
   };
 
   // for language support
@@ -619,3 +633,9 @@ export default class PipingUI extends Vue {
 }
 
 </script>
+
+<style scoped>
+.icon-and-text-margin {
+  margin-right: 0.3em;
+}
+</style>
