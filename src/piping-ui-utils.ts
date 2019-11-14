@@ -10,17 +10,33 @@ const jwkThumbprintAsync  = () => import("jwk-thumbprint");
 
 // Decrypt & Download
 export async function decryptingDownload(
-  {downloadUrl, fileName, enablePasswordProtection, password, decryptErrorMessage}:
-  {downloadUrl: string, fileName: string, enablePasswordProtection: boolean, password: string, decryptErrorMessage: string}
+  {downloadUrl, fileName, key, decryptErrorMessage}:
+  {downloadUrl: string, fileName: string, key: string | Uint8Array | undefined, decryptErrorMessage: string}
 ) {
+  type Protection = {type: 'raw'} | {type: 'string', key: string} | {type: 'uint8array', key: string};
+
   const swDownload = await swDownloadAsync();
   // If supporting stream-download via Service Worker
   if (await swDownload.supportsSwDownload) {
+    const utils = await utilsAsync();
+    const protection: Protection = (() => {
+      if (key === undefined) {
+        return {type: 'raw'} as const;
+      } else if (typeof key === 'string') {
+        return {type: 'string', key: key} as const;
+      } else {
+        return {
+          type: 'uint8array',
+          key: utils.uint8ArrayToBase64(key),
+        } as const;
+      }
+    })();
+
     // Create download info to tell to Service Worker
     const downloadInfo = {
       url: downloadUrl,
       filename: fileName,
-      password: enablePasswordProtection ? password : '',
+      protection,
       decryptErrorMessage: decryptErrorMessage,
     };
     // Download via Service Worker
@@ -33,22 +49,22 @@ export async function decryptingDownload(
   } else {
     const binconv = await binconvAsync();
     // If password-protection is disabled
-    if (enablePasswordProtection) {
-      // Get response
-      const res = await fetch(downloadUrl);
-      const resBody = await binconv.blobToUint8Array(await res.blob());
-      // Decrypt the response body
-      const plain = await (await utilsAsync()).decrypt(resBody, password);
-      // Save
-      const FileSaver = await FileSaverAsync();
-      FileSaver.saveAs(binconv.uint8ArrayToBlob(plain), fileName);
-    } else {
+    if (key === undefined) {
       // Download or show on browser sometimes
       const aTag = document.createElement('a');
       aTag.href = downloadUrl;
       aTag.target = "_blank";
       aTag.download = fileName;
       aTag.click();
+    } else {
+      // Get response
+      const res = await fetch(downloadUrl);
+      const resBody = await binconv.blobToUint8Array(await res.blob());
+      // Decrypt the response body
+      const plain = await (await utilsAsync()).decrypt(resBody, key);
+      // Save
+      const FileSaver = await FileSaverAsync();
+      FileSaver.saveAs(binconv.uint8ArrayToBlob(plain), fileName);
     }
   }
 }

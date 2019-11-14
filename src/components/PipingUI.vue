@@ -544,9 +544,17 @@ export default class PipingUI extends Vue {
     await pipingUiUtils.decryptingDownload({
       downloadUrl: downloadUrl,
       fileName: this.secretPath,
-      // FIXME:
-      enablePasswordProtection: this.protectionType === 'password',
-      password: this.password,
+      key: (() => {
+        switch (this.protectionType) {
+          case "raw":
+            return undefined;
+          case "password":
+            return this.password;
+          case "passwordless":
+            // TODO: this is dummy value
+            return new Uint8Array([1, 2, 3]);
+        }
+      })(),
       decryptErrorMessage: this.strings['password_might_be_wrong'],
     });
   }

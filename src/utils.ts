@@ -122,3 +122,8 @@ export async function sha256(input: string): Promise<string> {
     await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input)),
   );
 }
+
+// (from: https://stackoverflow.com/a/11562550/2885946)
+export function uint8ArrayToBase64(arr: Uint8Array): string {
+  return btoa(String.fromCharCode(...arr));
+}
