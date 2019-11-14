@@ -45,9 +45,9 @@ const en = {
   key_exchange_error: (errorCode: KeyExchangeErrorCode): string => {
     switch (errorCode) {
       case "invalid_parcel_format":
-        return 'Parcel format is invalid';
+        return 'Parcel format is invalid.';
       case "different_key_exchange_version":
-        return 'Key exchange versions are different. Please update your app or peer\'s app'
+        return 'Key exchange versions are different. Please update your app or peer\'s app.'
     }
   },
   upload_url: 'Upload URL',
@@ -111,9 +111,9 @@ const ja: typeof defaultStr = {
   key_exchange_error: (errorCode: KeyExchangeErrorCode): string => {
     switch (errorCode) {
       case "invalid_parcel_format":
-        return 'パーセルのフォーマットが不正です';
+        return 'パーセルのフォーマットが不正です。';
       case "different_key_exchange_version":
-        return '鍵交換のバージョンが異なります。このアプリを更新するか通信相手のアプリを更新してください';
+        return '鍵交換のバージョンが異なります。このアプリを更新するか通信相手のアプリを更新してください。';
     }
   },
   upload_url: 'アップロードURL',
