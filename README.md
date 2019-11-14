@@ -17,7 +17,12 @@ Web UI for [Piping Server](https://github.com/nwtgck/piping-server)
 - Multi-file sending with zip
 - Auto completes for server URLs and secret paths
 - Image/video preview
-- Password protection powered by [OpenPGP.js](https://github.com/openpgpjs/openpgpjs)
+- Passwordless E2E encryption by [Elliptic-curve Diffie–Hellman] and [OpenPGP.js]
+- Password protection powered by [OpenPGP.js]
 
 ## Logo
 <div>Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
+
+
+[Elliptic-curve Diffie–Hellman]: https://en.wikipedia.org/wiki/Elliptic-curve_Diffie%E2%80%93Hellman
+[OpenPGP.js]: https://github.com/openpgpjs/openpgpjs
