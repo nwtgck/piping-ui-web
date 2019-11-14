@@ -44,6 +44,7 @@
                     @blur="attachProtocolToUrl()"
                     ref="server_url_ref"
                     clearable
+                    style="margin-bottom: 0.8em;"
         >
           <template v-slot:item="{ index, item }">
             {{ item }}
@@ -62,6 +63,7 @@
                     :items="secretPathHistory"
                     :placeholder="strings['secret_path_placeholder']"
                     ref="secret_path_ref"
+                    class="ma-0 pa-0"
                     clearable
         >
           <template v-slot:item="{ index, item }">
@@ -82,7 +84,7 @@
           <v-chip v-for="suggestedSecretPath in suggestedSecretPaths"
                   :key="suggestedSecretPath"
                   @click="secretPath = suggestedSecretPath"
-                  class="ma-1"
+                  class="ma-0"
                   label
                   outlined
                   style="font-size: 1em;"
@@ -91,23 +93,36 @@
           </v-chip>
         </div>
 
-        <v-layout>
-          <v-switch v-model="enablePasswordProtection"
-                    inset
-                    :label="strings['protect_with_password']"
-                    color="blue"
-                    style="padding-left: 0.5em;"/>
+        <v-col class="pa-0">
+          <v-row align="center" class="ma-0" style="padding-top: 0.4em;">
+            <v-switch :input-value="protectionType === 'passwordless'"
+                      @change="onEnablePasswordlessProtection"
+                      inset
+                      :label="strings['passwordless_protection']"
+                      color="blue"
+                      class="ma-0 pa-0"/>
+          </v-row>
 
-          <v-text-field :style="{visibility: enablePasswordProtection ? 'visible' : 'hidden'}"
-                        v-model="password"
-                        :type="showsPassword ? 'text' : 'password'"
-                        :label="strings['password']"
-                        :append-icon="showsPassword ? icons.mdiEye : icons.mdiEyeOff"
-                        @click:append="showsPassword = !showsPassword"
-                        single-line
-                        outlined
-                        style="margin-left: 0.5em;" />
-        </v-layout>
+          <v-row align="center" class="ma-0 pa-0">
+            <v-switch :input-value="protectionType === 'password'"
+                      @change="onEnablePasswordProtection"
+                      inset
+                      :label="strings['protect_with_password']"
+                      color="blue"
+                      class="ma-0 pa-0" />
+
+            <v-text-field :style="{visibility: protectionType === 'password' ? 'visible' : 'hidden'}"
+                          v-model="password"
+                          :type="showsPassword ? 'text' : 'password'"
+                          :label="strings['password']"
+                          :append-icon="showsPassword ? icons.mdiEye : icons.mdiEyeOff"
+                          @click:append="showsPassword = !showsPassword"
+                          single-line
+                          outlined
+                          class="pa-0"
+                          style="margin-left: 0.5em;" />
+          </v-row>
+        </v-col>
 
         <v-btn v-if="sendOrGet === 'send'"
                color="primary"
@@ -140,22 +155,18 @@
       </v-card>
 
       <div style="padding: 0.5em;">
-        <!-- Data uploaders to Piping Server -->
-        <v-expansion-panels v-model="uploadExpandedPanelIds"
-                            v-show="sendOrGet === 'send'"
-                            multiple>
-          <DataUploader v-for="dataUpload in dataUploads"
-                        :key="dataUpload.uploadNo"
-                        :props="dataUpload"/>
-        </v-expansion-panels>
-
-        <!-- Data viewers to Piping Server -->
-        <v-expansion-panels v-model="viewExpandedPanelIds"
-                            v-show="sendOrGet === 'get'"
-                            multiple>
-          <DataViewer v-for="dataView in dataViews"
-                      :key="dataView.viewNo"
-                      :props="dataView"/>
+        <v-expansion-panels v-model="expandedPanelIds" multiple>
+          <template v-for="expandedPanel in expandedPanels">
+            <template v-if="expandedPanel.type === 'data_uploader'">
+              <DataUploader :props="expandedPanel.props" :key="`upload-${expandedPanel.props.uploadNo}`"/>
+            </template>
+            <template v-if="expandedPanel.type === 'data_viewer'">
+              <DataViewer :props="expandedPanel.props" :key="`view-${expandedPanel.props.viewNo}`"/>
+            </template>
+            <template v-if="expandedPanel.type === 'data_downloader'">
+              <DataDownloader :props="expandedPanel.props" :key="`download-${expandedPanel.props.downloadNo}`"/>
+            </template>
+          </template>
         </v-expansion-panels>
       </div>
     </v-flex>
@@ -178,6 +189,8 @@ import {DataUploaderProps} from '@/components/DataUploader.vue';
 const DataUploader = () => import('@/components/DataUploader.vue');
 import {DataViewerProps} from "@/components/DataViewer.vue";
 const DataViewer = () => import("@/components/DataViewer.vue");
+const DataDownloader = () => import('@/components/DataDownloader.vue');
+import {DataDownloaderProps} from "@/components/DataDownloader.vue";
 import {str, arr, validatingParse, Json, TsType} from 'ts-json-validator';
 import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiCloseCircle, mdiClose, mdiEye, mdiEyeOff} from "@mdi/js";
 
@@ -186,6 +199,7 @@ import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import {File as FilePondFile} from "filepond";
 import {baseAndExt} from "@/utils";
+import {Protection} from "@/datatypes";
 const pipingUiUtilsAsync = () => import("@/piping-ui-utils");
 
 (async () => require('filepond/dist/filepond.min.css'))();
@@ -226,6 +240,7 @@ function randomStr(len: number, chars: ReadonlyArray<string>){
   components: {
     DataUploader,
     DataViewer,
+    DataDownloader,
     FilePond,
   },
 })
@@ -239,7 +254,7 @@ export default class PipingUI extends Vue {
   private files: FilePondFile[] = [];
   private serverUrlHistory: string[] = [];
   private secretPathHistory: string[] = [];
-  private enablePasswordProtection: boolean = false;
+  private protectionType: Protection["type"] = 'raw';
   private password: string = '';
   private showsPassword: boolean = false;
 
@@ -258,17 +273,19 @@ export default class PipingUI extends Vue {
 
   private uploadCount = 0;
   private viewCount = 0;
-  private dataUploads: DataUploaderProps[] = [];
-  private dataViews: DataViewerProps[] = [];
+  private downloadCount = 0;
+  private expandedPanels: (
+    {type: 'data_uploader', props: DataUploaderProps} |
+    {type: 'data_viewer', props: DataViewerProps} |
+    {type: 'data_downloader', props: DataDownloaderProps}
+  )[] = [];
+  // Indexes of expanded expansion-panel
+  private expandedPanelIds: number[] = [];
 
   // Show snackbar
   private showsSnackbar: boolean = false;
   // Message of snackbar
   private snackbarMessage: string = '';
-  // Indexes of expanded expansion-panel for upload
-  private uploadExpandedPanelIds: number[] = [];
-  // Indexes of expanded expansion-panel for view
-  private viewExpandedPanelIds: number[] = [];
 
   private icons = {
     mdiUpload,
@@ -327,6 +344,21 @@ export default class PipingUI extends Vue {
     }
   }
 
+  private get enablePasswordProtection(): boolean {
+    return this.protectionType === 'password';
+  }
+
+  // eslint-disable-next-line getter-return
+  private get protection(): Protection {
+    switch (this.protectionType) {
+      case 'raw':
+      case 'passwordless':
+        return {type: this.protectionType};
+      case 'password':
+        return {type: this.protectionType, password: this.password};
+    }
+  }
+
   private updateRandomStrs() {
     this.randomStrs[0] = randomStr(3, chars.nonConfusing);
   }
@@ -361,6 +393,14 @@ export default class PipingUI extends Vue {
     })();
 
     return candidates.filter(c => this.secretPath !== c);
+  }
+
+  private onEnablePasswordProtection(enable: boolean) {
+    this.protectionType = enable ? 'password' : 'raw';
+  }
+
+  private onEnablePasswordlessProtection(enable: boolean) {
+    this.protectionType = enable ? 'passwordless' : 'raw';
   }
 
   private mounted() {
@@ -414,7 +454,7 @@ export default class PipingUI extends Vue {
     this.secretPath = this.shouldBeRemoved.latestSecretPath;
   }
 
-  private send() {
+  private async send() {
     this.applyLatestServerUrlAndSecretPath();
 
     if (!this.isTextMode && this.files.length === 0) {
@@ -430,7 +470,7 @@ export default class PipingUI extends Vue {
     }
 
     // If enabling password protection and password is empty
-    if (this.enablePasswordProtection && this.password === '') {
+    if (this.protectionType === 'password' && this.password === '') {
       // Show error message
       this.showSnackbar(this.strings['password_is_required']);
       return;
@@ -441,15 +481,18 @@ export default class PipingUI extends Vue {
     // Increment upload counter
     this.uploadCount++;
     // Delegate data uploading
-    this.dataUploads.unshift({
-      uploadNo: this.uploadCount,
-      data: body,
-      serverUrl: this.serverUrl,
-      secretPath: this.secretPath,
-      password: this.enablePasswordProtection ? this.password : '',
+    this.expandedPanels.unshift({
+      type: 'data_uploader',
+      props: {
+        uploadNo: this.uploadCount,
+        data: body,
+        serverUrl: this.serverUrl,
+        secretPath: this.secretPath,
+        protection: this.protection,
+      }
     });
     // Open by default
-    this.uploadExpandedPanelIds.push(this.uploadCount-1);
+    this.expandedPanelIds.push(this.expandedPanels.length-1);
 
     // If history is enable and user-input server URL is new
     if (globalStore.recordsServerUrlHistory && !this.serverUrlHistory.map(normalizeUrl).includes(normalizeUrl(this.serverUrl))) {
@@ -492,25 +535,27 @@ export default class PipingUI extends Vue {
 
     const urlJoin = await urlJoinAsync();
     // If enabling password protection and password is empty
-    if (this.enablePasswordProtection && this.password === '') {
+    if (this.protectionType === 'password' && this.password === '') {
       // Show error message
       this.showSnackbar(this.strings['password_is_required']);
       return;
     }
-    const downloadUrl = urlJoin(this.serverUrl, encodeURI(this.secretPath));
 
-    const pipingUiUtils = await pipingUiUtilsAsync();
-    // Decrypting & Download
-    await pipingUiUtils.decryptingDownload({
-      downloadUrl: downloadUrl,
-      fileName: this.secretPath,
-      enablePasswordProtection: this.enablePasswordProtection,
-      password: this.password,
-      decryptErrorMessage: this.strings['password_might_be_wrong'],
+    this.downloadCount++;
+    // Delegate data downloading
+    this.expandedPanels.unshift({
+      type: 'data_downloader',
+      props: {
+        downloadNo: this.downloadCount,
+        serverUrl: this.serverUrl,
+        secretPath: this.secretPath,
+        protection: this.protection,
+      }
     });
+    this.expandedPanelIds.push(this.expandedPanels.length-1);
   }
 
-  private view() {
+  private async view() {
     this.applyLatestServerUrlAndSecretPath();
 
     // If secret path is empty
@@ -528,14 +573,17 @@ export default class PipingUI extends Vue {
     }
 
     this.viewCount++;
-    this.dataViews.unshift({
-      viewNo: this.viewCount,
-      serverUrl: this.serverUrl,
-      secretPath: this.secretPath,
-      password: this.enablePasswordProtection ? this.password : '',
+    this.expandedPanels.unshift({
+      type: 'data_viewer',
+      props: {
+        viewNo: this.viewCount,
+        serverUrl: this.serverUrl,
+        secretPath: this.secretPath,
+        protection: this.protection,
+      }
     });
     // Open by default
-    this.viewExpandedPanelIds.push(this.viewCount-1);
+    this.expandedPanelIds.push(this.expandedPanels.length-1);
   }
 
   // Show error message
