@@ -155,22 +155,15 @@
       </v-card>
 
       <div style="padding: 0.5em;">
-        <!-- Data uploaders to Piping Server -->
-        <v-expansion-panels v-model="uploadExpandedPanelIds"
-                            v-show="sendOrGet === 'send'"
-                            multiple>
-          <DataUploader v-for="dataUpload in dataUploads"
-                        :key="dataUpload.uploadNo"
-                        :props="dataUpload"/>
-        </v-expansion-panels>
-
-        <!-- Data viewers to Piping Server -->
-        <v-expansion-panels v-model="viewExpandedPanelIds"
-                            v-show="sendOrGet === 'get'"
-                            multiple>
-          <DataViewer v-for="dataView in dataViews"
-                      :key="dataView.viewNo"
-                      :props="dataView"/>
+        <v-expansion-panels v-model="expandedPanelIds" multiple>
+          <template v-for="expandedPanel in expandedPanels">
+            <template v-if="expandedPanel.type === 'data_uploader'">
+              <DataUploader :props="expandedPanel.props" :key="`upload-${expandedPanel.props.uploadNo}`"/>
+            </template>
+            <template v-if="expandedPanel.type === 'data_viewer'">
+              <DataViewer :props="expandedPanel.props" :key="`view-${expandedPanel.props.viewNo}`"/>
+            </template>
+          </template>
         </v-expansion-panels>
       </div>
     </v-flex>
@@ -274,17 +267,17 @@ export default class PipingUI extends Vue {
 
   private uploadCount = 0;
   private viewCount = 0;
-  private dataUploads: DataUploaderProps[] = [];
-  private dataViews: DataViewerProps[] = [];
+  private expandedPanels: (
+    {type: 'data_uploader', props: DataUploaderProps} |
+    {type: 'data_viewer', props: DataViewerProps}
+  )[] = [];
+  // Indexes of expanded expansion-panel
+  private expandedPanelIds: number[] = [];
 
   // Show snackbar
   private showsSnackbar: boolean = false;
   // Message of snackbar
   private snackbarMessage: string = '';
-  // Indexes of expanded expansion-panel for upload
-  private uploadExpandedPanelIds: number[] = [];
-  // Indexes of expanded expansion-panel for view
-  private viewExpandedPanelIds: number[] = [];
 
   private icons = {
     mdiUpload,
@@ -480,15 +473,18 @@ export default class PipingUI extends Vue {
     // Increment upload counter
     this.uploadCount++;
     // Delegate data uploading
-    this.dataUploads.unshift({
-      uploadNo: this.uploadCount,
-      data: body,
-      serverUrl: this.serverUrl,
-      secretPath: this.secretPath,
-      protection: this.protection,
+    this.expandedPanels.unshift({
+      type: 'data_uploader',
+      props: {
+        uploadNo: this.uploadCount,
+        data: body,
+        serverUrl: this.serverUrl,
+        secretPath: this.secretPath,
+        protection: this.protection,
+      }
     });
     // Open by default
-    this.uploadExpandedPanelIds.push(this.uploadCount-1);
+    this.expandedPanelIds.push(this.expandedPanels.length-1);
 
     // If history is enable and user-input server URL is new
     if (globalStore.recordsServerUrlHistory && !this.serverUrlHistory.map(normalizeUrl).includes(normalizeUrl(this.serverUrl))) {
@@ -577,14 +573,17 @@ export default class PipingUI extends Vue {
     }
 
     this.viewCount++;
-    this.dataViews.unshift({
-      viewNo: this.viewCount,
-      serverUrl: this.serverUrl,
-      secretPath: this.secretPath,
-      protection: this.protection,
+    this.expandedPanels.unshift({
+      type: 'data_viewer',
+      props: {
+        viewNo: this.viewCount,
+        serverUrl: this.serverUrl,
+        secretPath: this.secretPath,
+        protection: this.protection,
+      }
     });
     // Open by default
-    this.viewExpandedPanelIds.push(this.viewCount-1);
+    this.expandedPanelIds.push(this.expandedPanels.length-1);
   }
 
   // Show error message
