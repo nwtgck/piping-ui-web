@@ -17,9 +17,7 @@
       </v-alert>
 
       <span v-if="props.protection.type === 'passwordless' && verificationStep.type === 'verification_code_arrived'">
-        <v-alert type="info">
-          <span style="font-size: 1.2em">{{ strings['verification_code'] }}: <b>{{ verificationStep.verificationCode }}</b></span>
-        </v-alert>
+        <VerificationCode :value="verificationStep.verificationCode"/>
 
         <v-layout>
           <v-flex xs6>
@@ -114,6 +112,7 @@ import {strings} from "@/strings";
 import {mdiAlert, mdiCancel, mdiCheck, mdiChevronDown, mdiCloseCircle} from "@mdi/js";
 import {AsyncComputed} from "@/AsyncComputed";
 import {Protection, VerificationStep, VerifiedParcel} from "@/datatypes";
+import VerificationCode from "@/components/VerificationCode.vue";
 
 
 export type DataUploaderProps = {
@@ -125,7 +124,11 @@ export type DataUploaderProps = {
 };
 
 // NOTE: Automatically upload when mounted
-@Component
+@Component({
+  components: {
+    VerificationCode,
+  },
+})
 export default class DataUploader extends Vue {
   @Prop() private props!: DataUploaderProps;
 
