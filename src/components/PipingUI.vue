@@ -164,7 +164,7 @@
               <DataViewer :props="expandedPanel.props" :key="`view-${expandedPanel.props.viewNo}`"/>
             </template>
             <template v-if="expandedPanel.type === 'data_downloader'">
-              <DataDownloader :props="expandedPanel.props" :key="`view-${expandedPanel.props.downloadNo}`"/>
+              <DataDownloader :props="expandedPanel.props" :key="`download-${expandedPanel.props.downloadNo}`"/>
             </template>
           </template>
         </v-expansion-panels>
