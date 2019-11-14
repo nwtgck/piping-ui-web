@@ -2,6 +2,14 @@
 
 importScripts('openpgp/openpgp.min.js');
 
+// (from: https://gist.github.com/borismus/1032746#gistcomment-1493026)
+function base64ToUint8Array(base64Str) {
+  const raw = atob(base64Str);
+  return Uint8Array.from(Array.prototype.map.call(raw, (x) => {
+    return x.charCodeAt(0);
+  }));
+}
+
 // This is the code piece that GenerateSW mode can't provide for us.
 // This code listens for the user's confirmation to update the app.
 self.addEventListener('message', (e) => {
@@ -43,10 +51,12 @@ self.addEventListener('fetch', (event) => {
       console.error('downloadInfo.filename is missing');
       return;
     }
-    // NOTE: .password should always be required
-    //       .password === '' means non-password protection
-    if (!("password" in downloadInfo)) {
-      console.error('downloadInfo.password is missing');
+    if (!("protection" in downloadInfo)) {
+      console.error('downloadInfo.protection is missing');
+      return;
+    }
+    if (!("type" in downloadInfo.protection)) {
+      console.error('downloadInfo.protection.type is missing');
       return;
     }
     if (!("decryptErrorMessage" in downloadInfo)) {
@@ -55,8 +65,22 @@ self.addEventListener('fetch', (event) => {
     }
     const targetUrl = downloadInfo.url;
     let filename = downloadInfo.filename;
-    const password = downloadInfo.password;
+    const protection = downloadInfo.protection;
     const decryptErrorMessage = downloadInfo.decryptErrorMessage;
+
+    const password = (() => {
+      switch (protection.type) {
+        case "raw":
+          return undefined;
+        case "string":
+          return protection.key;
+        case "uint8array":
+          return base64ToUint8Array(protection.key);
+        default:
+          console.error(`Unexpected protection.type: ${protection.type}`);
+          return undefined;
+      }
+    })();
 
     event.respondWith((async () => {
       const res = await fetch(targetUrl);
@@ -67,8 +91,8 @@ self.addEventListener('fetch', (event) => {
       headers.set('Content-Disposition', "attachment; filename*=UTF-8''" + filename);
       // Plain ReadableStream
       let plainStream = res.body;
-      // If password protection is enabled
-      if (password !== '') {
+      // If encrypted
+      if (password !== undefined) {
         try {
           // Allow unauthenticated stream
           // (see: https://github.com/openpgpjs/openpgpjs/releases/tag/v4.0.0)
