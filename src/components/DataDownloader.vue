@@ -39,11 +39,14 @@
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import urlJoin from 'url-join';
 import {mdiAlert, mdiChevronDown} from "@mdi/js";
+import {uint8ArrayToString} from 'binconv/dist/src/uint8ArrayToString';
+import {validatingParse} from "ts-json-validator";
 
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
+import * as utils from "@/utils";
 import * as pipingUiUtils from "@/piping-ui-utils";
-import {Protection, VerificationStep} from "@/datatypes";
+import {Protection, VerificationStep, VerifiedParcel, verifiedParcelFormat} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 
 
@@ -100,22 +103,49 @@ export default class DataDownloader extends Vue {
   }
 
   async mounted() {
+    const password: string | Uint8Array | undefined = await (async () => {
+      switch (this.props.protection.type) {
+        case 'raw':
+          return undefined;
+        case 'password':
+          return this.props.protection.password;
+        case 'passwordless': {
+          // Key exchange
+          const keyExchangeRes = await pipingUiUtils.keyExchange(this.props.serverUrl, 'receiver', this.props.secretPath);
+          if (keyExchangeRes.type === 'error') {
+            this.verificationStep = {type: 'error'};
+            this.errorMessage = () => this.strings['key_exchange_error'](keyExchangeRes.errorCode);
+            return;
+          }
+          const {key, verificationCode} = keyExchangeRes;
+          this.verificationStep = {type: 'verification_code_arrived', verificationCode, key};
+          const path = urlJoin(this.props.serverUrl, await pipingUiUtils.verifiedPath(this.props.secretPath));
+          // Get verified or not
+          const res = await fetch(path);
+          // Decrypt body
+          const decryptedBody: Uint8Array = await utils.decrypt(new Uint8Array(await res.arrayBuffer()), key);
+          // Parse
+          const verifiedParcel: VerifiedParcel | undefined = validatingParse(verifiedParcelFormat, uint8ArrayToString(decryptedBody));
+          if (verifiedParcel === undefined) {
+            // TODO: Do something, not to throw error
+            throw new Error('Invalid parcel format');
+          }
+          const {verified} = verifiedParcel;
+          this.verificationStep = {type: 'verified', verified};
+          if (!verified) {
+            // TODO: Do something, not to throw error
+            throw new Error('Not verified from the sender');
+          }
+          return key;
+        }
+      }
+    })();
+
     // Decrypting & Download
     await pipingUiUtils.decryptingDownload({
       downloadUrl: this.downloadPath,
       fileName: this.props.secretPath,
-      key: (() => {
-        switch (this.props.protection.type) {
-          case "raw":
-            return undefined;
-          case "password":
-            return this.props.protection.password;
-          case "passwordless":
-            // TODO: impl for passwordless protection
-            // TODO: this is dummy value
-            return new Uint8Array([1, 2, 3]);
-        }
-      })(),
+      key: password,
       decryptErrorMessage: this.strings['password_might_be_wrong'],
     });
   }
