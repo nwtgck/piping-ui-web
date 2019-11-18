@@ -39,14 +39,11 @@
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import urlJoin from 'url-join';
 import {mdiAlert, mdiChevronDown} from "@mdi/js";
-import {uint8ArrayToString} from 'binconv/dist/src/uint8ArrayToString';
-import {validatingParse} from "ts-json-validator";
 
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
-import * as utils from "@/utils";
 import * as pipingUiUtils from "@/piping-ui-utils";
-import {Protection, VerificationStep, VerifiedParcel, verifiedParcelFormat} from "@/datatypes";
+import {Protection, VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 
 

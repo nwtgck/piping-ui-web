@@ -195,7 +195,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
+import { Component, Vue, Watch } from 'vue-property-decorator';
 const urlJoinAsync = () => import('url-join').then(p => p.default);
 import {DataUploaderProps} from '@/components/DataUploader.vue';
 const DataUploader = () => import('@/components/DataUploader.vue');

@@ -163,9 +163,7 @@ import Clipboard from 'clipboard';
 import fileType from 'file-type';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
 import {uint8ArrayToBlob} from 'binconv/dist/src/uint8ArrayToBlob';
-import {uint8ArrayToString} from 'binconv/dist/src/uint8ArrayToString';
 import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle, mdiEye, mdiEyeOff, mdiKey, mdiFeatureSearchOutline} from "@mdi/js";
-import {validatingParse} from 'ts-json-validator';
 
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
