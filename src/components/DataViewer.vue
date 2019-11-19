@@ -12,19 +12,29 @@
     </v-expansion-panel-header>
     <v-expansion-panel-content>
 
-      <!-- loaded of total -->
-      <v-tooltip bottom>
-        <template v-slot:activator="{ on }">
-          <div style="text-align: center" v-on="on">
-            {{ readableBytesString(progressSetting.loadedBytes, 1) }}{{ !progressSetting.totalBytes ? "" : ` of ${readableBytesString(progressSetting.totalBytes, 1)}` }}
-          </div>
-        </template>
-        <span>{{ progressSetting.loadedBytes }}{{ !progressSetting.totalBytes ? "" : ` of ${progressSetting.totalBytes}` }}</span>
-      </v-tooltip>
+      <v-alert type="info" v-if="props.protection.type === 'passwordless' && verificationStep.type === 'initial'">
+        <span style="">{{ strings['waiting_for_sender'] }}</span>
+      </v-alert>
 
-      <!-- Progress bar -->
-      <v-progress-linear :value="progressPercentage"
-                         :indeterminate="progressPercentage === null && !canceled && errorMessage() === ''" />
+      <span v-if="props.protection.type === 'passwordless' && verificationStep.type === 'verification_code_arrived'">
+        <VerificationCode :value="verificationStep.verificationCode"/>
+      </span>
+
+      <span v-if="isReadyToDownload">
+        <!-- loaded of total -->
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on }">
+            <div style="text-align: center" v-on="on">
+              {{ readableBytesString(progressSetting.loadedBytes, 1) }}{{ !progressSetting.totalBytes ? "" : ` of ${readableBytesString(progressSetting.totalBytes, 1)}` }}
+            </div>
+          </template>
+          <span>{{ progressSetting.loadedBytes }}{{ !progressSetting.totalBytes ? "" : ` of ${progressSetting.totalBytes}` }}</span>
+        </v-tooltip>
+
+          <!-- Progress bar -->
+        <v-progress-linear :value="progressPercentage"
+                           :indeterminate="progressPercentage === null && !canceled && errorMessage() === ''" />
+      </span>
 
       <div v-show="isDecrypting">
         <div style="text-align: center">
@@ -43,7 +53,8 @@
         </tbody>
       </v-simple-table>
 
-      <div v-if="isDoneDownload">
+      <!-- NOTE: The reason why don't use .protection.type === 'password' is that a user may forget to check "Protect with password" despite the data is encrypted with a password -->
+      <div v-if="props.protection.type !== 'passwordless' && isDoneDownload">
         <v-layout>
           <v-switch v-model="enablePasswordReinput"
                     inset
@@ -64,7 +75,7 @@
         <div v-if="enablePasswordReinput" style="text-align: right">
           <v-btn color="primary"
                  text
-                 @click="decryptIfNeedAndViewBlob()">
+                 @click="decryptIfNeedAndViewBlob(props.protection.password)">
             <v-icon >{{ icons.mdiKey }}</v-icon>
             {{ strings['unlock'] }}
           </v-btn>
@@ -95,7 +106,7 @@
       <div v-show="linkifiedText !== ''" style="text-align: center">
         <div style="text-align: right">
           <v-tooltip v-model="showsCopied" bottom>
-            <template v-slot:activator="{ on }">
+            <template v-slot:activator="{}">
               <v-btn ref="text_copy_button" style="background-color: #dcdcdc; margin-bottom: 0.3em;">
                 <!-- (from: https://iconify.design/icon-sets/octicon/clippy.html) -->
                 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" focusable="false" width="1.5em" height="1.5em" style="-ms-transform: rotate(360deg); -webkit-transform: rotate(360deg); transform: rotate(360deg);" preserveAspectRatio="xMidYMid meet" viewBox="0 0 14 16"><path fill-rule="evenodd" d="M2 13h4v1H2v-1zm5-6H2v1h5V7zm2 3V8l-3 3 3 3v-2h5v-2H9zM4.5 9H2v1h2.5V9zM2 12h2.5v-1H2v1zm9 1h1v2c-.02.28-.11.52-.3.7-.19.18-.42.28-.7.3H1c-.55 0-1-.45-1-1V4c0-.55.45-1 1-1h3c0-1.11.89-2 2-2 1.11 0 2 .89 2 2h3c.55 0 1 .45 1 1v5h-1V6H1v9h10v-2zM2 5h8c0-.55-.45-1-1-1H8c-.55 0-1-.45-1-1s-.45-1-1-1-1 .45-1 1-.45 1-1 1H3c-.55 0-1 .45-1 1z" fill="#000000"/></svg>
@@ -157,18 +168,25 @@ import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle, mdiE
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import * as utils from '@/utils';
+import * as pipingUiUtils from "@/piping-ui-utils";
 import {AsyncComputed} from "@/AsyncComputed";
+import {Protection, VerificationStep, VerifiedParcel, verifiedParcelFormat} from "@/datatypes";
+import VerificationCode from "@/components/VerificationCode.vue";
+
 
 export type DataViewerProps = {
   viewNo: number,
   serverUrl: string,
   secretPath: string,
-  // NOTE: empty string means non-encryption
-  password: string,
+  protection: Protection,
 };
 
 // NOTE: Automatically download when mounted
-@Component
+@Component({
+  components: {
+    VerificationCode,
+  },
+})
 export default class DataViewer extends Vue {
   @Prop() private props!: DataViewerProps;
 
@@ -189,6 +207,7 @@ export default class DataViewer extends Vue {
   private text: string = '';
   private enablePasswordReinput: boolean = false;
   private showsPassword: boolean = false;
+  private verificationStep: VerificationStep = {type: 'initial'};
 
   private rawBlob: Blob = new Blob();
   private blob: Blob = new Blob();
@@ -251,7 +270,11 @@ export default class DataViewer extends Vue {
   }
 
   private get isCancelable(): boolean {
-    return !this.isDoneDownload && !this.hasError && !this.canceled;
+    return this.isReadyToDownload && !this.isDoneDownload && !this.hasError && !this.canceled;
+  }
+
+  private get isReadyToDownload(): boolean {
+    return this.props.protection.type === 'passwordless' ? this.verificationStep.type === 'verified' && this.verificationStep.verified : true
   }
 
   private get downloadPath(): string {
@@ -270,7 +293,7 @@ export default class DataViewer extends Vue {
     this.xhr = new XMLHttpRequest();
   }
 
-  mounted() {
+  async mounted() {
     // Setting for copying to clipboard
     new Clipboard((this.$refs.text_copy_button as Vue).$el, {
       target: () => {
@@ -281,6 +304,23 @@ export default class DataViewer extends Vue {
         return this.$refs.text_viewer as Element
       }
     });
+
+    // Key exchange
+    const keyExchangeRes = await pipingUiUtils.keyExchangeAndReceiveVerified(
+      this.props.serverUrl,
+      this.props.secretPath,
+      this.props.protection,
+      (step: VerificationStep) => {
+        this.verificationStep = step;
+      }
+    );
+
+    // If error
+    if (keyExchangeRes.type === "error") {
+      this.errorMessage = () => keyExchangeRes.errorMessage(globalStore.language);
+      return;
+    }
+    const {key} = keyExchangeRes;
 
     this.xhr.open('GET', this.downloadPath);
     this.xhr.responseType = 'blob';
@@ -304,7 +344,7 @@ export default class DataViewer extends Vue {
         // Get raw response body
         this.rawBlob = this.xhr.response;
         // Decrypt and view blob if possible
-        this.decryptIfNeedAndViewBlob();
+        this.decryptIfNeedAndViewBlob(key);
       } else {
         const responseText = await utils.readBlobAsText(this.xhr.response);
         this.errorMessage = () => this.strings['xhr_status_error']({
@@ -350,9 +390,9 @@ export default class DataViewer extends Vue {
 
   }
 
-  private async decryptIfNeedAndViewBlob() {
+  private async decryptIfNeedAndViewBlob(password: string | Uint8Array | undefined) {
     this.blob = await (async () => {
-      if (this.props.password === '') {
+      if (password === undefined) {
         return this.rawBlob;
       } else {
         // Get response body
@@ -360,7 +400,7 @@ export default class DataViewer extends Vue {
         try {
           this.isDecrypting = true;
           // Decrypt the response body
-          const plain = await utils.decrypt(resBody, this.props.password);
+          const plain = await utils.decrypt(resBody, password);
           this.enablePasswordReinput = false;
           this.errorMessage = () => '';
           return uint8ArrayToBlob(plain);

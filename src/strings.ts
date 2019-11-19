@@ -1,5 +1,7 @@
-const urlJoinAsync = () => import('url-join').then(p => p.default);
+import {KeyExchangeErrorCode} from "@/piping-ui-utils";
 import {VERSION} from "@/version";
+
+const urlJoinAsync = () => import('url-join').then(p => p.default);
 const utilsAsync = () => import('@/utils');
 
 export function strings(language: string): typeof defaultStr {
@@ -29,6 +31,7 @@ const en = {
   secret_path_placeholder: 'e.g. mypath374',
   drop_a_file_here_or_browse: 'Drop a file here or <span class=\'filepond--label-action\'>Browse</span>',
   protect_with_password: 'Protect with password',
+  passwordless_protection: 'Passwordless',
   password: 'Password',
   password_is_required: 'Password is required',
   view: 'View',
@@ -36,6 +39,18 @@ const en = {
   error_file_not_selected: 'Error: File not selected',
   error_secret_path_not_specified: 'Error: Secret path not specified',
   upload: 'Upload',
+  waiting_for_receiver: 'Waiting for receiver...',
+  verification_code: 'Verification code',
+  verify_and_send: 'Verify & Send',
+  key_exchange_error: (errorCode: KeyExchangeErrorCode): string => {
+    switch (errorCode) {
+      case "invalid_parcel_format":
+        return 'Parcel format is invalid.';
+      case "different_key_exchange_version":
+        return 'Key exchange versions are different. Please update your app or peer\'s app.'
+    }
+  },
+  sender_not_verified: 'Sender not verified',
   upload_url: 'Upload URL',
   compressing: 'Compressing...',
   encrypting: 'Encrypting...',
@@ -49,6 +64,7 @@ const en = {
   cancel: 'Cancel',
   view_in_viewer: 'View',
   download_url: 'Download URL',
+  waiting_for_sender: 'Waiting for sender...',
   decrypting: 'Decrypting...',
   copied: 'Copied',
   password_might_be_wrong: 'The password might be wrong',
@@ -62,6 +78,7 @@ const en = {
   save: 'Save',
   record_server_url: 'Record server URL',
   record_secret_path: 'Record secret path',
+  download_in_downloader: 'Download',
 };
 const defaultStr = en;
 
@@ -82,6 +99,7 @@ const ja: typeof defaultStr = {
   secret_path_placeholder: '例: mypath374、ひみつのパス',
   drop_a_file_here_or_browse: 'ファイルをドラッグするか<span class=\'filepond--label-action\'>開く</span>',
   protect_with_password: 'パスワードで保護',
+  passwordless_protection: 'パスワードレス',
   password: 'パスワード',
   password_is_required: 'パスワードを入力してください',
   view: '見る',
@@ -89,6 +107,18 @@ const ja: typeof defaultStr = {
   error_file_not_selected: 'エラー: ファイルが選択されていません',
   error_secret_path_not_specified: 'エラー: 転送パスが指定されていません',
   upload: 'アップロード',
+  waiting_for_receiver: '受信者を待機中...',
+  verification_code: '確認コード',
+  verify_and_send: '確認完了',
+  key_exchange_error: (errorCode: KeyExchangeErrorCode): string => {
+    switch (errorCode) {
+      case "invalid_parcel_format":
+        return 'パーセルのフォーマットが不正です。';
+      case "different_key_exchange_version":
+        return '鍵交換のバージョンが異なります。このアプリを更新するか通信相手のアプリを更新してください。';
+    }
+  },
+  sender_not_verified: '送信者が拒否しました',
   upload_url: 'アップロードURL',
   compressing: '圧縮中...',
   encrypting: '暗号化中...',
@@ -103,6 +133,7 @@ const ja: typeof defaultStr = {
   view_in_viewer: '表示',
   decrypting: '復号中...',
   download_url: 'ダウンロードURL',
+  waiting_for_sender: '送信者を待機中...',
   copied: 'コピーされました',
   password_might_be_wrong: 'パスワードが間違っている可能性があります',
   reinput_password: 'パスワードを再入力',
@@ -115,4 +146,5 @@ const ja: typeof defaultStr = {
   save: '保存',
   record_server_url: 'サーバーURLを記憶',
   record_secret_path: '転送パスを記憶',
+  download_in_downloader: 'ダウンロード',
 } as const;

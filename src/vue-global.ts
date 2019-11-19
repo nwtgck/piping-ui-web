@@ -8,7 +8,7 @@ export const globalStore = new Vue({
     language: (() => {
       const language = window.localStorage.getItem(keys.language);
       if (language === null) {
-        return (navigator.languages && navigator.languages[0]) || navigator.language || (navigator as any).userLanguage;
+        return (navigator.languages && navigator.languages[0]) ?? navigator.language ?? (navigator as any).userLanguage;
       } else {
         return language;
       }
