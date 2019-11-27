@@ -390,7 +390,8 @@ export default class PipingUI extends Vue {
         const {ext} = baseAndExt(fileName);
         return [
           fileName,
-          ...this.randomStrs.map(s => `${s}${ext}`)
+          ...this.randomStrs.map(s => `${s}${ext}`),
+          ...this.randomStrs,
         ];
       } else if(this.files.length > 1) {
         if(this.secretPath.endsWith('.zip')) {
@@ -398,7 +399,8 @@ export default class PipingUI extends Vue {
         } else {
           return [
             ...(this.secretPath === '' ? [] : [`${this.secretPath}.zip`]),
-            ...this.randomStrs.map(s => `${s}.zip`)
+            ...this.randomStrs.map(s => `${s}.zip`),
+            ...this.randomStrs,
           ];
         }
       } else {
