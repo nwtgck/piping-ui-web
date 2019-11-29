@@ -26,7 +26,7 @@
     "jszip": "^3.2.2",
     "jwk-thumbprint": "^0.1.2",
     "linkifyjs": "^2.1.8",
-    "openpgp": "^4.7.0",
+    "openpgp": "^4.7.1",
     "register-service-worker": "^1.6.2",
     "sanitize-html": "^1.20.1",
     "ts-json-validator": "git+https://github.com/nwtgck/ts-json-validator.git#v0.1.2",
