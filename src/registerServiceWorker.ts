@@ -25,15 +25,8 @@ if (process.env.NODE_ENV === 'production') {
     },
     updated (registration) {
       console.log('New content is available; please refresh.')
-      registration.waiting.postMessage('skipWaiting')
-      navigator.serviceWorker.addEventListener(
-        'controllerchange',
-        () => {
-          document.dispatchEvent(
-            new CustomEvent('swUpdated')
-          );
-        },
-        {once: true},
+      document.dispatchEvent(
+        new CustomEvent('swUpdated', { detail: registration })
       );
     },
     offline () {
