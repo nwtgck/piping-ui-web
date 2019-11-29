@@ -72,8 +72,10 @@ export default class App extends Vue {
     mdiDotsVertical,
   };
 
-  pwa: {refreshing: boolean, updateExists: boolean} = {
+  // TODO: Remove any
+  pwa: {refreshing: boolean, registration?: any, updateExists: boolean} = {
     refreshing: false,
+    registration: undefined,
     updateExists: false
   };
   private version = VERSION;
@@ -85,11 +87,7 @@ export default class App extends Vue {
 
   created () {
     document.addEventListener(
-      'swUpdated',
-      () => {
-        this.pwa.updateExists = true;
-      },
-      { once: true },
+      'swUpdated', this.showRefreshUI, { once: true }
     );
   }
 
@@ -98,12 +96,27 @@ export default class App extends Vue {
     this.$vuetify.theme.dark = enableDarkTheme();
   }
 
+  // TODO: Remove any
+  showRefreshUI (e: any) {
+    this.pwa.registration = e.detail;
+    this.pwa.updateExists = true;
+  }
+
   // Update PWA app
   refreshApp () {
     this.pwa.updateExists = false;
-    if (this.pwa.refreshing) return;
-    this.pwa.refreshing = true;
-    window.location.reload();
+    if (this.pwa.registration === undefined || !this.pwa.registration.waiting) {
+      return;
+    }
+    this.pwa.registration.waiting.postMessage('skipWaiting');
+    navigator.serviceWorker.addEventListener(
+      'controllerchange', () => {
+        if (this.pwa.refreshing) return;
+        this.pwa.refreshing = true;
+        window.location.reload();
+      },
+      {once: true}
+    );
   }
 }
 </script>
