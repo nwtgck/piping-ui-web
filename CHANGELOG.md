@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [0.4.7] - 2019-12-03
+### Changed
+- Update dependencies
+
 ## [0.4.6] - 2019-11-29
 ### Fixed
 - Not update app using browser reload, to work properly when an update is available
@@ -91,7 +95,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 ### Added
 - First release
 
-[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.6...HEAD
+[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.7...HEAD
+[0.4.7]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.6...v0.4.7
 [0.4.6]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.5...v0.4.6
 [0.4.5]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.3...v0.4.4
