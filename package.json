@@ -14,7 +14,7 @@
     "postinstall": "license-checker --production --json > src/licenses.json"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-svg-core": "^1.2.25",
+    "@fortawesome/fontawesome-svg-core": "^1.2.26",
     "@fortawesome/free-brands-svg-icons": "^5.12.0",
     "@fortawesome/vue-fontawesome": "^0.1.8",
     "binconv": "github:nwtgck/binconv-npm#v0.1.0",
