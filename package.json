@@ -22,7 +22,7 @@
     "core-js": "^3.5.0",
     "file-saver": "^2.0.2",
     "file-type": "^12.4.0",
-    "filepond": "^4.8.1",
+    "filepond": "^4.8.2",
     "jszip": "^3.2.2",
     "jwk-thumbprint": "^0.1.2",
     "linkifyjs": "^2.1.8",
