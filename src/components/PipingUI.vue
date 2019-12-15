@@ -212,17 +212,14 @@ import {strings} from "@/strings";
 import {File as FilePondFile} from "filepond";
 import {baseAndExt} from "@/utils";
 import {Protection} from "@/datatypes";
+import constants from "@/constants";
 
 (async () => require('filepond/dist/filepond.min.css'))();
 
 // Create component
 const FilePond = () => import('vue-filepond').then(vueFilePond => vueFilePond.default());
 
-const defaultServerUrls: ReadonlyArray<string> = [
-  "https://ppng.ml",
-  "https://piping.arukascloud.io",
-  "https://ppng.herokuapp.com"
-];
+const defaultServerUrls: ReadonlyArray<string> = constants.pipingServerUrls;
 
 function normalizeUrl(url: string): string {
   return new URL(url).href;
