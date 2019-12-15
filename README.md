@@ -20,6 +20,29 @@ Web UI for [Piping Server](https://github.com/nwtgck/piping-server)
 - Passwordless E2E encryption by [Elliptic-curve Diffie–Hellman] and [OpenPGP.js]
 - Password protection powered by [OpenPGP.js]
 
+## Self-hosting
+
+You can build Piping UI by yourself like the following.
+
+```console
+$ git clone https://github.com/nwtgck/piping-ui-web.git
+$ cd piping-ui-web
+$ npm run build
+```
+
+Then, you can publish `./dist`.  
+In addition, you can also use hosting services such as GitHub pages and Netlify.
+
+### Change default Piping Server URLs at build-time
+
+Set env `$PIPING_SERVER_URLS` to change default Piping Server URLs.
+
+```console
+$ PIPING_SERVER_URLS='["https://mypiping.server", "https://mypipi.ng"]' npm run build
+```
+
+![Build-time Piping Server URLs](doc_assets/build-time-piping-server-urls.png)
+
 ## Logo
 <div>Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 
