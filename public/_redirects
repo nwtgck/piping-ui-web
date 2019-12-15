@@ -1,7 +1,0 @@
-# (from: https://app.netlify.com/sites/piping-ui/settings/domain)
-# (docs: https://www.netlify.com/docs/redirects/?_ga=2.106908486.438216407.1568729608-543376186.1551672218)
-
-# These rules will change if you change your site’s custom domains or HTTPS settings
-
-# Redirect default Netlify subdomain to primary domain
-https://piping-ui.netlify.com/* https://piping-ui.org/:splat 301!
