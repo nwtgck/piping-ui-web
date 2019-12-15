@@ -27,6 +27,7 @@ You can build Piping UI by yourself like the following.
 ```console
 $ git clone https://github.com/nwtgck/piping-ui-web.git
 $ cd piping-ui-web
+$ npm ci
 $ npm run build
 ```
 
