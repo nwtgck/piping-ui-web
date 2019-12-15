@@ -1,6 +1,8 @@
 const webpack = require('webpack');
 
 module.exports = {
+  // (from: https://cli.vuejs.org/config/#publicpath)
+  publicPath: "./",
   // (base: https://stackoverflow.com/q/56127998/2885946)
   css: {
     sourceMap: true
