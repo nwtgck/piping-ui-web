@@ -217,7 +217,11 @@ import constants from "@/constants";
 (async () => require('filepond/dist/filepond.min.css'))();
 
 // Create component
-const FilePond = () => import('vue-filepond').then(vueFilePond => vueFilePond.default());
+const FilePond = async () => {
+  await import('filepond-polyfill');
+  const vueFilePond = await import('vue-filepond');
+  return vueFilePond.default();
+};
 
 const defaultServerUrls: ReadonlyArray<string> = constants.pipingServerUrls;
 
