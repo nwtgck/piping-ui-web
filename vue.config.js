@@ -19,6 +19,8 @@ module.exports = {
       })
     ]
   },
+  // (from: https://github.com/vuetifyjs/vuetify/issues/8279#issuecomment-517900297)
+  transpileDependencies: ['vuetify'],
   // (from: https://medium.com/@dougallrich/give-users-control-over-app-updates-in-vue-cli-3-pwas-20453aedc1f2)
   pwa: {
     workboxPluginMode: 'InjectManifest',
