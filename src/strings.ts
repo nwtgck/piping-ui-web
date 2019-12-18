@@ -15,7 +15,6 @@ export function strings(language: string): typeof defaultStr {
 }
 
 const en = {
-  description: 'Secure file transfer between every device over HTTP/HTTPS with/without E2E encryption powered by ECDH and OpenPGP.js',
   language: 'Language',
   dark_theme: 'Dark Theme',
   pwa_update: 'Update',
@@ -84,7 +83,6 @@ const en = {
 const defaultStr = en;
 
 const ja: typeof defaultStr = {
-  description: 'セキュアに手軽にあらゆるデバイス間でファイルやテキストを転送します。',
   language: '言語 (Language)',
   dark_theme: 'ダークテーマ',
   pwa_update: 'Update',
