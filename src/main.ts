@@ -5,6 +5,7 @@ import vuetify from '@/plugins/vuetify';
 // @ts-ignore
 import AsyncComputed from 'vue-async-computed';
 import metaDescription from "@/meta-description.json";
+import constants from '@/constants';
 
 // (from: https://github.com/FortAwesome/vue-fontawesome/tree/700a86cb1a3726364de7137d0cbee2e00fcfd30d#usage)
 import { library } from '@fortawesome/fontawesome-svg-core'
@@ -12,8 +13,7 @@ import { faGithub } from '@fortawesome/free-brands-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
 (() => {
-  // TODO: Hard code 'lang'
-  const lang = new URLSearchParams(window.location.search).get('lang');
+  const lang = new URLSearchParams(window.location.search).get(constants.langQueryParameterName);
   if (lang !== null) {
     const html = document.getElementsByTagName('html');
     // Set <html lang>
