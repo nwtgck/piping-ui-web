@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [0.4.15] - 2019-12-18
+### Changed
+- Update dependency
+- Support dynamic meta description
+
 ## [0.4.14] - 2019-12-16
 ### Fixed
 - Support Edge, not to show a blank page
@@ -127,7 +132,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 ### Added
 - First release
 
-[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.14...HEAD
+[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.15...HEAD
+[0.4.15]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.14...v0.4.15
 [0.4.14]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.13...v0.4.14
 [0.4.13]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.12...v0.4.13
 [0.4.12]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.11...v0.4.12
