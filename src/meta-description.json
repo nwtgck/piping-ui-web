@@ -1,4 +1,4 @@
 {
-  "en": "Secure file transfer between every device over HTTP/HTTPS with/without E2E encryption powered by ECDH and OpenPGP.js",
+  "en": "Easy and secure file transfer between every device over HTTPS with/without E2E encryption by ECDH and OpenPGP",
   "ja": "Piping UIは手軽にセキュアにあらゆるデバイス間でファイルやテキストをECDH/OpenPGPを用いて暗号化して転送します。"
 }
