@@ -4,6 +4,7 @@ node_modules
 /src/version.ts
 /src/licenses.json
 /public/openpgp
+/public/sitemap.xml
 
 # local env files
 .env.local

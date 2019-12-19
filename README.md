@@ -44,6 +44,15 @@ $ PIPING_SERVER_URLS='["https://mypiping.server", "https://mypipi.ng"]' npm run 
 
 ![Build-time Piping Server URLs](doc_assets/build-time-piping-server-urls.png)
 
+## Sitemap for telling about localized versions
+
+Set env `$SITE_URL` to generate `sitemap.xml` for telling about localized versions.  
+(see: <https://support.google.com/webmasters/answer/189077>)
+
+```console
+$ SITE_URL="https://mypiping.ui" npm run build
+```
+
 ## Logo
 <div>Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 
