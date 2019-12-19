@@ -46,7 +46,7 @@
     "@types/file-saver": "^2.0.1",
     "@types/jszip": "^3.1.6",
     "@types/mocha": "^5.2.7",
-    "@types/openpgp": "^4.4.7",
+    "@types/openpgp": "^4.4.8",
     "@types/sanitize-html": "^1.20.2",
     "@types/url-join": "^4.0.0",
     "@vue/cli-plugin-babel": "^4.1.1",
