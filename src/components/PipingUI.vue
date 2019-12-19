@@ -212,14 +212,14 @@ import {strings} from "@/strings";
 import {File as FilePondFile} from "filepond";
 import {baseAndExt} from "@/utils";
 import {Protection} from "@/datatypes";
-import constants from "@/constants";
+import buildConstants from "@/build-constants";
 
 (async () => require('filepond/dist/filepond.min.css'))();
 
 // Create component
 const FilePond = () => import('vue-filepond').then(vueFilePond => vueFilePond.default());
 
-const defaultServerUrls: ReadonlyArray<string> = constants.pipingServerUrls;
+const defaultServerUrls: ReadonlyArray<string> = buildConstants.pipingServerUrls;
 
 function normalizeUrl(url: string): string {
   return new URL(url).href;
