@@ -46,8 +46,9 @@ $ PIPING_SERVER_URLS='["https://mypiping.server", "https://mypipi.ng"]' npm run 
 
 ## Sitemap for telling about localized versions
 
-Set env `$SITE_URL` to generate `sitemap.xml` for telling about localized versions.  
-(see: <https://support.google.com/webmasters/answer/189077>)
+Set env `$SITE_URL` to generate `sitemap.xml` for telling about localized versions. `robots.txt` has also `Sitemap: ...` section.  
+(see: <https://support.google.com/webmasters/answer/189077>)  
+(see: <https://developers.google.com/search/reference/robots_txt#google-supported-non-group-member-lines>)
 
 ```console
 $ SITE_URL="https://mypiping.ui" npm run build
