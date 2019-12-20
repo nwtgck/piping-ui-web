@@ -5,6 +5,7 @@ node_modules
 /src/licenses.json
 /public/openpgp
 /public/sitemap.xml
+/public/robots.txt
 
 # local env files
 .env.local
