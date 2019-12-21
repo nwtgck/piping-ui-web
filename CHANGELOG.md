@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [0.4.19] - 2019-12-21
+### Changed
+- Update dependencies
+
 ## [0.4.18] - 2019-12-20
 ### Changed
 - `robots.txt` has `Sitemap: ...` when `$SITE_URL` is specified at build-time
@@ -148,7 +152,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 ### Added
 - First release
 
-[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.18...HEAD
+[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.19...HEAD
+[0.4.19]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.18...v0.4.19
 [0.4.18]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.17...v0.4.18
 [0.4.17]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.16...v0.4.17
 [0.4.16]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.15...v0.4.16
