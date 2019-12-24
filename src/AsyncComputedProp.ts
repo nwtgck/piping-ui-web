@@ -11,15 +11,15 @@ export interface IAsyncComputedProperty<T> {
   lazy?: boolean;
 }
 
-export function AsyncComputed<T>(
+export function AsyncComputedProp<T>(
   computedOptions?: IAsyncComputedProperty<T>,
 ): VueDecorator {
   return createDecorator((_options, key) => {
     // TODO: Not use any casting
-    const options: any = _options as any;
+    const options: any = _options;
     options.asyncComputed = options.asyncComputed || {};
     const method = options.methods![key];
-    options.asyncComputed![key] = <IAsyncComputedProperty<T>>{
+    options.asyncComputed![key] = {
       get: method,
       ...computedOptions,
     };
