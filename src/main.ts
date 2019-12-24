@@ -2,7 +2,6 @@ import Vue from 'vue'
 import App from '@/App.vue'
 import '@/registerServiceWorker'
 import vuetify from '@/plugins/vuetify';
-// @ts-ignore
 import AsyncComputed from 'vue-async-computed';
 import metaDescription from "@/meta-description.json";
 import constants from '@/constants';
