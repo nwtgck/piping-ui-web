@@ -110,7 +110,7 @@ import * as pipingUiUtils from "@/piping-ui-utils";
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import {mdiAlert, mdiCancel, mdiCheck, mdiChevronDown, mdiCloseCircle} from "@mdi/js";
-import {AsyncComputed} from "@/AsyncComputed";
+import {AsyncComputedProp} from "@/AsyncComputedProp";
 import {Protection, VerificationStep, VerifiedParcel} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 
@@ -144,7 +144,7 @@ export default class DataUploader extends Vue {
   //       Delegation is to reassign this value
   private errorMessageDelegate: () => string | Promise<string> =
     () => "";
-  @AsyncComputed()
+  @AsyncComputedProp()
   async errorMessage(): Promise<string> {
     return this.errorMessageDelegate();
   }
@@ -178,13 +178,13 @@ export default class DataUploader extends Vue {
     return urlJoin(this.props.serverUrl, this.props.secretPath);
   }
 
-  @AsyncComputed()
+  @AsyncComputedProp()
   private async hasError(): Promise<boolean> {
     return await this.errorMessageDelegate() !== "";
   }
 
   private get headerIcon(): string {
-    // NOTE: getter `hasError` is created by @AsyncComputed
+    // NOTE: getter `hasError` is created by @AsyncComputedProp
     const self = (this as unknown as {hasError: boolean});
     if (self.hasError) {
       return mdiAlert;
@@ -198,7 +198,7 @@ export default class DataUploader extends Vue {
   }
 
   private get headerIconColor(): string | undefined {
-    // NOTE: Getter `hasError` is created by @AsyncComputed
+    // NOTE: Getter `hasError` is created by @AsyncComputedProp
     const self = (this as unknown as {hasError: boolean});
     if (self.hasError) {
       return "error";

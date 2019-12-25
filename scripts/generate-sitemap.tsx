@@ -37,8 +37,9 @@ const sitemap: string = (() => {
       {...{"xmlns:xhtml": "http://www.w3.org/1999/xhtml"}}>
       <url>
         <loc>{new URL(siteUrl).href}</loc>
-        <XhtmlLink rel="alternate" hreflang="en" href={urlWithLang(siteUrl, "en")} />
-        <XhtmlLink rel="alternate" hreflang="ja" href={urlWithLang(siteUrl, "ja")} />
+        {["en", "ja"].map((lang) =>
+          <XhtmlLink rel="alternate" hreflang={lang} href={urlWithLang(siteUrl, lang)} />
+        )}
       </url>
     </urlset>;
     return renderXmlToString(sitemapElement);
