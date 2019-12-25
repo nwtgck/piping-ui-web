@@ -21,7 +21,7 @@
     "@fortawesome/vue-fontawesome": "^0.1.9",
     "binconv": "github:nwtgck/binconv-npm#v0.1.0",
     "clipboard": "^2.0.4",
-    "core-js": "^3.6.0",
+    "core-js": "^3.6.1",
     "file-saver": "^2.0.2",
     "file-type": "^12.4.2",
     "filepond": "^4.9.2",
