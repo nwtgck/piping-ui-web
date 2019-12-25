@@ -11,8 +11,8 @@
     "lint": "vue-cli-service lint",
     "test:unit": "vue-cli-service test:unit",
     "generate-version": "cross-var echo \"export const VERSION = \\\"$npm_package_version\\\";\" > src/version.ts",
-    "generate-sitemap": "ts-node scripts/generate-sitemap.tsx > public/sitemap.xml",
-    "generate-robots-txt": "ts-node scripts/generate-robots-txt.tsx > public/robots.txt",
+    "generate-sitemap": "ts-node --project scripts/tsconfig.json scripts/generate-sitemap.tsx > public/sitemap.xml",
+    "generate-robots-txt": "ts-node --project scripts/tsconfig.json scripts/generate-robots-txt.tsx > public/robots.txt",
     "postinstall": "license-checker --production --json > src/licenses.json"
   },
   "dependencies": {
