@@ -169,7 +169,7 @@ import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import * as utils from '@/utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
-import {AsyncComputedProp} from "@/AsyncComputedProp";
+import AsyncComputed from 'vue-async-computed-decorator';
 import {Protection, VerificationStep, VerifiedParcel, verifiedParcelFormat} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 
@@ -281,7 +281,7 @@ export default class DataViewer extends Vue {
     return urlJoin(this.props.serverUrl, this.props.secretPath);
   }
 
-  @AsyncComputedProp()
+  @AsyncComputed()
   private async linkifiedText(): Promise<string> {
     return utils.sanitizeHtmlAllowingATag(linkifyHtml(this.text, {
       defaultProtocol: 'https'
