@@ -96,7 +96,7 @@ const ja: typeof defaultStr = {
   text_placeholder: 'テキスト',
   server_url: 'サーバー',
   secret_path: '転送パス',
-  secret_path_placeholder: '例: mypath374、ひみつのパス',
+  secret_path_placeholder: '例: mypath374, あいう123',
   drop_a_file_here_or_browse: 'ファイルをドラッグするか<span class=\'filepond--label-action\'>開く</span>',
   protect_with_password: 'パスワードで保護',
   passwordless_protection: 'パスワードレス',
