@@ -17,15 +17,16 @@
         </div>
 
         <div v-show="sendOrGet === 'send'">
-          <v-switch
-                  inset
-                  v-model="isTextMode"
-                  :class="`justify-end`">
-            <template v-slot:label>
-              <v-icon class="icon-and-text-margin">{{ icons.mdiText }}</v-icon>
-              {{ strings['text_mode'] }}
-            </template>
-          </v-switch>
+          <div :class="`d-flex justify-end`">
+            <v-switch
+                    inset
+                    v-model="isTextMode">
+              <template v-slot:label>
+                <v-icon class="icon-and-text-margin">{{ icons.mdiText }}</v-icon>
+                {{ strings['text_mode'] }}
+              </template>
+            </v-switch>
+          </div>
           <file-pond v-if="!isTextMode"
                      v-model="files"
                      :label-idle="filePondLabelIdle"
