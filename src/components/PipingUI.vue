@@ -17,15 +17,16 @@
         </div>
 
         <div v-show="sendOrGet === 'send'">
-          <v-switch
-                  inset
-                  v-model="isTextMode"
-                  :class="`justify-end`">
-            <template v-slot:label>
-              <v-icon class="icon-and-text-margin">{{ icons.mdiText }}</v-icon>
-              {{ strings['text_mode'] }}
-            </template>
-          </v-switch>
+          <div :class="`d-flex justify-end`">
+            <v-switch
+                    inset
+                    v-model="isTextMode">
+              <template v-slot:label>
+                <v-icon class="icon-and-text-margin">{{ icons.mdiText }}</v-icon>
+                {{ strings['text_mode'] }}
+              </template>
+            </v-switch>
+          </div>
           <file-pond v-if="!isTextMode"
                      v-model="files"
                      :label-idle="filePondLabelIdle"
@@ -119,50 +120,51 @@
                       class="ma-0 pa-0" >
               <template v-slot:label>
                 <v-icon class="icon-and-text-margin" :color="protectionType === 'password' ? 'blue' : ''">{{ icons.mdiKey }}</v-icon>
-                {{ strings['protect_with_password'] }}
+                {{ protectionType === 'password' ? '' : strings['protect_with_password'] }}
               </template>
             </v-switch>
 
-            <v-text-field :style="{visibility: protectionType === 'password' ? 'visible' : 'hidden'}"
+            <v-text-field v-if="protectionType === 'password'"
                           v-model="password"
                           :type="showsPassword ? 'text' : 'password'"
                           :label="strings['password']"
                           :append-icon="showsPassword ? icons.mdiEye : icons.mdiEyeOff"
                           @click:append="showsPassword = !showsPassword"
                           single-line
-                          outlined
                           class="pa-0"
                           style="margin-left: 0.5em;" />
           </v-row>
         </v-col>
 
-        <v-btn v-if="sendOrGet === 'send'"
-               color="primary"
-               v-on:click="send()"
-               block>
-          {{ strings['send'] }}
-          <v-icon right dark>{{ icons.mdiUpload }}</v-icon>
-        </v-btn>
-        <v-layout v-if="sendOrGet === 'get'">
-          <v-flex xs6>
-            <v-btn color="light-blue"
-                   dark
-                   @click="view()"
-                   block>
-              {{ strings['view'] }}
-              <v-icon right dark>{{ icons.mdiFileFind }}</v-icon>
-            </v-btn>
-          </v-flex>
-          <v-flex xs6>
-            <v-btn color="blue"
-                   @click="get()"
-                   dark
-                   block>
-              {{ strings['download'] }}
-              <v-icon right dark>{{ icons.mdiDownload }}</v-icon>
-            </v-btn>
-          </v-flex>
-        </v-layout>
+        <div style="margin-top: 1.2em;">
+          <v-btn v-if="sendOrGet === 'send'"
+                 color="primary"
+                 v-on:click="send()"
+                 block>
+            {{ strings['send'] }}
+            <v-icon right dark>{{ icons.mdiUpload }}</v-icon>
+          </v-btn>
+          <v-layout v-if="sendOrGet === 'get'">
+            <v-flex xs6>
+              <v-btn color="light-blue"
+                     dark
+                     @click="view()"
+                     block>
+                {{ strings['view'] }}
+                <v-icon right dark>{{ icons.mdiFileFind }}</v-icon>
+              </v-btn>
+            </v-flex>
+            <v-flex xs6>
+              <v-btn color="blue"
+                     @click="get()"
+                     dark
+                     block>
+                {{ strings['download'] }}
+                <v-icon right dark>{{ icons.mdiDownload }}</v-icon>
+              </v-btn>
+            </v-flex>
+          </v-layout>
+        </div>
 
       </v-card>
 
