@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [0.4.24] - 2019-01-06
+### Changed
+- Update dependencies
+- Scroll down to DataUploader/Viewer/Downloader after action
+
 ## [0.4.23] - 2019-01-05
 ### Changed
 - Update dependencies
@@ -170,7 +175,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 ### Added
 - First release
 
-[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.23...HEAD
+[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.24...HEAD
+[0.4.24]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.23...v0.4.24
 [0.4.23]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.22...v0.4.23
 [0.4.22]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.21...v0.4.22
 [0.4.21]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.20...v0.4.21
