@@ -294,6 +294,10 @@ export default class DataViewer extends Vue {
   }
 
   async mounted() {
+    // Scroll to this element
+    // (base: https://stackoverflow.com/a/22292000/2885946)
+    this.$el.scrollIntoView({behavior: 'smooth'});
+
     // Setting for copying to clipboard
     new Clipboard((this.$refs.text_copy_button as Vue).$el, {
       target: () => {

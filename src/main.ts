@@ -33,6 +33,10 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
   }
 })();
 
+// Apply smooth scroll polyfill for window.scrollOoo
+// NOTE: Import asynchronously because user's action should be lazy, even if not lazy, the problem is only in animation, not logic.
+import('smoothscroll-polyfill').then(smoothscroll => smoothscroll.polyfill());
+
 library.add(faGithub);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
 Vue.config.productionTip = false;

@@ -235,6 +235,10 @@ export default class DataUploader extends Vue {
   }
 
   async mounted() {
+    // Scroll to this element
+    // (base: https://stackoverflow.com/a/22292000/2885946)
+    this.$el.scrollIntoView({behavior: 'smooth'});
+
     switch (this.props.protection.type) {
       case 'raw':
         // Send
