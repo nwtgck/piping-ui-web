@@ -100,6 +100,10 @@ export default class DataDownloader extends Vue {
   }
 
   async mounted() {
+    // Scroll to this element
+    // (base: https://stackoverflow.com/a/22292000/2885946)
+    this.$el.scrollIntoView({behavior: 'smooth'});
+
     // Key exchange
     const keyExchangeRes = await pipingUiUtils.keyExchangeAndReceiveVerified(
       this.props.serverUrl,
