@@ -112,7 +112,7 @@
             </v-switch>
           </v-row>
 
-          <v-row align="center" class="ma-0 pa-0">
+          <v-row align="center" class="ma-0" style="padding-top: 0.5em;">
             <v-switch :input-value="protectionType === 'password'"
                       @change="onEnablePasswordProtection"
                       inset
