@@ -160,7 +160,7 @@ import urlJoin from 'url-join';
 import linkifyHtml from 'linkifyjs/html';
 const FileSaverAsync = () => import('file-saver');
 import Clipboard from 'clipboard';
-const fileType = require('file-type/browser');
+import * as fileType from 'file-type/browser';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
 import {uint8ArrayToBlob} from 'binconv/dist/src/uint8ArrayToBlob';
 import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle, mdiEye, mdiEyeOff, mdiKey, mdiFeatureSearchOutline} from "@mdi/js";
