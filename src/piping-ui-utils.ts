@@ -15,6 +15,7 @@ const swDownloadAsync = () => import("@/sw-download");
 const utilsAsync = () => import("@/utils");
 const jwkThumbprintAsync  = () => import("jwk-thumbprint");
 const uint8ArrayToStringAsync = () => import('binconv/dist/src/uint8ArrayToString').then(p => p.uint8ArrayToString);
+import {appBarPromise} from "@/App.vue";
 
 // Decrypt & Download
 export async function decryptingDownload(
@@ -222,4 +223,14 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
       };
     }
   }
+}
+
+/**
+ * Scroll to the specific element considering the app bar
+ * @param element
+ */
+export async function scrollTo(element: Element): Promise<void> {
+  const appBar = await appBarPromise;
+  const moveTop = element.getBoundingClientRect().y - appBar.clientHeight;
+  window.scrollBy({ top: moveTop, left: 0, behavior: 'smooth' });
 }
