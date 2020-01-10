@@ -160,7 +160,7 @@ import urlJoin from 'url-join';
 import linkifyHtml from 'linkifyjs/html';
 const FileSaverAsync = () => import('file-saver');
 import Clipboard from 'clipboard';
-import fileType from 'file-type';
+import * as fileType from 'file-type/browser';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
 import {uint8ArrayToBlob} from 'binconv/dist/src/uint8ArrayToBlob';
 import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle, mdiEye, mdiEyeOff, mdiKey, mdiFeatureSearchOutline} from "@mdi/js";
@@ -295,8 +295,8 @@ export default class DataViewer extends Vue {
 
   async mounted() {
     // Scroll to this element
-    // (base: https://stackoverflow.com/a/22292000/2885946)
-    this.$el.scrollIntoView({behavior: 'smooth'});
+    // NOTE: no need to add `await`
+    pipingUiUtils.scrollTo(this.$el);
 
     // Setting for copying to clipboard
     new Clipboard((this.$refs.text_copy_button as Vue).$el, {
@@ -378,7 +378,7 @@ export default class DataViewer extends Vue {
       this.text = await utils.readBlobAsText(this.blob);
     } else {
       // Detect type of blob
-      const fileTypeResult = fileType(firstChunk);
+      const fileTypeResult = await fileType.fromBlob(new Blob([firstChunk]));
       if (fileTypeResult !== undefined) {
         const blobUrl = URL.createObjectURL(this.blob);
         if (fileTypeResult.mime.startsWith("image/")) {

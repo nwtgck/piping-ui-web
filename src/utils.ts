@@ -127,3 +127,16 @@ export async function sha256(input: string): Promise<string> {
 export function uint8ArrayToBase64(arr: Uint8Array): string {
   return btoa(String.fromCharCode(...arr));
 }
+
+/***
+ * Make a promise which can be resolved and rejected outside of the Promise constructor
+ */
+export function makePromise<T>(): {promise: Promise<T>, resolve: (value?: T | PromiseLike<T>) => void, reject: (reason?: any) => void} {
+  let resolve = (value?: T | PromiseLike<T>) => {};
+  let reject = () => {};
+  const promise = new Promise<T>((_resolve, _reject) => {
+    resolve = _resolve;
+    reject  = _reject;
+  });
+  return {promise, resolve, reject};
+}
