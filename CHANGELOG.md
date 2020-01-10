@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [0.4.25] - 2019-01-10
+### Changed
+- Update dependencies
+
+### Fixed
+- Auto-scroll to more proper position
+
 ## [0.4.24] - 2019-01-06
 ### Changed
 - Update dependencies
@@ -175,7 +182,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 ### Added
 - First release
 
-[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.24...HEAD
+[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.25...HEAD
+[0.4.25]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.24...v0.4.25
 [0.4.24]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.23...v0.4.24
 [0.4.23]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.22...v0.4.23
 [0.4.22]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.21...v0.4.22
