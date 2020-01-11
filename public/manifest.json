@@ -16,5 +16,8 @@
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#000000",
-  "theme_color": "#5A98E3"
+  "theme_color": "#5A98E3",
+  "share_target": {
+    "action": "index.html"
+  }
 }
