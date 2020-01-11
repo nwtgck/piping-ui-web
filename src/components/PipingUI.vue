@@ -418,7 +418,7 @@ export default class PipingUI extends Vue {
     this.protectionType = enable ? 'passwordless' : 'raw';
   }
 
-  private mounted() {
+  mounted() {
     // Update random strings
     this.updateRandomStrs();
 
