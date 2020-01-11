@@ -246,6 +246,11 @@ function randomStr(len: number, chars: ReadonlyArray<string>){
   return Array.from(randomArr).map(n => chars[n % chars.length]).join('');
 }
 
+// Text from Web Share Target API
+function getShareTargetText(): string | null {
+  return new URL(window.location.toString()).searchParams.get("text");
+}
+
 @Component({
   components: {
     DataUploader,
@@ -259,8 +264,11 @@ export default class PipingUI extends Vue {
 
   private serverUrl: string = defaultServerUrls[0];
   private secretPath: string = "";
-  private isTextMode: boolean = false;
-  private inputText: string = '';
+  private isTextMode: boolean = getShareTargetText() !== null;
+  private inputText: string = (() => {
+    const shareTargetText = getShareTargetText();
+    return shareTargetText === null ? '' :  shareTargetText;
+  })();
   private files: FilePondFile[] = [];
   private serverUrlHistory: string[] = [];
   private secretPathHistory: string[] = [];
