@@ -5,31 +5,31 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
-## [0.4.28] - 2019-01-12
+## [0.4.28] - 2020-01-12
 ### Fixed
 - Remove warnings of Web Share Target API
 
-## [0.4.27] - 2019-01-11
+## [0.4.27] - 2020-01-11
 ### Added
 - Support Web Share Target API
 
-## [0.4.26] - 2019-01-11
+## [0.4.26] - 2020-01-11
 ### Changed
 - Update dependencies
 
-## [0.4.25] - 2019-01-10
+## [0.4.25] - 2020-01-10
 ### Changed
 - Update dependencies
 
 ### Fixed
 - Auto-scroll to more proper position
 
-## [0.4.24] - 2019-01-06
+## [0.4.24] - 2020-01-06
 ### Changed
 - Update dependencies
 - Scroll down to DataUploader/Viewer/Downloader after action
 
-## [0.4.23] - 2019-01-05
+## [0.4.23] - 2020-01-05
 ### Changed
 - Update dependencies
 - Hide "Protect with password" display when enabled
