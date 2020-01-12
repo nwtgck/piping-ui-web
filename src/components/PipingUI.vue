@@ -50,9 +50,10 @@
                     ref="server_url_ref"
                     clearable
                     style="margin-bottom: 0.8em;"
+                    class="readable-font"
         >
           <template v-slot:item="{ index, item }">
-            {{ item }}
+            <span class="readable-font">{{ item }}</span>
             <div class="flex-grow-1"></div>
             <v-list-item-action @click.stop>
               <v-btn icon
@@ -68,11 +69,11 @@
                     :items="secretPathHistory"
                     :placeholder="strings['secret_path_placeholder']"
                     ref="secret_path_ref"
-                    class="ma-0 pa-0"
+                    class="ma-0 pa-0 readable-font"
                     clearable
         >
           <template v-slot:item="{ index, item }">
-            {{ item }}
+            <span class="readable-font">{{ item }}</span>
             <div class="flex-grow-1"></div>
             <v-list-item-action>
               <v-btn icon
@@ -89,7 +90,7 @@
           <v-chip v-for="suggestedSecretPath in suggestedSecretPaths"
                   :key="suggestedSecretPath"
                   @click="secretPath = suggestedSecretPath"
-                  class="ma-0"
+                  class="ma-0 readable-font"
                   label
                   outlined
                   style="font-size: 1em;"
@@ -646,5 +647,11 @@ export default class PipingUI extends Vue {
 <style scoped>
 .icon-and-text-margin {
   margin-right: 0.3em;
+}
+
+.readable-font {
+  /* Fonts used in GitHub code */
+  /* easier to distinguish similar words */
+  font-family: SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace;
 }
 </style>
