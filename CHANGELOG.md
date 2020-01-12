@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [0.4.29] - 2020-01-12
+### Changed
+- Update dependency
+- Make fonts of URLs and secret paths easier to distinguish similar words
+
+### Fixed
+- Fix to copy text
+
 ## [0.4.28] - 2020-01-12
 ### Fixed
 - Remove warnings of Web Share Target API
@@ -194,7 +202,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 ### Added
 - First release
 
-[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.28...HEAD
+[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.29...HEAD
+[0.4.29]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.28...v0.4.29
 [0.4.28]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.27...v0.4.28
 [0.4.27]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.26...v0.4.27
 [0.4.26]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.25...v0.4.26
