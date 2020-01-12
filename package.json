@@ -1,6 +1,6 @@
 {
   "name": "piping-ui",
-  "version": "0.4.28",
+  "version": "0.4.29",
   "private": true,
   "author": "Ryo Ota <nwtgck@nwtgck.org> (https://github.com/nwtgck)",
   "scripts": {
@@ -37,7 +37,7 @@
     "vue": "^2.6.11",
     "vue-async-computed": "^3.8.2",
     "vue-async-computed-decorator": "0.0.4",
-    "vue-class-component": "^7.2.0",
+    "vue-class-component": "^7.2.1",
     "vue-filepond": "^6.0.0",
     "vue-property-decorator": "^8.3.0",
     "vuetify": "^2.1.18"

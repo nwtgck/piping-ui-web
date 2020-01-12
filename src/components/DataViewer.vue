@@ -16,11 +16,13 @@
         <span style="">{{ strings['waiting_for_sender'] }}</span>
       </v-alert>
 
-      <span v-if="props.protection.type === 'passwordless' && verificationStep.type === 'verification_code_arrived'">
+      <!-- NOTE: Don't use v-if because the "sibling" element uses "ref" and the ref is loaded in mounted(), but don't know why "sibling" affects. -->
+      <span v-show="props.protection.type === 'passwordless' && verificationStep.type === 'verification_code_arrived'">
         <VerificationCode :value="verificationStep.verificationCode"/>
       </span>
 
-      <span v-if="isReadyToDownload">
+      <!-- NOTE: Don't use v-if because the "sibling" element uses "ref" and the ref is loaded in mounted(), but don't know why "sibling" affects. -->
+      <span v-show="isReadyToDownload">
         <!-- loaded of total -->
         <v-tooltip bottom>
           <template v-slot:activator="{ on }">

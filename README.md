@@ -2,7 +2,7 @@
 [![Netlify Status](https://api.netlify.com/api/v1/badges/7c9ee3e6-ade3-4032-bac0-3a3ed25ae3e6/deploy-status)](https://app.netlify.com/sites/piping-ui/deploys)  
 <a href="https://piping-ui.org"><img src="https://user-images.githubusercontent.com/9122190/28998409-c5bf7362-7a00-11e7-9b63-db56694522e7.png" alt="Launch now as Web App" height="48"></a>
 
-Web UI for [Piping Server](https://github.com/nwtgck/piping-server)  
+Web UI for [Piping Server](https://github.com/nwtgck/piping-server) - Easy and secure file transfer between every device over HTTPS  
 ![Piping UI - iPhone to UI](doc_assets/iphone-to-ui.gif)
 
 ## Application
@@ -19,6 +19,7 @@ Web UI for [Piping Server](https://github.com/nwtgck/piping-server)
 - Image/video preview
 - Passwordless [E2E encryption] by [Elliptic-curve Diffie–Hellman] and [OpenPGP.js]
 - Password protection powered by [OpenPGP.js]
+- Share Sheet support by Web Share Target API
 
 ## Self-hosting
 
