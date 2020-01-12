@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [0.4.28] - 2019-01-12
+### Fixed
+- Remove warnings of Web Share Target API
+
 ## [0.4.27] - 2019-01-11
 ### Added
 - Support Web Share Target API
@@ -190,7 +194,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 ### Added
 - First release
 
-[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.27...HEAD
+[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.28...HEAD
+[0.4.28]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.27...v0.4.28
 [0.4.27]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.26...v0.4.27
 [0.4.26]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.25...v0.4.26
 [0.4.25]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.24...v0.4.25
