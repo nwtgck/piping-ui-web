@@ -18,6 +18,13 @@
   "background_color": "#000000",
   "theme_color": "#5A98E3",
   "share_target": {
-    "action": "index.html"
+    "action": "index.html",
+    "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
   }
 }
