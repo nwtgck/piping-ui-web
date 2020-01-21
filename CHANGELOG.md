@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [0.5.0] - 2020-01-21
+### Changed
+- Update dependencies
+- Not pass download info including secret path and password to URL fragment in stream download
+
 ## [0.4.31] - 2020-01-15
 ### Changed
 - Update dependencies
@@ -210,7 +215,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 ### Added
 - First release
 
-[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.31...HEAD
+[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.31...v0.5.0
 [0.4.31]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.30...v0.4.31
 [0.4.30]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.29...v0.4.30
 [0.4.29]: https://github.com/nwtgck/piping-ui-web/compare/v0.4.28...v0.4.29
