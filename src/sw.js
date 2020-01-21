@@ -41,52 +41,45 @@ self.addEventListener('message', (e) => {
     return;
   }
 
-  switch (e.data) {
-    case 'skipWaiting':
+  switch(e.data.type) {
+    case 'skip-waiting':
       self.skipWaiting();
       break;
+    case 'enroll-download-info': {
+      // Get download info
+      const downloadInfo = e.data.downloadInfo;
+      if (!("url" in downloadInfo)) {
+        console.error('downloadInfo.url is missing');
+        return;
+      }
+      if (!("filename" in downloadInfo)) {
+        console.error('downloadInfo.filename is missing');
+        return;
+      }
+      if (!("protection" in downloadInfo)) {
+        console.error('downloadInfo.protection is missing');
+        return;
+      }
+      if (!("type" in downloadInfo.protection)) {
+        console.error('downloadInfo.protection.type is missing');
+        return;
+      }
+      if (!("decryptErrorMessage" in downloadInfo)) {
+        console.error('downloadInfo.decryptErrorMessage is missing');
+        return;
+      }
+      // Generate unique ID
+      const id = generateUniqueDownloadInfoId();
+      // Enroll info with the ID
+      idToDownloadInfo[id] = downloadInfo;
+      e.ports[0].postMessage({
+        downloadInfoId: id,
+      });
+      break;
+    }
     default:
       // NOOP
       break;
-  }
-
-  if (e.data.type !== undefined) {
-    switch(e.data.type) {
-      case 'enroll-download-info': {
-        // Get download info
-        const downloadInfo = e.data.downloadInfo;
-        if (!("url" in downloadInfo)) {
-          console.error('downloadInfo.url is missing');
-          return;
-        }
-        if (!("filename" in downloadInfo)) {
-          console.error('downloadInfo.filename is missing');
-          return;
-        }
-        if (!("protection" in downloadInfo)) {
-          console.error('downloadInfo.protection is missing');
-          return;
-        }
-        if (!("type" in downloadInfo.protection)) {
-          console.error('downloadInfo.protection.type is missing');
-          return;
-        }
-        if (!("decryptErrorMessage" in downloadInfo)) {
-          console.error('downloadInfo.decryptErrorMessage is missing');
-          return;
-        }
-        // Generate unique ID
-        const id = generateUniqueDownloadInfoId();
-        // Enroll info with the ID
-        idToDownloadInfo[id] = downloadInfo;
-        e.ports[0].postMessage({
-          downloadInfoId: id,
-        });
-        break;
-      }
-      default:
-        break;
-    }
   }
 });
 
