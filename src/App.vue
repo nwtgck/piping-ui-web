@@ -104,7 +104,7 @@ export default class App extends Vue {
     appBarPromiseResolver((this.$refs['app_bar'] as Vue).$el);
   }
 
-  // TODO: Remove any
+  // TODO: Remove any but "registration" in /register-service-worker/index.d.ts is also any
   showRefreshUI (e: any) {
     this.pwa.registration = e.detail;
     this.pwa.updateExists = true;
@@ -116,7 +116,9 @@ export default class App extends Vue {
     if (this.pwa.registration === undefined || !this.pwa.registration.waiting) {
       return;
     }
-    this.pwa.registration.waiting.postMessage('skipWaiting');
+    this.pwa.registration.waiting.postMessage({
+      type: 'skip-waiting'
+    });
     navigator.serviceWorker.addEventListener(
       'controllerchange', () => {
         if (this.pwa.refreshing) return;

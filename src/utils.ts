@@ -140,3 +140,24 @@ export function makePromise<T>(): {promise: Promise<T>, resolve: (value?: T | Pr
   });
   return {promise, resolve, reject};
 }
+
+/**
+ * Send a message to Service Worker
+ * base: https://googlechrome.github.io/samples/service-worker/post-message/
+ * @param message
+ */
+export function sendToServiceWorker(message: any): Promise<MessageEvent> {
+  return new Promise((resolve, reject) => {
+    if (!("serviceWorker" in navigator)) {
+      reject(new Error("Service Worker not supported"));
+      return;
+    }
+    if (navigator.serviceWorker.controller === null) {
+      reject(new Error("navigator.serviceWorker.controller is null"));
+      return;
+    }
+    const messageChannel = new MessageChannel();
+    messageChannel.port1.onmessage = resolve;
+    navigator.serviceWorker.controller.postMessage(message, [messageChannel.port2]);
+  });
+}

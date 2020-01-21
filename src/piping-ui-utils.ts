@@ -48,11 +48,18 @@ export async function decryptingDownload(
       protection,
       decryptErrorMessage: decryptErrorMessage,
     };
+    // Enroll download-info
+    const enrollDownloadInfoRes: MessageEvent = await utils.sendToServiceWorker({
+      type: 'enroll-download-info',
+      downloadInfo,
+    });
+    // Get download-info ID
+    const {downloadInfoId} = enrollDownloadInfoRes.data;
     // Download via Service Worker
     const aTag = document.createElement('a');
     // NOTE: '/sw-download' can be received by Service Worker in src/sw.js
     // NOTE: URL fragment is passed to Service Worker but not passed to Web server
-    aTag.href = `/sw-download#${encodeURIComponent(JSON.stringify(downloadInfo))}`;
+    aTag.href = `/sw-download#${downloadInfoId}`;
     aTag.target = "_blank";
     aTag.click();
   } else {
