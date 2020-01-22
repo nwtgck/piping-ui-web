@@ -17,7 +17,29 @@ module.exports = {
           "https://ppng.herokuapp.com"
         ]),
       })
-    ]
+    ],
+    module: {
+      rules: [
+        // (base: https://vuetifyjs.com/en/customization/sass-variables#variable-api)
+        // SASS has different line endings than SCSS
+        // and cannot use semicolons in the markup
+        {
+          test: /\.scss$/,
+          use: [
+            'vue-style-loader',
+            'css-loader',
+            {
+              loader: 'sass-loader',
+              // Requires sass-loader@^7.0.0
+              options: {
+                // This is the path to your variables
+                data: "@import '@/styles/variables.scss'"
+              },
+            },
+          ],
+        },
+      ]
+    },
   },
   // (from: https://github.com/vuetifyjs/vuetify/issues/8279#issuecomment-517900297)
   transpileDependencies: ['vuetify'],
