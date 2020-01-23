@@ -4,21 +4,23 @@
   "private": true,
   "author": "Ryo Ota <nwtgck@nwtgck.org> (https://github.com/nwtgck)",
   "scripts": {
-    "serve": "npm run generate-version && npm run copy-openpgp && vue-cli-service serve",
-    "build": "npm run generate-version && npm run generate-sitemap && npm run generate-robots-txt && npm run copy-openpgp && vue-cli-service build",
+    "serve": "npm run generate-version && npm run copy-openpgp && npm run copy-web-streams-adapter && vue-cli-service serve",
+    "build": "npm run generate-version && npm run generate-sitemap && npm run generate-robots-txt && npm run copy-openpgp && npm run copy-web-streams-adapter && vue-cli-service build",
     "test:unit": "vue-cli-service test:unit",
     "lint": "vue-cli-service lint",
     "copy-openpgp": "copyfiles --flat node_modules/openpgp/dist/*.min.js public/openpgp",
+    "copy-web-streams-adapter": "copyfiles --flat node_modules/@mattiasbuelens/web-streams-adapter/dist/web-streams-adapter.js public/web-streams-adapter",
     "generate-robots-txt": "ts-node --project scripts/tsconfig.json scripts/generate-robots-txt.tsx > public/robots.txt",
     "generate-sitemap": "ts-node --project scripts/tsconfig.json scripts/generate-sitemap.tsx > public/sitemap.xml",
     "generate-version": "cross-var echo \"export const VERSION = \\\"$npm_package_version\\\";\" > src/version.ts",
     "postinstall": "license-checker --production --json > src/licenses.json",
-    "real-serve": "watch-build-serve -i=dist -i=.idea -i=./node_modules -i=.git -i=src/version.ts -i src/licenses.json -i public/openpgp/openpgp.min.js -i public/openpgp/openpgp.worker.min.js -i public/sitemap.xml -i public/robots.txt"
+    "real-serve": "watch-build-serve -i=dist -i=.idea -i=./node_modules -i=.git -i=src/version.ts -i src/licenses.json -i public/openpgp/openpgp.min.js -i public/openpgp/openpgp.worker.min.js -i public/web-streams-adapter/web-streams-adapter.js -i public/sitemap.xml -i public/robots.txt"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.26",
     "@fortawesome/free-brands-svg-icons": "^5.12.0",
     "@fortawesome/vue-fontawesome": "^0.1.9",
+    "@mattiasbuelens/web-streams-adapter": "0.1.0-alpha.3",
     "binconv": "^0.1.2",
     "clipboard": "^2.0.4",
     "core-js": "^3.6.4",

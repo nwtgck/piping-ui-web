@@ -1,6 +1,49 @@
 // (from: https://medium.com/@dougallrich/give-users-control-over-app-updates-in-vue-cli-3-pwas-20453aedc1f2)
 
+// Backup the native ReadableStream because OpenPGP.js might modify it on Firefox
+const NativeReadableStream = ReadableStream;
 importScripts('openpgp/openpgp.min.js');
+importScripts('web-streams-adapter/web-streams-adapter.js');
+
+
+/**
+ * Convert a native ReadableStream to polyfill ReadableStream if ReadableStream class is polyfill.
+ *
+ * @param readableStream Native ReadableStream
+ * @returns {*}
+ */
+function toPolyfillReadableIfNeed(readableStream) {
+  // If not polyfilled
+  if (NativeReadableStream === ReadableStream) {
+    return readableStream;
+  // If ReadableStream is polyfill
+  } else {
+    // (base: https://github.com/MattiasBuelens/web-streams-adapter/tree/d76e3789d67b1ab3c91699ecc0c42bde897d2298)
+    // NOTE: ReadableStream is polyfill ReadableStream in this condition
+    const toPolyfillReadable = WebStreamsAdapter.createReadableStreamWrapper(ReadableStream);
+    // Convert a native ReadableStream to polyfill ReadableStream
+    return toPolyfillReadable(readableStream);
+  }
+}
+
+/**
+ * Convert a polyfill ReadableStream to native ReadableStream if ReadableStream class is polyfill.
+ *
+ * @param readableStream Native ReadableStream or polyfill ReadableStream
+ * @returns {*}
+ */
+function toNativeReadableIfNeed(readableStream) {
+  // If not polyfilled
+  if (NativeReadableStream === ReadableStream) {
+    return readableStream;
+    // If ReadableStream is polyfill
+  } else {
+    // (base: https://github.com/MattiasBuelens/web-streams-adapter/tree/d76e3789d67b1ab3c91699ecc0c42bde897d2298)
+    const toNativeReadable = WebStreamsAdapter.createReadableStreamWrapper(NativeReadableStream);
+    // Convert a polyfill ReadableStream to native ReadableStream
+    return toNativeReadable(readableStream);
+  }
+}
 
 // Generate random string with specific length
 function generateRandomString(len){
@@ -89,7 +132,7 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname === '/sw-download-support') {
     // Return "OK"
     event.respondWith(new Response(
-      new ReadableStream({
+      new NativeReadableStream({
         start(controller) {
           controller.enqueue(new Uint8Array([79, 75]));
           controller.close();
@@ -146,7 +189,7 @@ self.addEventListener('fetch', (event) => {
           openpgp.config.allow_unauthenticated_stream = true;
           // Decrypt the response body
           const decrypted = await openpgp.decrypt({
-            message: await openpgp.message.read(res.body),
+            message: await openpgp.message.read(toPolyfillReadableIfNeed(res.body)),
             passwords: [password],
             format: 'binary'
           });
@@ -160,7 +203,7 @@ self.addEventListener('fetch', (event) => {
         }
       }
 
-      const downloadableRes = new Response(plainStream, {
+      const downloadableRes = new Response(toNativeReadableIfNeed(plainStream), {
         headers
       });
       return downloadableRes;

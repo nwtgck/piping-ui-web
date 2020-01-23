@@ -4,6 +4,7 @@ node_modules
 /src/version.ts
 /src/licenses.json
 /public/openpgp
+/public/web-streams-adapter
 /public/sitemap.xml
 /public/robots.txt
 
