@@ -25,7 +25,7 @@ module.exports = {
   pwa: {
     workboxPluginMode: 'InjectManifest',
     workboxOptions: {
-      swSrc: './src/sw.js',
+      swSrc: './src/service-worker/dist/sw.js',
       swDest: 'service-worker.js',
       importWorkboxFrom: 'local',
       exclude: [/\.map$/, '_redirects'],

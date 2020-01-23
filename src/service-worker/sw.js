@@ -3,7 +3,7 @@
 // Backup the native ReadableStream because OpenPGP.js might modify it on Firefox
 const NativeReadableStream = ReadableStream;
 importScripts('openpgp/openpgp.min.js');
-importScripts('web-streams-adapter/web-streams-adapter.js');
+import {createReadableStreamWrapper} from '@mattiasbuelens/web-streams-adapter';
 
 
 /**
@@ -20,7 +20,7 @@ function toPolyfillReadableIfNeed(readableStream) {
   } else {
     // (base: https://github.com/MattiasBuelens/web-streams-adapter/tree/d76e3789d67b1ab3c91699ecc0c42bde897d2298)
     // NOTE: ReadableStream is polyfill ReadableStream in this condition
-    const toPolyfillReadable = WebStreamsAdapter.createReadableStreamWrapper(ReadableStream);
+    const toPolyfillReadable = createReadableStreamWrapper(ReadableStream);
     // Convert a native ReadableStream to polyfill ReadableStream
     return toPolyfillReadable(readableStream);
   }
@@ -39,7 +39,7 @@ function toNativeReadableIfNeed(readableStream) {
     // If ReadableStream is polyfill
   } else {
     // (base: https://github.com/MattiasBuelens/web-streams-adapter/tree/d76e3789d67b1ab3c91699ecc0c42bde897d2298)
-    const toNativeReadable = WebStreamsAdapter.createReadableStreamWrapper(NativeReadableStream);
+    const toNativeReadable = createReadableStreamWrapper(NativeReadableStream);
     // Convert a polyfill ReadableStream to native ReadableStream
     return toNativeReadable(readableStream);
   }
