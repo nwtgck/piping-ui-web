@@ -1,6 +1,13 @@
 // (from: https://medium.com/@dougallrich/give-users-control-over-app-updates-in-vue-cli-3-pwas-20453aedc1f2)
 
+// Backup the native ReadableStream because OpenPGP.js might modify it on Firefox
+const NativeReadableStream = ReadableStream;
+import {createReadableStreamWrapper} from '@mattiasbuelens/web-streams-adapter';
 importScripts('openpgp/openpgp.min.js');
+
+// Create convert functions
+const toPolyfillReadable = createReadableStreamWrapper(ReadableStream);
+const toNativeReadable = createReadableStreamWrapper(NativeReadableStream);
 
 // Generate random string with specific length
 function generateRandomString(len){
@@ -89,7 +96,7 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname === '/sw-download-support') {
     // Return "OK"
     event.respondWith(new Response(
-      new ReadableStream({
+      new NativeReadableStream({
         start(controller) {
           controller.enqueue(new Uint8Array([79, 75]));
           controller.close();
@@ -146,7 +153,7 @@ self.addEventListener('fetch', (event) => {
           openpgp.config.allow_unauthenticated_stream = true;
           // Decrypt the response body
           const decrypted = await openpgp.decrypt({
-            message: await openpgp.message.read(res.body),
+            message: await openpgp.message.read(toPolyfillReadable(res.body)),
             passwords: [password],
             format: 'binary'
           });
@@ -160,7 +167,7 @@ self.addEventListener('fetch', (event) => {
         }
       }
 
-      const downloadableRes = new Response(plainStream, {
+      const downloadableRes = new Response(toNativeReadable(plainStream), {
         headers
       });
       return downloadableRes;

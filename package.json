@@ -1,11 +1,13 @@
 {
   "name": "piping-ui",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": true,
   "author": "Ryo Ota <nwtgck@nwtgck.org> (https://github.com/nwtgck)",
   "scripts": {
-    "serve": "npm run generate-version && npm run copy-openpgp && vue-cli-service serve",
-    "build": "npm run generate-version && npm run generate-sitemap && npm run generate-robots-txt && npm run copy-openpgp && vue-cli-service build",
+    "serve": "npm run generate-files && vue-cli-service serve",
+    "build": "npm run generate-files && vue-cli-service build",
+    "build-sw": "webpack --config src/service-worker/webpack.config.js src/service-worker/sw.js",
+    "generate-files": "npm run generate-version && npm run generate-sitemap && npm run generate-robots-txt && npm run copy-openpgp && npm run build-sw",
     "test:unit": "vue-cli-service test:unit",
     "lint": "vue-cli-service lint",
     "copy-openpgp": "copyfiles --flat node_modules/openpgp/dist/*.min.js public/openpgp",
@@ -13,18 +15,19 @@
     "generate-sitemap": "ts-node --project scripts/tsconfig.json scripts/generate-sitemap.tsx > public/sitemap.xml",
     "generate-version": "cross-var echo \"export const VERSION = \\\"$npm_package_version\\\";\" > src/version.ts",
     "postinstall": "license-checker --production --json > src/licenses.json",
-    "real-serve": "watch-build-serve -i=dist -i=.idea -i=./node_modules -i=.git -i=src/version.ts -i src/licenses.json -i public/openpgp/openpgp.min.js -i public/openpgp/openpgp.worker.min.js -i public/sitemap.xml -i public/robots.txt"
+    "real-serve": "watch-build-serve -i=dist -i=.idea -i=./node_modules -i=.git -i=src/version.ts -i src/service-worker/dist -i public/openpgp -i src/licenses.json -i public/sitemap.xml -i public/robots.txt"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.26",
     "@fortawesome/free-brands-svg-icons": "^5.12.0",
     "@fortawesome/vue-fontawesome": "^0.1.9",
+    "@mattiasbuelens/web-streams-adapter": "0.1.0-alpha.3",
     "binconv": "^0.1.2",
     "clipboard": "^2.0.4",
     "core-js": "^3.6.4",
     "file-saver": "^2.0.2",
-    "file-type": "^13.1.1",
-    "filepond": "^4.9.4",
+    "file-type": "^13.1.2",
+    "filepond": "^4.9.5",
     "jszip": "^3.2.2",
     "jwk-thumbprint": "^0.1.2",
     "linkifyjs": "^2.1.8",
@@ -40,7 +43,7 @@
     "vue-class-component": "^7.2.2",
     "vue-filepond": "^6.0.2",
     "vue-property-decorator": "^8.3.0",
-    "vuetify": "^2.1.18"
+    "vuetify": "^2.2.6"
   },
   "devDependencies": {
     "@babel/plugin-proposal-nullish-coalescing-operator": "^7.8.3",
@@ -51,7 +54,7 @@
     "@types/jszip": "^3.1.7",
     "@types/mocha": "^5.2.7",
     "@types/openpgp": "^4.4.8",
-    "@types/react": "^16.9.17",
+    "@types/react": "^16.9.19",
     "@types/react-dom": "^16.9.5",
     "@types/sanitize-html": "^1.20.2",
     "@types/smoothscroll-polyfill": "^0.3.1",
@@ -79,7 +82,8 @@
     "vue-cli-plugin-vuetify": "^2.0.3",
     "vue-template-compiler": "^2.6.11",
     "vuetify-loader": "^1.4.3",
-    "watch-build-serve": "github:nwtgck/watch-build-serve-node#afc757410b3339e1603916ab98b8e5760569dbaa"
+    "watch-build-serve": "github:nwtgck/watch-build-serve-node#afc757410b3339e1603916ab98b8e5760569dbaa",
+    "webpack-cli": "^3.3.10"
   },
   "license": "MIT",
   "repository": {

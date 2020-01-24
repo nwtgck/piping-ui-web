@@ -17,7 +17,7 @@ module.exports = {
           "https://ppng.herokuapp.com"
         ]),
       })
-    ]
+    ],
   },
   // (from: https://github.com/vuetifyjs/vuetify/issues/8279#issuecomment-517900297)
   transpileDependencies: ['vuetify'],
@@ -25,7 +25,7 @@ module.exports = {
   pwa: {
     workboxPluginMode: 'InjectManifest',
     workboxOptions: {
-      swSrc: './src/sw.js',
+      swSrc: './src/service-worker/dist/sw.js',
       swDest: 'service-worker.js',
       importWorkboxFrom: 'local',
       exclude: [/\.map$/, '_redirects'],
