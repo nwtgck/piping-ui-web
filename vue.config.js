@@ -12,8 +12,8 @@ module.exports = {
       // (base: https://medium.com/curofy-engineering/a-guide-to-inject-variable-into-your-code-using-webpack-36c49fcc1dcd)
       new webpack.DefinePlugin({
         PIPING_SERVER_URLS: process.env.PIPING_SERVER_URLS || JSON.stringify([
-          "https://ppng.ml",
-          "https://piping.arukascloud.io",
+          "https://ppng.io",
+          "https://piping.glitch.me",
           "https://ppng.herokuapp.com"
         ]),
       })
