@@ -43,7 +43,7 @@
     "vue-class-component": "^7.2.2",
     "vue-filepond": "^6.0.2",
     "vue-property-decorator": "^8.3.0",
-    "vuetify": "^2.2.6"
+    "vuetify": "^2.2.7"
   },
   "devDependencies": {
     "@babel/plugin-proposal-nullish-coalescing-operator": "^7.8.3",
