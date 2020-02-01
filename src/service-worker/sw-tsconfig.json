@@ -8,7 +8,7 @@
     "sourceMap": true,
     "declaration": true,
     "target": "es2015",
-    "lib": ["es2017", "dom"],
+    "lib": ["es2017", "dom", "webworker"],
     "outDir": "dist",
     "rootDir": "./",
     "baseUrl": ".",
