@@ -58,8 +58,7 @@ function base64ToUint8Array(base64Str: string): Uint8Array {
 
 // This is the code piece that GenerateSW mode can't provide for us.
 // This code listens for the user's confirmation to update the app.
-// TODO: Not use any
-self.addEventListener('message', (e: any) => {
+self.addEventListener('message', (e: ExtendableMessageEvent) => {
   if (!e.data) {
     return;
   }
@@ -107,8 +106,7 @@ self.addEventListener('message', (e: any) => {
 });
 
 // Support for stream download
-// TODO: Not use any
-self.addEventListener('fetch', (event: any) => {
+self.addEventListener('fetch', (event: FetchEvent) => {
   const url = new URL(event.request.url);
   if (url.pathname === '/sw-download-support') {
     // Return "OK"
