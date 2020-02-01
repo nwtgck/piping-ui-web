@@ -4,8 +4,6 @@
 declare var self: any;
 // TODO: Not use any
 declare var openpgp: any;
-// TODO: Not use any
-declare var workbox: any;
 
 // Backup the native ReadableStream because OpenPGP.js might modify it on Firefox
 const NativeReadableStream = ReadableStream;
