@@ -6,7 +6,10 @@ Web UI for [Piping Server](https://github.com/nwtgck/piping-server) - Easy and s
 ![Piping UI - iPhone to UI](doc_assets/iphone-to-ui.gif)
 
 ## Application
+
 <https://piping-ui.org>
+
+![Piping UI QR code](./doc_assets/piping-ui-qr.png)
 
 ## Features
 
