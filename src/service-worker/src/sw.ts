@@ -1,5 +1,5 @@
 // (from: https://medium.com/@dougallrich/give-users-control-over-app-updates-in-vue-cli-3-pwas-20453aedc1f2)
-
+// @ts-nocheck
 // Backup the native ReadableStream because OpenPGP.js might modify it on Firefox
 const NativeReadableStream = ReadableStream;
 import {createReadableStreamWrapper} from '@mattiasbuelens/web-streams-adapter';

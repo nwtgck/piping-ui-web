@@ -6,7 +6,7 @@
   "scripts": {
     "serve": "npm run generate-files && vue-cli-service serve",
     "build": "npm run generate-files && vue-cli-service build",
-    "build-sw": "webpack --config src/service-worker/webpack.config.js src/service-worker/sw.js",
+    "build-sw": "webpack --config src/service-worker/webpack.config.js src/service-worker/src/sw.ts",
     "generate-files": "npm run generate-version && npm run generate-sitemap && npm run generate-robots-txt && npm run copy-openpgp && npm run build-sw",
     "test:unit": "vue-cli-service test:unit",
     "lint": "vue-cli-service lint",
