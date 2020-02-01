@@ -1,7 +1,6 @@
 // (from: https://medium.com/@dougallrich/give-users-control-over-app-updates-in-vue-cli-3-pwas-20453aedc1f2)
 
-// TODO: Not use any
-declare var self: any;
+declare var self: ServiceWorkerGlobalScope;
 // TODO: Not use any
 declare var openpgp: any;
 
@@ -194,5 +193,5 @@ self.addEventListener('fetch', (event: any) => {
 workbox.core.clientsClaim();
 
 // The precaching code provided by Workbox.
-self.__precacheManifest = [].concat(self.__precacheManifest || []);
-workbox.precaching.precacheAndRoute(self.__precacheManifest, {});
+(self as any).__precacheManifest = [].concat((self as any).__precacheManifest || []);
+workbox.precaching.precacheAndRoute((self as any).__precacheManifest, {});
