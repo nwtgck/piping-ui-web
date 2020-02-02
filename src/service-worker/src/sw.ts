@@ -7,6 +7,7 @@ declare var openpgp: any;
 // Backup the native ReadableStream because OpenPGP.js might modify it on Firefox
 const NativeReadableStream = ReadableStream;
 import {createReadableStreamWrapper} from '@mattiasbuelens/web-streams-adapter';
+import {base64ToUint8Array} from 'binconv/dist/src/base64ToUint8Array';
 importScripts('openpgp/openpgp.min.js');
 
 // Create convert functions
@@ -46,14 +47,6 @@ function generateUniqueDownloadInfoId(): string {
       return downloadInfoId;
     }
   }
-}
-
-// (from: https://gist.github.com/borismus/1032746#gistcomment-1493026)
-function base64ToUint8Array(base64Str: string): Uint8Array {
-  const raw = atob(base64Str);
-  return Uint8Array.from(Array.prototype.map.call(raw, (x: string) => {
-    return x.charCodeAt(0);
-  }) as number[]); // TODO: Not use type assertion
 }
 
 // This is the code piece that GenerateSW mode can't provide for us.
