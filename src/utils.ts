@@ -123,11 +123,6 @@ export async function sha256(input: string): Promise<string> {
   );
 }
 
-// (from: https://stackoverflow.com/a/11562550/2885946)
-export function uint8ArrayToBase64(arr: Uint8Array): string {
-  return btoa(String.fromCharCode(...arr));
-}
-
 /***
  * Make a promise which can be resolved and rejected outside of the Promise constructor
  */

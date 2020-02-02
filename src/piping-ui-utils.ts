@@ -27,7 +27,7 @@ export async function decryptingDownload(
   const swDownload = await swDownloadAsync();
   // If supporting stream-download via Service Worker
   if (await swDownload.supportsSwDownload) {
-    const utils = await utilsAsync();
+    const binconv = await binconvAsync();
     const protection: Protection = (() => {
       if (key === undefined) {
         return {type: 'raw'} as const;
@@ -36,11 +36,12 @@ export async function decryptingDownload(
       } else {
         return {
           type: 'uint8array',
-          key: utils.uint8ArrayToBase64(key),
+          key: binconv.uint8ArrayToBase64(key),
         } as const;
       }
     })();
 
+    const utils = await utilsAsync();
     // Create download info to tell to Service Worker
     const downloadInfo = {
       url: downloadUrl,
