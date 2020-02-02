@@ -165,6 +165,7 @@ import Clipboard from 'clipboard';
 import * as fileType from 'file-type/browser';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
 import {uint8ArrayToBlob} from 'binconv/dist/src/uint8ArrayToBlob';
+import {blobToReadableStream} from 'binconv/dist/src/blobToReadableStream';
 import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle, mdiEye, mdiEyeOff, mdiKey, mdiFeatureSearchOutline} from "@mdi/js";
 
 import {globalStore} from "@/vue-global";
@@ -366,21 +367,26 @@ export default class DataViewer extends Vue {
   }
 
   private async viewBlob() {
-    // Get first bytes from blob
-    const firstChunk: Uint8Array = await blobToUint8Array(this.blob.slice(0, fileType.minimumBytes));
-
     // Reset viewers
     this.imgSrc = '';
     this.videoSrc = '';
     this.text = '';
 
+    const isText: boolean = await (async () => {
+      // NOTE: 4100 was used in FileType.minimumBytes in file-type until 13.1.2
+      const nBytes = 4100;
+      // Get first bytes from blob
+      const firstChunk: Uint8Array = await blobToUint8Array(this.blob.slice(0, nBytes));
+      return utils.isText(firstChunk);
+    })();
+
     // If body is text
-    if (utils.isText(firstChunk)) {
+    if (isText) {
       // Set text
       this.text = await utils.readBlobAsText(this.blob);
     } else {
       // Detect type of blob
-      const fileTypeResult = await fileType.fromBlob(new Blob([firstChunk]));
+      const fileTypeResult = await fileType.fromStream(blobToReadableStream(this.blob));
       if (fileTypeResult !== undefined) {
         const blobUrl = URL.createObjectURL(this.blob);
         if (fileTypeResult.mime.startsWith("image/")) {
