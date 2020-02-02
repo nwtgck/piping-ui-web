@@ -7,6 +7,7 @@ const openpgpAsync = memorizeFunc(async () => {
   await openpgp.initWorker({ path: 'openpgp/openpgp.worker.min.js' });
   return openpgp;
 });
+const uint8ArrayToHexStringAsync = () => import("binconv/dist/src/uint8ArrayToHexString").then(p => p.default);
 
 export function readableBytesString(bytes: number, fractionDigits: number): string {
   const units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
@@ -112,15 +113,12 @@ export async function decrypt(bytes: Uint8Array, password: string | Uint8Array):
   return plain;
 }
 
-// (from: https://stackoverflow.com/a/40031979/2885946)
-export function buffToHex(buff: ArrayBuffer): string {
-  return Array.prototype.map.call(new Uint8Array(buff), (x) => ('00' + x.toString(16)).slice(-2)).join('');
-}
-
 export async function sha256(input: string): Promise<string> {
-  return buffToHex(
-    await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input)),
-  );
+  const uint8ArrayToHexString = await uint8ArrayToHexStringAsync();
+  // Calculate SHA-256
+  const sha256: ArrayBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
+  // Convert array buffer to hex string
+  return uint8ArrayToHexString(new Uint8Array(sha256));
 }
 
 /***
