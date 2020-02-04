@@ -16,11 +16,25 @@ jobs:
           node-version: 12.x
       - run: npm ci
       - run: npm run build
-      # Deploy to Netlify
-      # (base: https://github.com/jwbaart/quotes/blob/cbad9a27197879e54d1e80f98185c471c20e8522/.github/workflows/netlify.yml)
-      - uses: netlify/actions/cli@master
+
+      - name: Deploy to Netlify
+        run: npx netlify-cli deploy --dir=./dist --json > netlify-deploy.json
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+      - name: Comment Deploy URL when it is a pull request
+        uses: actions/github-script@0.4.0
         with:
-          args: deploy --dir=./dist
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            if (context.issue.number !== undefined) {
+              const deployJson = JSON.parse(require('fs').readFileSync('netlify-deploy.json'));
+
+              github.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `🚀 Deploy on ${deployJson.deploy_url}`
+              })
+            }
