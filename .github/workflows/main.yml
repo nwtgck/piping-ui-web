@@ -18,23 +18,10 @@ jobs:
       - run: npm run build
 
       - name: Deploy to Netlify
-        run: npx netlify-cli deploy --dir=./dist --json > netlify-deploy.json
+        uses: nwtgck/actions-netlify@v0.1.1
+        with:
+          publish-dir: './dist'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-
-      - name: Comment Deploy URL when it is a pull request
-        uses: actions/github-script@0.4.0
-        with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |
-            if (context.issue.number !== undefined) {
-              const deployJson = JSON.parse(require('fs').readFileSync('netlify-deploy.json'));
-
-              github.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: `🚀 Deploy on ${deployJson.deploy_url}`
-              })
-            }
