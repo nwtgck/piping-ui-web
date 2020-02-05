@@ -42,7 +42,7 @@
     "vue-async-computed-decorator": "0.0.4",
     "vue-class-component": "^7.2.2",
     "vue-filepond": "^6.0.2",
-    "vue-property-decorator": "^8.3.0",
+    "vue-property-decorator": "^8.4.0",
     "vuetify": "^2.2.9"
   },
   "devDependencies": {
