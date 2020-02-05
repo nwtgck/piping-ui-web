@@ -80,7 +80,7 @@
     "sass": "^1.25.0",
     "sass-loader": "^8.0.2",
     "typescript": "^3.7.5",
-    "vue-cli-plugin-vuetify": "^2.0.3",
+    "vue-cli-plugin-vuetify": "^2.0.4",
     "vue-template-compiler": "^2.6.11",
     "vuetify-loader": "^1.4.3",
     "watch-build-serve": "github:nwtgck/watch-build-serve-node#afc757410b3339e1603916ab98b8e5760569dbaa",
