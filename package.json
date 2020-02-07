@@ -60,7 +60,7 @@
     "@types/smoothscroll-polyfill": "^0.3.1",
     "@types/url-join": "^4.0.0",
     "@types/workbox-sw": "^4.3.0",
-    "@vue/cli-plugin-babel": "^4.1.2",
+    "@vue/cli-plugin-babel": "^4.2.2",
     "@vue/cli-plugin-eslint": "^4.1.2",
     "@vue/cli-plugin-pwa": "^4.1.2",
     "@vue/cli-plugin-typescript": "^4.1.2",
