@@ -91,14 +91,14 @@
       </div>
 
       <!-- Image viewer -->
-      <div v-show="imgSrc !== ''" style="text-align: center">
-        <img :src="imgSrc"
+      <div v-show="imgSrc.url !== undefined" style="text-align: center">
+        <img :src="imgSrc.url"
              style="width: 95%">
       </div>
 
       <!-- Video viewer -->
-      <div v-if="videoSrc !== ''" style="text-align: center">
-        <video :src="videoSrc"
+      <div v-if="videoSrc.url !== undefined" style="text-align: center">
+        <video :src="videoSrc.url"
                style="width: 95%"
                controls />
       </div>
@@ -175,6 +175,7 @@ import * as pipingUiUtils from "@/piping-ui-utils";
 import AsyncComputed from 'vue-async-computed-decorator';
 import {Protection, VerificationStep, VerifiedParcel, verifiedParcelFormat} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
+import {BlobUrlManager} from "@/blob-url-manager";
 
 
 export type DataViewerProps = {
@@ -205,8 +206,8 @@ export default class DataViewer extends Vue {
   private xhr: XMLHttpRequest;
   private isDoneDownload: boolean = false;
   private canceled: boolean = false;
-  private imgSrc: string = '';
-  private videoSrc: string = '';
+  private imgSrc: BlobUrlManager= new BlobUrlManager();
+  private videoSrc: BlobUrlManager= new BlobUrlManager();
   private text: string = '';
   private enablePasswordReinput: boolean = false;
   private showsPassword: boolean = false;
@@ -368,8 +369,8 @@ export default class DataViewer extends Vue {
 
   private async viewBlob() {
     // Reset viewers
-    this.imgSrc = '';
-    this.videoSrc = '';
+    this.imgSrc.clearIfNeed();
+    this.videoSrc.clearIfNeed();
     this.text = '';
 
     const isText: boolean = await (async () => {
@@ -388,11 +389,10 @@ export default class DataViewer extends Vue {
       // Detect type of blob
       const fileTypeResult = await fileType.fromStream(blobToReadableStream(this.blob));
       if (fileTypeResult !== undefined) {
-        const blobUrl = URL.createObjectURL(this.blob);
         if (fileTypeResult.mime.startsWith("image/")) {
-          this.imgSrc = blobUrl;
+          this.imgSrc.set(this.blob);
         } else if (fileTypeResult.mime.startsWith("video/")) {
-          this.videoSrc = blobUrl;
+          this.videoSrc.set(this.blob);
         } else if (fileTypeResult.mime.startsWith("text/")) {
           // Set text
           this.text = await utils.readBlobAsText(this.blob);
