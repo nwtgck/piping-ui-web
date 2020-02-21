@@ -43,7 +43,7 @@ import {mdiAlert, mdiChevronDown} from "@mdi/js";
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import * as pipingUiUtils from "@/piping-ui-utils";
-import {Protection, VerificationStep} from "@/datatypes";
+import type {Protection, VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 
 

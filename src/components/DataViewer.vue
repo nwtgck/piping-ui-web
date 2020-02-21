@@ -173,7 +173,7 @@ import {strings} from "@/strings";
 import * as utils from '@/utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
 import AsyncComputed from 'vue-async-computed-decorator';
-import {Protection, VerificationStep, VerifiedParcel, verifiedParcelFormat} from "@/datatypes";
+import type {Protection, VerificationStep, VerifiedParcel, verifiedParcelFormat} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import {BlobUrlManager} from "@/blob-url-manager";
 

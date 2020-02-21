@@ -214,7 +214,7 @@ import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import {File as FilePondFile} from "filepond";
 import {baseAndExt} from "@/utils";
-import {Protection} from "@/datatypes";
+import type {Protection} from "@/datatypes";
 import buildConstants from "@/build-constants";
 
 (async () => require('filepond/dist/filepond.min.css'))();
