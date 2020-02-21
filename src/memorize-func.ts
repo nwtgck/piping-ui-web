@@ -1,11 +1,11 @@
-const NOT_MEMORIZED: Symbol = Symbol('NOT_MEMORIZED');
+const NOT_MEMORIZED: unique symbol = Symbol('NOT_MEMORIZED');
 export function memorizeFunc<T>(func: () => T) {
-  let memo: T | Symbol = NOT_MEMORIZED;
+  let memo: T | typeof NOT_MEMORIZED = NOT_MEMORIZED;
   return (): T => {
     // If no memo
     if (memo === NOT_MEMORIZED) {
       memo = func();
     }
-    return memo as T;
+    return memo;
   };
 }
