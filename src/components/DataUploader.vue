@@ -111,7 +111,7 @@ import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import {mdiAlert, mdiCancel, mdiCheck, mdiChevronDown, mdiCloseCircle} from "@mdi/js";
 import AsyncComputed from 'vue-async-computed-decorator';
-import {Protection, VerificationStep, VerifiedParcel} from "@/datatypes";
+import type {Protection, VerificationStep, VerifiedParcel} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 
 
