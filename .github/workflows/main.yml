@@ -15,7 +15,7 @@ jobs:
         with:
           node-version: 12.x
       - run: npm ci
-      - run: npm run build
+      - run: SITE_URL="https://piping-ui.org" npm run build
 
       - name: Deploy to Netlify
         uses: nwtgck/actions-netlify@v1.0
