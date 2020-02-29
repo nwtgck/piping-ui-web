@@ -78,7 +78,7 @@
     "license-checker": "^25.0.1",
     "material-design-icons-iconfont": "^5.0.1",
     "react": "^16.13.0",
-    "sass": "^1.26.1",
+    "sass": "^1.26.2",
     "sass-loader": "^8.0.2",
     "typescript": "~3.8.2",
     "vue-cli-plugin-vuetify": "^2.0.5",
