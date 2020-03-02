@@ -47,7 +47,7 @@
   },
   "devDependencies": {
     "@mdi/js": "^4.9.95",
-    "@types/chai": "^4.2.9",
+    "@types/chai": "^4.2.10",
     "@types/clipboard": "^2.0.1",
     "@types/file-saver": "^2.0.1",
     "@types/jszip": "^3.1.7",
