@@ -75,8 +75,7 @@ export default class App extends Vue {
     mdiDotsVertical,
   };
 
-  // TODO: Remove any
-  pwa: {refreshing: boolean, registration?: any, updateExists: boolean} = {
+  pwa: {refreshing: boolean, registration?: ServiceWorkerRegistration, updateExists: boolean} = {
     refreshing: false,
     registration: undefined,
     updateExists: false
@@ -90,7 +89,7 @@ export default class App extends Vue {
 
   created () {
     document.addEventListener(
-      'swUpdated', this.showRefreshUI, { once: true }
+      'swUpdated', this.showRefreshUI as EventListenerOrEventListenerObject, { once: true }
     );
   }
 
@@ -104,8 +103,7 @@ export default class App extends Vue {
     appBarPromiseResolver((this.$refs['app_bar'] as Vue).$el);
   }
 
-  // TODO: Remove any but "registration" in /register-service-worker/index.d.ts is also any
-  showRefreshUI (e: any) {
+  showRefreshUI (e: CustomEvent<ServiceWorkerRegistration>) {
     this.pwa.registration = e.detail;
     this.pwa.updateExists = true;
   }
