@@ -3,8 +3,7 @@ name: github pages
 on:
   push:
     branches:
-      # TODO: Change to master
-      - develop
+      - master
 
 jobs:
   deploy:
@@ -21,6 +20,6 @@ jobs:
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
-          deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
           cname: piping-ui.org
