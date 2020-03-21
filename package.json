@@ -53,7 +53,7 @@
     "@types/jszip": "^3.1.7",
     "@types/mocha": "^7.0.2",
     "@types/openpgp": "^4.4.8",
-    "@types/react": "^16.9.23",
+    "@types/react": "^16.9.25",
     "@types/react-dom": "^16.9.5",
     "@types/sanitize-html": "^1.22.0",
     "@types/smoothscroll-polyfill": "^0.3.1",
