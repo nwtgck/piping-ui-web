@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [0.6.17] - 2020-05-25
+### Changed
+- Update dependencies
+
 ## [0.6.16] - 2020-04-24
 ### Changed
 - Update dependencies
@@ -295,7 +299,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 ### Added
 - First release
 
-[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.6.16...HEAD
+[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.6.17...HEAD
+[0.6.17]: https://github.com/nwtgck/piping-ui-web/compare/v0.6.16...v0.6.17
 [0.6.16]: https://github.com/nwtgck/piping-ui-web/compare/v0.6.15...v0.6.16
 [0.6.15]: https://github.com/nwtgck/piping-ui-web/compare/v0.6.14...v0.6.15
 [0.6.14]: https://github.com/nwtgck/piping-ui-web/compare/v0.6.13...v0.6.14
