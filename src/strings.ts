@@ -1,4 +1,4 @@
-import {KeyExchangeErrorCode} from "@/piping-ui-utils";
+import type {KeyExchangeErrorCode} from "@/piping-ui-auth";
 import {VERSION} from "@/version";
 
 const urlJoinAsync = () => import('url-join').then(p => p.default);

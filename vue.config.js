@@ -28,7 +28,12 @@ module.exports = {
       swSrc: './src/service-worker/dist/src/sw.js',
       swDest: 'service-worker.js',
       importWorkboxFrom: 'local',
-      exclude: [/\.map$/, '_redirects'],
+      exclude: [
+        /\.map$/,
+        '_redirects',
+        // Ignore piping-ui.auth caching because the logic can be changeable in the future
+        /piping-ui-auth.*\.js/
+      ],
     },
   }
 };
