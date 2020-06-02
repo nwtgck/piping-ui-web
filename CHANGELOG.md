@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [0.6.18] - 2020-06-02
+### Changed
+- Update dependencies
+- Not cache the logic of peer verification (internal implementation)
+
 ## [0.6.17] - 2020-05-25
 ### Changed
 - Update dependencies
@@ -299,7 +304,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 ### Added
 - First release
 
-[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.6.17...HEAD
+[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.6.18...HEAD
+[0.6.18]: https://github.com/nwtgck/piping-ui-web/compare/v0.6.17...v0.6.18
 [0.6.17]: https://github.com/nwtgck/piping-ui-web/compare/v0.6.16...v0.6.17
 [0.6.16]: https://github.com/nwtgck/piping-ui-web/compare/v0.6.15...v0.6.16
 [0.6.15]: https://github.com/nwtgck/piping-ui-web/compare/v0.6.14...v0.6.15
