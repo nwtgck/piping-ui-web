@@ -46,6 +46,7 @@ import * as pipingUiUtils from "@/piping-ui-utils";
 import type {Protection, VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 
+const pipingUiAuthAsync = import(/* webpackChunkName: "piping-ui-auth" */ "@/piping-ui-auth");
 
 export type DataDownloaderProps = {
   downloadNo: number,
@@ -105,7 +106,7 @@ export default class DataDownloader extends Vue {
     pipingUiUtils.scrollTo(this.$el);
 
     // Key exchange
-    const keyExchangeRes = await pipingUiUtils.keyExchangeAndReceiveVerified(
+    const keyExchangeRes = await (await pipingUiAuthAsync).keyExchangeAndReceiveVerified(
       this.props.serverUrl,
       this.props.secretPath,
       this.props.protection,

@@ -114,6 +114,8 @@ import AsyncComputed from 'vue-async-computed-decorator';
 import type {Protection, VerificationStep, VerifiedParcel} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 
+const pipingUiAuthAsync = import(/* webpackChunkName: "piping-ui-auth" */ "@/piping-ui-auth");
+
 
 export type DataUploaderProps = {
   uploadNo: number,
@@ -250,7 +252,7 @@ export default class DataUploader extends Vue {
         break;
       case 'passwordless': {
         // Key exchange
-        const keyExchangeRes = await pipingUiUtils.keyExchange(this.props.serverUrl, 'sender', this.props.secretPath);
+        const keyExchangeRes = await (await pipingUiAuthAsync).keyExchange(this.props.serverUrl, 'sender', this.props.secretPath);
         if (keyExchangeRes.type === 'error') {
           this.verificationStep = {type: 'error'};
           this.errorMessageDelegate = () => this.strings['key_exchange_error'](keyExchangeRes.errorCode);
@@ -278,7 +280,7 @@ export default class DataUploader extends Vue {
       stringToUint8Array(JSON.stringify(verifiedParcel)),
       key,
     );
-    const path = urlJoin(this.props.serverUrl, await pipingUiUtils.verifiedPath(this.props.secretPath));
+    const path = urlJoin(this.props.serverUrl, await (await pipingUiAuthAsync).verifiedPath(this.props.secretPath));
     // Send verified or not
     await fetch(path, {
       method: 'POST',

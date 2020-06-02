@@ -177,6 +177,7 @@ import type {Protection, VerificationStep, VerifiedParcel, verifiedParcelFormat}
 import VerificationCode from "@/components/VerificationCode.vue";
 import {BlobUrlManager} from "@/blob-url-manager";
 
+const pipingUiAuthAsync = import(/* webpackChunkName: "piping-ui-auth" */ "@/piping-ui-auth");
 
 export type DataViewerProps = {
   viewNo: number,
@@ -314,7 +315,7 @@ export default class DataViewer extends Vue {
     });
 
     // Key exchange
-    const keyExchangeRes = await pipingUiUtils.keyExchangeAndReceiveVerified(
+    const keyExchangeRes = await (await pipingUiAuthAsync).keyExchangeAndReceiveVerified(
       this.props.serverUrl,
       this.props.secretPath,
       this.props.protection,
