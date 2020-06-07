@@ -45,8 +45,7 @@ import {strings} from "@/strings";
 import * as pipingUiUtils from "@/piping-ui-utils";
 import type {Protection, VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
-
-const pipingUiAuthAsync = import(/* webpackChunkName: "piping-ui-auth" */ "@/piping-ui-auth");
+import {pipingUiAuthAsync} from "@/pipingUiAuthWithWebpackChunkName"
 
 export type DataDownloaderProps = {
   downloadNo: number,

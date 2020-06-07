@@ -113,8 +113,7 @@ import {mdiAlert, mdiCancel, mdiCheck, mdiChevronDown, mdiCloseCircle} from "@md
 import AsyncComputed from 'vue-async-computed-decorator';
 import type {Protection, VerificationStep, VerifiedParcel} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
-
-const pipingUiAuthAsync = import(/* webpackChunkName: "piping-ui-auth" */ "@/piping-ui-auth");
+import {pipingUiAuthAsync} from "@/pipingUiAuthWithWebpackChunkName"
 
 
 export type DataUploaderProps = {

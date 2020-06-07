@@ -176,8 +176,8 @@ import AsyncComputed from 'vue-async-computed-decorator';
 import type {Protection, VerificationStep, VerifiedParcel, verifiedParcelFormat} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import {BlobUrlManager} from "@/blob-url-manager";
+import {pipingUiAuthAsync} from "@/pipingUiAuthWithWebpackChunkName"
 
-const pipingUiAuthAsync = import(/* webpackChunkName: "piping-ui-auth" */ "@/piping-ui-auth");
 
 export type DataViewerProps = {
   viewNo: number,
