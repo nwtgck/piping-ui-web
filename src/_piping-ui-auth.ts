@@ -1,4 +1,4 @@
-// NOTE: Use `const pipingUiAuthAsync = import(/* webpackChunkName: "piping-ui-auth" */ "@/piping-ui-auth");` to import this file
+// NOTE: Use `const pipingUiAuthAsync = import(/* webpackChunkName: "piping-ui-auth" */ "@/_piping-ui-auth");` to import this file
 
 import {
   KeyExchangeParcel,
