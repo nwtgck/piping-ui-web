@@ -26,7 +26,7 @@
     "clipboard": "^2.0.6",
     "core-js": "^3.6.5",
     "file-saver": "^2.0.2",
-    "file-type": "^14.6.1",
+    "file-type": "^14.6.2",
     "filepond": "^4.17.1",
     "jszip": "^3.4.0",
     "jwk-thumbprint": "^0.1.3",
