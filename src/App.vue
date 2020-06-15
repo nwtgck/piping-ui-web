@@ -40,9 +40,9 @@
       <Licenses v-model="licenseDialog" v-if="licenseDialog"/>
     </v-dialog>
 
-    <v-content>
+    <v-main>
       <PipingUI/>
-    </v-content>
+    </v-main>
   </v-app>
 </template>
 
