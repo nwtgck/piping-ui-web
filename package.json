@@ -52,7 +52,7 @@
     "@types/file-saver": "^2.0.1",
     "@types/mocha": "^7.0.2",
     "@types/openpgp": "^4.4.12",
-    "@types/react": "^16.9.36",
+    "@types/react": "^16.9.38",
     "@types/react-dom": "^16.9.8",
     "@types/sanitize-html": "^1.23.2",
     "@types/smoothscroll-polyfill": "^0.3.1",
