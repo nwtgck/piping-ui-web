@@ -8,6 +8,9 @@ const openpgpAsync = memorizeFunc(async () => {
   return openpgp;
 });
 const uint8ArrayToHexStringAsync = () => import("binconv/dist/src/uint8ArrayToHexString").then(p => p.default);
+const uint8ArrayToReadableStreamAsync = () => import("binconv/dist/src/uint8ArrayToReadableStream").then(p => p.default);
+const readableStreamToUint8ArrayAsync = () => import("binconv/dist/src/readableStreamToUint8Array").then(p => p.default);
+const urlJoinAsync = () => import('url-join').then(p => p.default);
 
 export function readableBytesString(bytes: number, fractionDigits: number): string {
   const units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
@@ -92,16 +95,22 @@ export async function sanitizeHtmlAllowingATag(dirtyHtml: string): Promise<strin
 }
 
 export async function encrypt(bytes: Uint8Array, password: string | Uint8Array): Promise<Uint8Array> {
+  const uint8ArrayToReadableStream = await uint8ArrayToReadableStreamAsync();
+  const readableStreamToUint8Array = await readableStreamToUint8ArrayAsync();
+  const encrypted = await encryptStream(uint8ArrayToReadableStream(bytes), password);
+  return readableStreamToUint8Array(encrypted);
+}
+
+export async function encryptStream(stream: ReadableStream<Uint8Array>, password: string | Uint8Array): Promise<ReadableStream<Uint8Array>> {
   const openpgp = await openpgpAsync();
   // Encrypt with PGP
   const encryptResult = await openpgp.encrypt({
-    message: openpgp.message.fromBinary(bytes),
+    message: openpgp.message.fromBinary(stream),
     passwords: [password],
     armor: false
   });
   // Get encrypted
-  const encrypted: Uint8Array =
-    encryptResult.message.packets.write() as Uint8Array;
+  const encrypted: ReadableStream<Uint8Array> = encryptResult.message.packets.write();
   return encrypted;
 }
 
@@ -155,4 +164,24 @@ export function sendToServiceWorker(message: any): Promise<MessageEvent> {
     messageChannel.port1.onmessage = resolve;
     navigator.serviceWorker.controller.postMessage(message, [messageChannel.port2]);
   });
+}
+
+// Check fetch()'s streaming upload support with Piping Server
+export async function supportsFetchStreamingUpload(pipingServerUrl: string): Promise<boolean> {
+  const stream = new ReadableStream( {
+    pull(controller) {
+      controller.enqueue(new Uint8Array([65, 66, 67]));
+      controller.close();
+    }
+  });
+  const urlJoin = await urlJoinAsync();
+  const path = Math.random().toString(36).slice(-8);
+  const url = urlJoin(pipingServerUrl, path)
+  fetch(url, {
+    method: 'POST',
+    body: stream,
+    allowHTTP1ForStreamingUpload: true, // NOTE: Chrome temporal property
+  } as any);
+  const text = await (await fetch(url)).text();
+  return text === 'ABC';
 }

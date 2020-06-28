@@ -62,7 +62,7 @@ const en = {
     const versionUrl = urlJoin(p.serverUrl, "/version");
     return utils.sanitizeHtmlAllowingATag(`An error occurred. The server might be < 0.9.4. Please check <a href="${versionUrl}" target="_blank">${versionUrl}</a>`);
   },
-  data_uploader_xhr_upload_onerror: 'An error occurred while uploading',
+  data_uploader_xhr_upload_error: 'An error occurred while uploading',
   cancel: 'Cancel',
   view_in_viewer: 'View',
   download_url: 'Download URL',
@@ -132,7 +132,7 @@ const ja: typeof defaultStr = {
     const versionUrl = urlJoin(p.serverUrl, "/version");
     return utils.sanitizeHtmlAllowingATag(`エラーが発生しました。サーバーが0.9.4より低い可能性があります。 <a href="${versionUrl}" target="_blank">${versionUrl}</a> でバージョンの確認できます。`);
   },
-  data_uploader_xhr_upload_onerror: 'アップロード中にエラが発生しました',
+  data_uploader_xhr_upload_error: 'アップロード中にエラーが発生しました',
   cancel: 'キャンセル',
   view_in_viewer: '表示',
   decrypting: '復号中...',
