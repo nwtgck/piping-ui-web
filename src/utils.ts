@@ -86,7 +86,8 @@ export async function sanitizeHtmlAllowingATag(dirtyHtml: string): Promise<strin
     allowedTags: ['a'],
     allowedAttributes: {
       'a': ['href', 'target']
-    }
+    },
+    disallowedTagsMode: 'escape',
   });
 }
 
