@@ -43,7 +43,7 @@
     "vue-class-component": "^7.2.3",
     "vue-filepond": "^6.0.2",
     "vue-property-decorator": "^9.0.0",
-    "vuetify": "^2.3.4"
+    "vuetify": "^2.3.5"
   },
   "devDependencies": {
     "@mdi/js": "^5.3.45",
