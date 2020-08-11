@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [0.6.25] - 2020-08-11
+### Changed
+- Update dependencies
+- Not make DarkReader make Piping UI dark again
+
 ## [0.6.24] - 2020-07-30
 ### Changed
 - Update dependencies
@@ -331,7 +336,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 ### Added
 - First release
 
-[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.6.24...HEAD
+[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.6.25...HEAD
+[0.6.25]: https://github.com/nwtgck/piping-ui-web/compare/v0.6.24...v0.6.25
 [0.6.24]: https://github.com/nwtgck/piping-ui-web/compare/v0.6.23...v0.6.24
 [0.6.23]: https://github.com/nwtgck/piping-ui-web/compare/v0.6.22...v0.6.23
 [0.6.22]: https://github.com/nwtgck/piping-ui-web/compare/v0.6.21...v0.6.22
