@@ -45,10 +45,15 @@ const ecJsonWebKeyType = t.intersection([
 
 export const keyExchangeParcelType = t.type({
   version: t.number,
+});
+export type KeyExchangeParcel = t.TypeOf<typeof keyExchangeParcelType>;
+
+export const keyExchangeV1ParcelType = t.type({
+  version: t.literal(1),
   // Public JWK for encryption
   encryptPublicJwk: ecJsonWebKeyType,
 });
-export type KeyExchangeParcel = t.TypeOf<typeof keyExchangeParcelType>;
+export type KeyExchangeV1Parcel = t.TypeOf<typeof keyExchangeV1ParcelType>;
 
 export const verifiedParcelType = t.type({
   verified: t.boolean,

@@ -3,6 +3,8 @@
 import {
   KeyExchangeParcel,
   keyExchangeParcelType,
+  KeyExchangeV1Parcel,
+  keyExchangeV1ParcelType,
   Protection, VerificationStep,
   VerifiedParcel,
   verifiedParcelType
@@ -25,7 +27,7 @@ export async function verifiedPath(secretPath: string): Promise<string> {
   return utils.sha256(`${secretPath}/verified`);
 }
 
-export type KeyExchangeErrorCode = 'invalid_parcel_format' | 'different_key_exchange_version';
+export type KeyExchangeErrorCode = 'invalid_parcel_format' | 'invalid_v1_parcel_format' | 'different_key_exchange_version';
 type KeyExchangeResult =
   {type: "key", key: Uint8Array, verificationCode: string} |
   {type: "error", errorCode: KeyExchangeErrorCode};
@@ -46,7 +48,7 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
     'jwk',
     keyPair.publicKey
   ) as JsonWebKey & {kty: 'EC'};
-  const keyExchangeParcel: KeyExchangeParcel = {
+  const keyExchangeParcel: KeyExchangeV1Parcel = {
     version: KEY_EXCHANGE_VERSION,
     encryptPublicJwk: publicKeyJwk,
   };
@@ -54,7 +56,7 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
   const myPath = await keyExchangePath(type, secretPath);
   const peerPath = await keyExchangePath(type === 'sender' ? 'receiver' : 'sender', secretPath);
   // Exchange
-  const [_, peerRes] = await Promise.all([
+  const [, peerRes] = await Promise.all([
     fetch(urlJoin(serverUrl, myPath), {method: 'POST', body: JSON.stringify(keyExchangeParcel)}),
     fetch(urlJoin(serverUrl, peerPath)),
   ]);
@@ -66,9 +68,14 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
   if (KEY_EXCHANGE_VERSION !== peerPublicKeyExchange.version) {
     return {type: "error", errorCode: 'different_key_exchange_version'};
   }
+  const peerPublicKeyExchangeV1Either = keyExchangeV1ParcelType.decode(peerPublicKeyExchange);
+  if (peerPublicKeyExchangeV1Either._tag === 'Left') {
+    return {type: "error", errorCode: 'invalid_v1_parcel_format'};
+  }
+  const peerPublicKeyExchangeV1 = peerPublicKeyExchangeV1Either.right;
   const peerPublicKey = await crypto.subtle.importKey(
     'jwk',
-    peerPublicKeyExchange.encryptPublicJwk,
+    peerPublicKeyExchangeV1.encryptPublicJwk,
     {name: 'ECDH', namedCurve: 'P-256'},
     false,
     []
@@ -78,7 +85,7 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
     keyPair.privateKey,
     KEY_BITS,
   );
-  const verificationCode = await generateVerificationCode(publicKeyJwk, peerPublicKeyExchange.encryptPublicJwk);
+  const verificationCode = await generateVerificationCode(publicKeyJwk, peerPublicKeyExchangeV1.encryptPublicJwk);
   return {
     type: 'key',
     key: new Uint8Array(keyBits),
