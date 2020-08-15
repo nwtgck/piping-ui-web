@@ -212,7 +212,7 @@ import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiCloseCircle, mdiClose
 import {keys} from "@/local-storage-keys";
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
-import {File as FilePondFile} from "filepond";
+import {FilePondFile} from "filepond";
 import {baseAndExt} from "@/utils";
 import type {Protection} from "@/datatypes";
 import buildConstants from "@/build-constants";
