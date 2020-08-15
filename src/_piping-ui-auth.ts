@@ -2,13 +2,13 @@
 
 import {
   KeyExchangeParcel,
-  keyExchangeParcelFormat,
+  keyExchangeParcelType,
   Protection, VerificationStep,
   VerifiedParcel,
-  verifiedParcelFormat
+  verifiedParcelType
 } from "@/datatypes";
-import {validatingParse} from 'ts-json-validator';
 import {strings} from "@/strings";
+import type {Validation} from "io-ts";
 const utilsAsync = () => import("@/utils");
 
 const jwkThumbprintAsync  = () => import("jwk-thumbprint");
@@ -58,10 +58,11 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
     fetch(urlJoin(serverUrl, myPath), {method: 'POST', body: JSON.stringify(keyExchangeParcel)}),
     fetch(urlJoin(serverUrl, peerPath)),
   ]);
-  const peerPublicKeyExchange: KeyExchangeParcel | undefined = validatingParse(keyExchangeParcelFormat, await peerRes.text());
-  if (peerPublicKeyExchange === undefined) {
+  const peerPublicKeyExchangeEither: Validation<KeyExchangeParcel> = keyExchangeParcelType.decode(JSON.parse(await peerRes.text()));
+  if (peerPublicKeyExchangeEither._tag === 'Left') {
     return {type: "error", errorCode: 'invalid_parcel_format'};
   }
+  const peerPublicKeyExchange = peerPublicKeyExchangeEither.right;
   if (KEY_EXCHANGE_VERSION !== peerPublicKeyExchange.version) {
     return {type: "error", errorCode: 'different_key_exchange_version'};
   }
@@ -134,8 +135,8 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
       // Decrypt body
       const decryptedBody: Uint8Array = await utils.decrypt(new Uint8Array(await res.arrayBuffer()), key);
       // Parse
-      const verifiedParcel: VerifiedParcel | undefined = validatingParse(verifiedParcelFormat, uint8ArrayToString(decryptedBody));
-      if (verifiedParcel === undefined) {
+      const verifiedParcelEither: Validation<VerifiedParcel> = verifiedParcelType.decode(JSON.parse(uint8ArrayToString(decryptedBody)));
+      if (verifiedParcelEither._tag === "Left") {
         return {
           type: "error",
           errorMessage(lang) {
@@ -143,7 +144,7 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
           }
         };
       }
-      const {verified} = verifiedParcel;
+      const {verified} = verifiedParcelEither.right;
       setVerificationStep({type: 'verified', verified});
       if (!verified) {
         return {

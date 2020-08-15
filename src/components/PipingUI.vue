@@ -206,7 +206,7 @@ import {DataViewerProps} from "@/components/DataViewer.vue";
 const DataViewer = () => import("@/components/DataViewer.vue");
 const DataDownloader = () => import('@/components/DataDownloader.vue');
 import {DataDownloaderProps} from "@/components/DataDownloader.vue";
-import {str, arr, validatingParse, Json, TsType} from 'ts-json-validator';
+import * as t from 'io-ts';
 import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiCloseCircle, mdiClose, mdiEye, mdiEyeOff, mdiKey, mdiShieldHalfFull, mdiText} from "@mdi/js";
 
 import {keys} from "@/local-storage-keys";
@@ -229,10 +229,12 @@ function normalizeUrl(url: string): string {
 }
 
 // Load from local storage with validation
-function loadLocalStorage<J extends Json>(format: J, key: string): TsType<J> | undefined {
+function loadLocalStorage<T>(typeC: t.Type<T>, key: string): T | undefined {
   const item: string | null = window.localStorage.getItem(key);
   if (item !== null) {
-    return validatingParse(format, item);
+    const either = typeC.decode(JSON.parse(item));
+    if (either._tag === 'Left') return undefined;
+    return either.right;
   }
 }
 
@@ -451,7 +453,7 @@ export default class PipingUI extends Vue {
     });
 
     // Load server URL history from local storage
-    const serverUrlHistory: string[] | undefined = loadLocalStorage(arr(str), keys.serverUrlHistory);
+    const serverUrlHistory: string[] | undefined = loadLocalStorage(t.array(t.string), keys.serverUrlHistory);
     // If none
     if (serverUrlHistory === undefined) {
       // Set default
@@ -462,7 +464,7 @@ export default class PipingUI extends Vue {
     }
 
     // Load server URL history from local storage
-    const secretPathHistory: string[] | undefined = loadLocalStorage(arr(str), keys.secretPathHistory);
+    const secretPathHistory: string[] | undefined = loadLocalStorage(t.array(t.string), keys.secretPathHistory);
     if (secretPathHistory !== undefined) {
       this.secretPathHistory = secretPathHistory;
     }
