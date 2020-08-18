@@ -29,18 +29,17 @@ jobs:
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         timeout-minutes: 1
 
-      # (from: https://stackoverflow.com/a/58035262/2885946)
-      - name: Extract branch name
+      - name: Generate Netlify alias
         shell: bash
-        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
-        id: extract_branch
+        run: ruby -e 'puts "::set-output name=netlify_alias::#{`git branch --show-current`.chomp.gsub(/[^\w\d]/){"-"}.downcase}"'
+        id: get_netlify_alias
       # For branch deploy
       - name: Deploy to Netlify (branch)
         uses: nwtgck/actions-netlify@v1.1
         with:
           publish-dir: './dist'
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          alias: ${{ steps.extract_branch.outputs.branch }}
+          alias: ${{ steps.get_netlify_alias.outputs.netlify_alias }}
           enable-pull-request-comment: false
           enable-commit-comment: false
         env:
