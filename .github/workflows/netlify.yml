@@ -39,7 +39,10 @@ jobs:
         uses: nwtgck/actions-netlify@v1.1
         with:
           publish-dir: './dist'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           alias: ${{ steps.extract_branch.outputs.branch }}
+          enable-pull-request-comment: false
+          enable-commit-comment: false
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
