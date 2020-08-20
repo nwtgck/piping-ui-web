@@ -39,7 +39,7 @@
     "smoothscroll-polyfill": "^0.4.4",
     "url-join": "^4.0.1",
     "vue": "^2.6.12",
-    "vue-async-computed": "^3.8.3",
+    "vue-async-computed": "^3.9.0",
     "vue-async-computed-decorator": "0.0.5",
     "vue-class-component": "^7.2.5",
     "vue-filepond": "^6.0.2",
