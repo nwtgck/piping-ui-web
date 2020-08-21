@@ -43,6 +43,7 @@ jobs:
           alias: ${{ steps.get_netlify_alias.outputs.netlify_alias }}
           enable-pull-request-comment: false
           enable-commit-comment: false
+          enable-commit-status: false
           github-deployment-environment: 'branch'
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
