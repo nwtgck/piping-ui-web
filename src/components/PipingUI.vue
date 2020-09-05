@@ -280,7 +280,7 @@ export default class PipingUI extends Vue {
   private showsPassword: boolean = false;
 
   // Random strings for suggested secret paths
-  private randomStrs: [string] = [
+  private randomStrs: string[] = [
     // mini
     '',
   ];
