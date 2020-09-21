@@ -1,0 +1,18 @@
+name: vue upgrade
+
+# on:
+#   push:
+#     branches:
+#       - develop
+on: [push]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+      - run: npm ci
+      - uses: nwtgck/actions-vue-upgrade@73a0155f28b49af288a913b82846fd03099740a3
