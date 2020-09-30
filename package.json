@@ -18,7 +18,7 @@
     "real-serve": "watch-build-serve -i=dist -i=.idea -i=./node_modules -i=.git -i=src/version.ts -i src/service-worker/dist -i public/openpgp -i src/licenses.json -i public/sitemap.xml -i public/robots.txt"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-svg-core": "^1.2.30",
+    "@fortawesome/fontawesome-svg-core": "^1.2.31",
     "@fortawesome/free-brands-svg-icons": "^5.14.0",
     "@fortawesome/vue-fontawesome": "^2.0.0",
     "@mattiasbuelens/web-streams-adapter": "0.1.0-alpha.5",
