@@ -24,6 +24,27 @@ jobs:
           production-branch: master
           github-token: ${{ secrets.GITHUB_TOKEN }}
           enable-pull-request-comment: false
+          enable-commit-comment: false
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        timeout-minutes: 1
+
+      - name: Generate Netlify alias
+        shell: bash
+        run: ruby -e 'puts "::set-output name=netlify_alias::#{`git branch --show-current`.chomp.gsub(/[^a-zA-Z\d]/){"-"}.downcase}"'
+        id: get_netlify_alias
+      # For branch deploy
+      - name: Deploy to Netlify (branch)
+        uses: nwtgck/actions-netlify@v1.1
+        with:
+          publish-dir: './dist'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          alias: ${{ steps.get_netlify_alias.outputs.netlify_alias }}
+          enable-pull-request-comment: false
+          enable-commit-comment: false
+          enable-commit-status: false
+          github-deployment-environment: 'branch'
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}

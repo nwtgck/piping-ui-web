@@ -48,6 +48,8 @@ const en = {
         return 'Parcel format is invalid.';
       case "different_key_exchange_version":
         return 'Key exchange versions are different. Please update your app or peer\'s app.'
+      case "invalid_v1_parcel_format":
+        return "Parcel is an invalid V1 parcel";
     }
   },
   sender_not_verified: 'Sender not verified',
@@ -116,6 +118,8 @@ const ja: typeof defaultStr = {
         return 'パーセルのフォーマットが不正です。';
       case "different_key_exchange_version":
         return '鍵交換のバージョンが異なります。このアプリを更新するか通信相手のアプリを更新してください。';
+      case "invalid_v1_parcel_format":
+        return "V1のパーセルとして不正なフォーマットです。"
     }
   },
   sender_not_verified: '送信者が拒否しました',
