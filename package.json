@@ -74,7 +74,7 @@
     "copyfiles": "^2.4.0",
     "cross-var": "^1.1.0",
     "eslint": "^6.8.0",
-    "eslint-plugin-vue": "^7.0.0",
+    "eslint-plugin-vue": "^7.0.1",
     "license-checker": "^25.0.1",
     "material-design-icons-iconfont": "^6.1.0",
     "react": "^16.13.1",
