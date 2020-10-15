@@ -47,7 +47,7 @@
     "vuetify": "^2.3.13"
   },
   "devDependencies": {
-    "@mdi/js": "^5.6.55",
+    "@mdi/js": "^5.7.55",
     "@types/chai": "^4.2.13",
     "@types/clipboard": "^2.0.1",
     "@types/file-saver": "^2.0.1",
