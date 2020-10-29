@@ -54,7 +54,7 @@
     "@types/mocha": "^8.0.3",
     "@types/openpgp": "^4.4.14",
     "@types/react": "^16.9.53",
-    "@types/react-dom": "^16.9.8",
+    "@types/react-dom": "^16.9.9",
     "@types/sanitize-html": "^1.27.0",
     "@types/smoothscroll-polyfill": "^0.3.1",
     "@types/url-join": "^4.0.0",
