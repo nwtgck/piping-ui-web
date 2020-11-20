@@ -29,7 +29,7 @@
     "file-type": "^16.0.1",
     "filepond": "^4.23.1",
     "fp-ts": "^2.8.6",
-    "io-ts": "^2.2.12",
+    "io-ts": "^2.2.13",
     "jszip": "^3.5.0",
     "jwk-thumbprint": "^0.1.4",
     "linkifyjs": "^2.1.9",
