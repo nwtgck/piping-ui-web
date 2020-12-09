@@ -51,7 +51,7 @@
     "@types/chai": "^4.2.14",
     "@types/clipboard": "^2.0.1",
     "@types/file-saver": "^2.0.1",
-    "@types/mocha": "^8.0.4",
+    "@types/mocha": "^8.2.0",
     "@types/openpgp": "^4.4.14",
     "@types/react": "^17.0.0",
     "@types/react-dom": "^17.0.0",
