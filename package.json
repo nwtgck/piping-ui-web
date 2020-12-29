@@ -68,7 +68,7 @@
     "@vue/cli-plugin-unit-mocha": "^4.5.9",
     "@vue/cli-service": "^4.5.9",
     "@vue/eslint-config-typescript": "^5.1.0",
-    "@vue/test-utils": "^1.1.1",
+    "@vue/test-utils": "^1.1.2",
     "babel-eslint": "^10.1.0",
     "chai": "^4.2.0",
     "copyfiles": "^2.4.1",
