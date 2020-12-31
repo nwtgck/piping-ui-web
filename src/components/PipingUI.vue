@@ -212,6 +212,7 @@ import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiCloseCircle, mdiClose
 import {keys} from "@/local-storage-keys";
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
+import * as filePond from "filepond";
 import {FilePondFile} from "filepond";
 import {baseAndExt} from "@/utils";
 import type {Protection} from "@/datatypes";
@@ -430,6 +431,11 @@ export default class PipingUI extends Vue {
   }
 
   private mounted() {
+    // Disable "Powered by PQINA" link
+    filePond.setOptions({
+      credits: false,
+    } as any);
+
     // Update random strings
     this.updateRandomStrs();
 
