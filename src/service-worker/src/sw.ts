@@ -181,7 +181,7 @@ self.addEventListener('fetch', (event: FetchEvent) => {
   }
 });
 
-workbox.core.clientsClaim();
+// workbox.core.clientsClaim();
 
 // The precaching code provided by Workbox.
 (self as any).__precacheManifest = [].concat((self as any).__precacheManifest || []);
