@@ -264,6 +264,11 @@ function getShareTargetText(): string | null {
   },
 })
 export default class PipingUI extends Vue {
+  $refs!: {
+    server_url_ref: Vue,
+    secret_path_ref: Vue
+  }
+
   private sendOrGet: 'send' | 'get' = 'send';
 
   private serverUrl: string = defaultServerUrls[0];
@@ -447,13 +452,13 @@ export default class PipingUI extends Vue {
 
     // FIXME: Combobox is lazy to update v-model
     // This is for updating server URL in real-time
-    (this.$refs.server_url_ref as Vue).$el.querySelector('input')!.addEventListener('keyup', (ev)=>{
+    this.$refs.server_url_ref.$el.querySelector('input')!.addEventListener('keyup', (ev)=>{
       // NOTE: [Send] button is hidden by auto-complete list if assigning to this.serverUrl
       this.shouldBeRemoved.latestServerUrl = (ev.target as any).value;
     });
     // FIXME: Combobox is lazy to update v-model
     // This is for updating secret path in real-time
-    (this.$refs.secret_path_ref as Vue).$el.querySelector('input')!.addEventListener('keyup', (ev)=>{
+    this.$refs.secret_path_ref.$el.querySelector('input')!.addEventListener('keyup', (ev)=>{
       // NOTE: [Send] button is hidden by auto-complete list if assigning to this.secretPath
       this.shouldBeRemoved.latestSecretPath = (ev.target as any).value;
     });

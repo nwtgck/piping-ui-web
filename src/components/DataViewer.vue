@@ -195,6 +195,11 @@ export type DataViewerProps = {
 export default class DataViewer extends Vue {
   @Prop() private props!: DataViewerProps;
 
+  $refs!: {
+    text_copy_button: Vue
+    text_viewer: Element,
+  };
+
   // Progress bar setting
   private progressSetting: {loadedBytes: number, totalBytes?: number} = {
     loadedBytes: 0,
@@ -304,13 +309,13 @@ export default class DataViewer extends Vue {
     pipingUiUtils.scrollTo(this.$el);
 
     // Setting for copying to clipboard
-    new Clipboard((this.$refs.text_copy_button as Vue).$el, {
+    new Clipboard(this.$refs.text_copy_button.$el, {
       target: () => {
         this.showsCopied = true;
         setTimeout(() => {
           this.showsCopied = false;
         }, 2000);
-        return this.$refs.text_viewer as Element
+        return this.$refs.text_viewer
       }
     });
 
