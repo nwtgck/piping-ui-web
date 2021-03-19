@@ -1,9 +1,7 @@
 name: vue upgrade
 
 on:
-  push:
-    branches:
-      - develop
+  workflow_dispatch:
 
 jobs:
   vue_upgrade:
