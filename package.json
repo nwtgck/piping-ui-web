@@ -49,7 +49,7 @@
   "devDependencies": {
     "@mdi/js": "^5.9.55",
     "@types/chai": "^4.2.18",
-    "@types/clipboard": "^2.0.1",
+    "@types/clipboard": "^2.0.7",
     "@types/file-saver": "^2.0.2",
     "@types/mocha": "^8.2.2",
     "@types/openpgp": "^4.4.16",
