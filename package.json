@@ -35,7 +35,7 @@
     "linkifyjs": "^2.1.9",
     "openpgp": "^4.10.10",
     "register-service-worker": "^1.7.2",
-    "sanitize-html": "^2.3.3",
+    "sanitize-html": "^2.4.0",
     "smoothscroll-polyfill": "^0.4.4",
     "url-join": "^4.0.1",
     "vue": "^2.6.12",
