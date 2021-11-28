@@ -20,7 +20,7 @@
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.30",
     "@fortawesome/free-brands-svg-icons": "^5.14.0",
-    "@fortawesome/vue-fontawesome": "^2.0.2",
+    "@fortawesome/vue-fontawesome": "^2.0.6",
     "@mattiasbuelens/web-streams-adapter": "0.1.0-alpha.5",
     "binconv": "^0.2.0",
     "clipboard": "^2.0.8",
