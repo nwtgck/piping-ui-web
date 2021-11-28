@@ -55,7 +55,7 @@
     "@types/openpgp": "^4.4.18",
     "@types/react": "^17.0.13",
     "@types/react-dom": "^17.0.8",
-    "@types/sanitize-html": "^2.3.1",
+    "@types/sanitize-html": "^2.5.0",
     "@types/smoothscroll-polyfill": "^0.3.1",
     "@types/url-join": "^4.0.0",
     "@types/workbox-sw": "^4.3.1",
