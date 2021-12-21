@@ -1,3 +1,4 @@
+/// <reference lib="webworker" />
 // (from: https://medium.com/@dougallrich/give-users-control-over-app-updates-in-vue-cli-3-pwas-20453aedc1f2)
 
 declare var self: ServiceWorkerGlobalScope;
