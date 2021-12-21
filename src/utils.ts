@@ -1,4 +1,5 @@
 import {memorizeFunc} from "@/memorize-func";
+import {type ActualFileObject} from "filepond";
 
 const JSZipAsync = () => import('jszip').then(p => p.default);
 const sanitizeHtmlAsync  = () => import("sanitize-html").then(p => p.default);
@@ -44,7 +45,7 @@ export function baseAndExt(name: string): {baseName: string, ext: string} {
   }
 }
 
-export async function zipFilesAsBlob(files: File[]): Promise<Blob> {
+export async function zipFilesAsBlob(files: ActualFileObject[]): Promise<Blob> {
   const JSZip = await JSZipAsync();
   const zip = new JSZip();
   // NOTE: Should not be null because it is new folder

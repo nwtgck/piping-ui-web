@@ -213,7 +213,6 @@ import {keys} from "@/local-storage-keys";
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import * as filePond from "filepond";
-import {FilePondFile} from "filepond";
 import {baseAndExt} from "@/utils";
 import type {Protection} from "@/datatypes";
 import buildConstants from "@/build-constants";
@@ -278,7 +277,7 @@ export default class PipingUI extends Vue {
     const shareTargetText = getShareTargetText();
     return shareTargetText === null ? '' :  shareTargetText;
   })();
-  private files: FilePondFile[] = [];
+  private files: filePond.FilePondFile[] = [];
   private serverUrlHistory: string[] = [];
   private secretPathHistory: string[] = [];
   private protectionType: Protection["type"] = 'raw';
@@ -513,7 +512,7 @@ export default class PipingUI extends Vue {
       return;
     }
 
-    const body: File[] | string = this.isTextMode ? this.inputText : this.files.map(f => f.file);
+    const body: filePond.ActualFileObject[] | string = this.isTextMode ? this.inputText : this.files.map(f => f.file);
 
     // Increment upload counter
     this.uploadCount++;
