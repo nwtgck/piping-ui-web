@@ -5,6 +5,10 @@ on:
   pull_request:
     types: [opened, synchronize]
 
+permissions:
+  statuses: write
+  deployments: write
+
 jobs:
   build:
     runs-on: ubuntu-18.04
