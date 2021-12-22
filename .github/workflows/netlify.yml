@@ -40,7 +40,7 @@ jobs:
         id: get_netlify_alias
       # For branch deploy
       - name: Deploy to Netlify (branch)
-        uses: nwtgck/actions-netlify@v1.1
+        uses: nwtgck/actions-netlify@v1.2
         with:
           publish-dir: './dist'
           github-token: ${{ secrets.GITHUB_TOKEN }}
