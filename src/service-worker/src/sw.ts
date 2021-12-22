@@ -161,7 +161,8 @@ self.addEventListener('fetch', (event: FetchEvent) => {
           // Decrypt the response body
           const decrypted = await openpgp.decrypt({
             message: await openpgp.message.read(toPolyfillReadable(res.body!)),
-            passwords: [password],
+            // FIXME: convert Uint8Array to string in better way
+            passwords: [password.toString()],
             format: 'binary'
           });
           plainStream = decrypted.data;

@@ -92,7 +92,7 @@ export async function sanitizeHtmlAllowingATag(dirtyHtml: string): Promise<strin
   });
 }
 
-export async function encrypt(bytes: Uint8Array, password: string | Uint8Array): Promise<Uint8Array> {
+export async function encrypt(bytes: Uint8Array, password: string): Promise<Uint8Array> {
   const openpgp = await openpgpAsync();
   // Encrypt with PGP
   const encryptResult = await openpgp.encrypt({

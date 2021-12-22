@@ -272,13 +272,14 @@ export default class DataUploader extends Vue {
     const {key} = this.verificationStep;
     this.verificationStep = {type: 'verified', verified};
 
-
     const verifiedParcel: VerifiedParcel = {
       verified,
     };
+    // FIXME: convert Uint8Array to string in better way
+    const password = key.toString();
     const encryptedVerifiedParcel = await utils.encrypt(
       stringToUint8Array(JSON.stringify(verifiedParcel)),
-      key,
+      password,
     );
     const path = urlJoin(this.props.serverUrl, await (await pipingUiAuthAsync).verifiedPath(this.props.secretPath));
     // Send verified or not
@@ -289,11 +290,11 @@ export default class DataUploader extends Vue {
 
     // If verified, send
     if (verified) {
-      await this.send(key);
+      await this.send(password);
     }
   }
 
-  private async send(password: string | Uint8Array | undefined) {
+  private async send(password: string | undefined) {
     const data: ActualFileObject[] | string = this.props.data;
 
     const plainBody: Blob = await (async () => {
