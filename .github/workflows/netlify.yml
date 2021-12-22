@@ -26,6 +26,8 @@ jobs:
         with:
           publish-dir: './dist'
           production-branch: master
+          # NOTE: "production-branch" has higher priory than "alias".
+          alias: git-${{ github.sha }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           enable-pull-request-comment: false
           enable-commit-comment: false
