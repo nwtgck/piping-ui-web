@@ -13,10 +13,10 @@ module.exports = {
       new webpack.DefinePlugin({
         PIPING_SERVER_URLS: process.env.PIPING_SERVER_URLS || JSON.stringify([
           "https://ppng.io",
-          "https://piping.glitch.me",
           "https://piping.nwtgck.repl.co",
-          "https://piping-47q675ro2guv.runkit.sh",
-          "https://ppng.herokuapp.com"
+          "https://ppng.herokuapp.com",
+          "https://piping.glitch.me",
+          "https://piping-47q675ro2guv.runkit.sh"
         ]),
       })
     ],
