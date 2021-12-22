@@ -5,23 +5,29 @@ on:
   pull_request:
     types: [opened, synchronize]
 
+permissions:
+  statuses: write
+  deployments: write
+
 jobs:
   build:
     runs-on: ubuntu-18.04
 
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v2.5.0
         with:
           node-version: 12.x
       - run: npm ci
       - run: SITE_URL="https://piping-ui.org" npm run build
 
       - name: Deploy to Netlify
-        uses: nwtgck/actions-netlify@v1.1
+        uses: nwtgck/actions-netlify@v1.2
         with:
           publish-dir: './dist'
           production-branch: master
+          # NOTE: "production-branch" has higher priory than "alias".
+          alias: git-${{ github.sha }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           enable-pull-request-comment: false
           enable-commit-comment: false
@@ -36,7 +42,7 @@ jobs:
         id: get_netlify_alias
       # For branch deploy
       - name: Deploy to Netlify (branch)
-        uses: nwtgck/actions-netlify@v1.1
+        uses: nwtgck/actions-netlify@v1.2
         with:
           publish-dir: './dist'
           github-token: ${{ secrets.GITHUB_TOKEN }}

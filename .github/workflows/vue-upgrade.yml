@@ -1,16 +1,14 @@
 name: vue upgrade
 
 on:
-  push:
-    branches:
-      - develop
+  workflow_dispatch:
 
 jobs:
   vue_upgrade:
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v2.5.0
         with:
           node-version: 12.x
       - run: npm ci
