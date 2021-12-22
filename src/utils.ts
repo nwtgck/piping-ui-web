@@ -97,7 +97,8 @@ export async function encrypt(bytes: Uint8Array, password: string | Uint8Array):
   // Encrypt with PGP
   const encryptResult = await openpgp.encrypt({
     message: openpgp.message.fromBinary(bytes),
-    passwords: [password],
+    // FIXME: convert Uint8Array password to string in better way
+    passwords: [password.toString()],
     armor: false
   });
   // Get encrypted
@@ -110,7 +111,8 @@ export async function decrypt(bytes: Uint8Array, password: string | Uint8Array):
   const openpgp = await openpgpAsync();
   const plain = (await openpgp.decrypt({
     message: await openpgp.message.read(bytes),
-    passwords: [password] as any, // TODO: Not use any
+    // FIXME: convert Uint8Array password to string in better way
+    passwords: [password.toString()],
     format: 'binary'
   })).data as Uint8Array;
   return plain;
