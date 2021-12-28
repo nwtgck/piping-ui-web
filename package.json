@@ -26,7 +26,7 @@
     "clipboard": "^2.0.8",
     "core-js": "^3.20.0",
     "file-saver": "^2.0.5",
-    "file-type": "^16.5.3",
+    "file-type": "^17.1.0",
     "filepond": "^4.30.3",
     "fp-ts": "^2.11.5",
     "io-ts": "^2.2.16",
