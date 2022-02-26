@@ -5,7 +5,7 @@
   "author": "Ryo Ota <nwtgck@nwtgck.org> (https://github.com/nwtgck)",
   "scripts": {
     "serve": "npm run generate-files && vue-cli-service serve",
-    "build": "npm run generate-files && vue-cli-service build && test -f ./dist/js/piping-ui-auth*.js",
+    "build": "npm run generate-files && vue-cli-service build && test -f ./dist/js/piping-ui-auth*.js && npm run generate-resources-html",
     "test:unit": "vue-cli-service test:unit",
     "lint": "vue-cli-service lint",
     "build-sw": "webpack --config src/service-worker/webpack.config.js src/service-worker/src/sw.ts",
@@ -14,6 +14,7 @@
     "generate-robots-txt": "ts-node --project scripts/tsconfig.json scripts/generate-robots-txt.tsx > public/robots.txt",
     "generate-sitemap": "ts-node --project scripts/tsconfig.json scripts/generate-sitemap.tsx > public/sitemap.xml",
     "generate-version": "cross-var echo \"export const VERSION = \\\"$npm_package_version\\\";\" > src/version.ts",
+    "generate-resources-html": "cd dist/ && node ../scripts/generate-resources-html.js > resources.html",
     "postinstall": "license-checker --production --json > src/licenses.json",
     "real-serve": "watch-build-serve -i=dist -i=.idea -i=./node_modules -i=.git -i=src/version.ts -i src/service-worker/dist -i public/openpgp -i src/licenses.json -i public/sitemap.xml -i public/robots.txt"
   },
