@@ -28,7 +28,7 @@
     "file-saver": "^2.0.5",
     "file-type": "^16.5.3",
     "filepond": "^4.30.3",
-    "fp-ts": "^2.11.5",
+    "fp-ts": "^2.11.9",
     "io-ts": "^2.2.16",
     "jszip": "^3.7.1",
     "jwk-thumbprint": "^0.1.4",
