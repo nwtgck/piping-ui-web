@@ -38,7 +38,7 @@
     "sanitize-html": "^2.6.1",
     "smoothscroll-polyfill": "^0.4.4",
     "url-join": "^4.0.1",
-    "vue": "^2.6.12",
+    "vue": "^3.2.37",
     "vue-async-computed": "^3.9.0",
     "vue-async-computed-decorator": "0.0.5",
     "vue-class-component": "^7.2.6",
