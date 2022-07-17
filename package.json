@@ -85,7 +85,7 @@
     "vue-cli-plugin-vuetify": "^2.4.5",
     "vue-template-compiler": "^2.6.12",
     "vuetify-loader": "^1.7.3",
-    "watch-build-serve": "github:nwtgck/watch-build-serve-node#afc757410b3339e1603916ab98b8e5760569dbaa",
+    "watch-build-serve": "git+https://github.com/nwtgck/watch-build-serve-node.git#afc757410b3339e1603916ab98b8e5760569dbaa",
     "webpack-cli": "^3.3.12"
   },
   "license": "MIT",
