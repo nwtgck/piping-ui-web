@@ -116,11 +116,12 @@ import AsyncComputed from 'vue-async-computed-decorator';
 import type {Protection, VerificationStep, VerifiedParcel} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import {pipingUiAuthAsync} from "@/pipingUiAuthWithWebpackChunkName"
+import {type ActualFileObject} from "filepond";
 
 
 export type DataUploaderProps = {
   uploadNo: number,
-  data: File[] | string,
+  data: ActualFileObject[] | string,
   serverUrl: string,
   secretPath: string,
   protection: Protection,
@@ -295,7 +296,7 @@ export default class DataUploader extends Vue {
   }
 
   private async send(password: string | Uint8Array | undefined) {
-    const data: File[] | string = this.props.data;
+    const data: ActualFileObject[] | string = this.props.data;
 
     const plainBody: Blob = await (async () => {
       // Text
@@ -306,7 +307,7 @@ export default class DataUploader extends Vue {
         return data[0];
         // Multiple files
       } else {
-        const files: File[] = data;
+        const files: ActualFileObject[] = data;
         this.isCompressing = true;
         // Zip files
         const zipBlob: Blob = await utils.zipFilesAsBlob(files);

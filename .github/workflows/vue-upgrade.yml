@@ -1,0 +1,15 @@
+name: vue upgrade
+
+on:
+  workflow_dispatch:
+
+jobs:
+  vue_upgrade:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3.4.1
+        with:
+          node-version: 16.x
+      - run: npm ci
+      - uses: nwtgck/actions-vue-upgrade@develop

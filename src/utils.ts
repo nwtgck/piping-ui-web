@@ -1,4 +1,5 @@
 import {memorizeFunc} from "@/memorize-func";
+import {type ActualFileObject} from "filepond";
 
 const JSZipAsync = () => import('jszip').then(p => p.default);
 const sanitizeHtmlAsync  = () => import("sanitize-html").then(p => p.default);
@@ -47,7 +48,7 @@ export function baseAndExt(name: string): {baseName: string, ext: string} {
   }
 }
 
-export async function zipFilesAsBlob(files: File[]): Promise<Blob> {
+export async function zipFilesAsBlob(files: ActualFileObject[]): Promise<Blob> {
   const JSZip = await JSZipAsync();
   const zip = new JSZip();
   // NOTE: Should not be null because it is new folder
@@ -106,7 +107,8 @@ export async function encryptStream(stream: ReadableStream<Uint8Array>, password
   // Encrypt with PGP
   const encryptResult = await openpgp.encrypt({
     message: openpgp.message.fromBinary(stream),
-    passwords: [password],
+    // FIXME: convert Uint8Array password to string in better way
+    passwords: [password.toString()],
     armor: false
   });
   // Get encrypted
@@ -118,7 +120,8 @@ export async function decrypt(bytes: Uint8Array, password: string | Uint8Array):
   const openpgp = await openpgpAsync();
   const plain = (await openpgp.decrypt({
     message: await openpgp.message.read(bytes),
-    passwords: [password] as any, // TODO: Not use any
+    // FIXME: convert Uint8Array password to string in better way
+    passwords: [password.toString()],
     format: 'binary'
   })).data as Uint8Array;
   return plain;
@@ -135,8 +138,8 @@ export async function sha256(input: string): Promise<string> {
 /***
  * Make a promise which can be resolved and rejected outside of the Promise constructor
  */
-export function makePromise<T>(): {promise: Promise<T>, resolve: (value?: T | PromiseLike<T>) => void, reject: (reason?: any) => void} {
-  let resolve = (value?: T | PromiseLike<T>) => {};
+export function makePromise<T>(): {promise: Promise<T>, resolve: (value: T | PromiseLike<T>) => void, reject: (reason?: any) => void} {
+  let resolve = (value: T | PromiseLike<T>) => {};
   let reject = () => {};
   const promise = new Promise<T>((_resolve, _reject) => {
     resolve = _resolve;

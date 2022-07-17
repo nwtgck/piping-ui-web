@@ -212,7 +212,7 @@ import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiCloseCircle, mdiClose
 import {keys} from "@/local-storage-keys";
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
-import {FilePondFile} from "filepond";
+import * as filePond from "filepond";
 import {baseAndExt} from "@/utils";
 import type {Protection} from "@/datatypes";
 import buildConstants from "@/build-constants";
@@ -263,6 +263,11 @@ function getShareTargetText(): string | null {
   },
 })
 export default class PipingUI extends Vue {
+  $refs!: {
+    server_url_ref: Vue,
+    secret_path_ref: Vue
+  }
+
   private sendOrGet: 'send' | 'get' = 'send';
 
   private serverUrl: string = defaultServerUrls[0];
@@ -272,7 +277,7 @@ export default class PipingUI extends Vue {
     const shareTargetText = getShareTargetText();
     return shareTargetText === null ? '' :  shareTargetText;
   })();
-  private files: FilePondFile[] = [];
+  private files: filePond.FilePondFile[] = [];
   private serverUrlHistory: string[] = [];
   private secretPathHistory: string[] = [];
   private protectionType: Protection["type"] = 'raw';
@@ -280,7 +285,7 @@ export default class PipingUI extends Vue {
   private showsPassword: boolean = false;
 
   // Random strings for suggested secret paths
-  private randomStrs: [string] = [
+  private randomStrs: string[] = [
     // mini
     '',
   ];
@@ -430,6 +435,11 @@ export default class PipingUI extends Vue {
   }
 
   private mounted() {
+    // Disable "Powered by PQINA" link
+    filePond.setOptions({
+      credits: false,
+    } as any);
+
     // Update random strings
     this.updateRandomStrs();
 
@@ -441,13 +451,13 @@ export default class PipingUI extends Vue {
 
     // FIXME: Combobox is lazy to update v-model
     // This is for updating server URL in real-time
-    (this.$refs.server_url_ref as Vue).$el.querySelector('input')!.addEventListener('keyup', (ev)=>{
+    this.$refs.server_url_ref.$el.querySelector('input')!.addEventListener('keyup', (ev)=>{
       // NOTE: [Send] button is hidden by auto-complete list if assigning to this.serverUrl
       this.shouldBeRemoved.latestServerUrl = (ev.target as any).value;
     });
     // FIXME: Combobox is lazy to update v-model
     // This is for updating secret path in real-time
-    (this.$refs.secret_path_ref as Vue).$el.querySelector('input')!.addEventListener('keyup', (ev)=>{
+    this.$refs.secret_path_ref.$el.querySelector('input')!.addEventListener('keyup', (ev)=>{
       // NOTE: [Send] button is hidden by auto-complete list if assigning to this.secretPath
       this.shouldBeRemoved.latestSecretPath = (ev.target as any).value;
     });
@@ -502,7 +512,7 @@ export default class PipingUI extends Vue {
       return;
     }
 
-    const body: File[] | string = this.isTextMode ? this.inputText : this.files.map(f => f.file);
+    const body: filePond.ActualFileObject[] | string = this.isTextMode ? this.inputText : this.files.map(f => f.file);
 
     // Increment upload counter
     this.uploadCount++;

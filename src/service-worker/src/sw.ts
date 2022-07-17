@@ -1,3 +1,4 @@
+/// <reference lib="webworker" />
 // (from: https://medium.com/@dougallrich/give-users-control-over-app-updates-in-vue-cli-3-pwas-20453aedc1f2)
 
 declare var self: ServiceWorkerGlobalScope;
@@ -160,7 +161,8 @@ self.addEventListener('fetch', (event: FetchEvent) => {
           // Decrypt the response body
           const decrypted = await openpgp.decrypt({
             message: await openpgp.message.read(toPolyfillReadable(res.body!)),
-            passwords: [password],
+            // FIXME: convert Uint8Array password to string in better way
+            passwords: [password.toString()],
             format: 'binary'
           });
           plainStream = decrypted.data;
