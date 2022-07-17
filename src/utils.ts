@@ -183,7 +183,7 @@ export async function supportsFetchStreamingUpload(pipingServerUrl: string): Pro
   fetch(url, {
     method: 'POST',
     body: stream,
-    allowHTTP1ForStreamingUpload: true, // NOTE: Chrome temporal property
+    duplex: 'half',
   } as any);
   const text = await (await fetch(url)).text();
   return text === 'ABC';

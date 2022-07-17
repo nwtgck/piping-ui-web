@@ -355,7 +355,7 @@ export default class DataUploader extends Vue {
       await fetch(this.uploadPath, {
         method: 'POST',
         body: encryptedStream,
-        allowHTTP1ForStreamingUpload: true, // NOTE: Chrome temporal property
+        duplex: 'half',
       } as any);
     } catch {
       this.errorMessageDelegate = () => this.strings['data_uploader_xhr_upload_error'];
