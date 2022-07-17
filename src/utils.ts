@@ -54,7 +54,7 @@ export async function zipFilesAsBlob(files: ActualFileObject[]): Promise<Blob> {
     // Name not-duplicate name
     const name: string = (() => {
       let name: string = file.name;
-      let {baseName, ext} = baseAndExt(file.name);
+      const {baseName, ext} = baseAndExt(file.name);
       // Loop until the file name is new
       for (let n = 1; directory.file(name) !== null; n++) {
         name = `${baseName}__${n}${ext}`;

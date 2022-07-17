@@ -89,7 +89,7 @@ export default class App extends Vue {
 
   created () {
     document.addEventListener(
-      'swUpdated', this.showRefreshUI as EventListenerOrEventListenerObject, { once: true }
+      'swUpdated', this.showRefreshUI as (evt: Event) => void, { once: true }
     );
   }
 
