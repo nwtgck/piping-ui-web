@@ -84,7 +84,7 @@
     "typescript": "^4.5.4",
     "vue-cli-plugin-vuetify": "^2.5.1",
     "vue-template-compiler": "^2.6.12",
-    "vuetify-loader": "^1.7.3",
+    "vuetify-loader": "^1.9.1",
     "watch-build-serve": "git+https://github.com/nwtgck/watch-build-serve-node.git#afc757410b3339e1603916ab98b8e5760569dbaa",
     "webpack-cli": "^3.3.12"
   },
