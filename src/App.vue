@@ -53,7 +53,7 @@ const MenuContent = () => import('@/components/MenuContent.vue');
 const Licenses = () => import("@/components/Licenses.vue");
 import {VERSION} from '@/version';
 import {globalStore} from "@/vue-global";
-import {strings} from "@/strings";
+import {stringsByLang} from "@/strings";
 import {mdiCached, mdiDotsVertical} from "@mdi/js";
 import enableDarkTheme from "@/enable-dark-theme";
 import {appBarPromiseResolverWhichShouldBeUsedInAppVue} from "@/app-bar-promise";
@@ -82,7 +82,7 @@ export default class App extends Vue {
 
   // for language support
   private get strings() {
-    return strings(globalStore.language);
+    return stringsByLang(globalStore.language);
   }
 
   created () {

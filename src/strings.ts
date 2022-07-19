@@ -4,7 +4,7 @@ import {VERSION} from "@/version";
 const urlJoinAsync = () => import('url-join').then(p => p.default);
 const utilsAsync = () => import('@/utils');
 
-export function strings(language: string): typeof defaultStr {
+export function stringsByLang(language: string): typeof defaultStr {
   if(language.startsWith("en")) {
     return en;
   } else if(language.startsWith("ja")) {

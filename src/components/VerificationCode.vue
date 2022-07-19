@@ -7,7 +7,7 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import {globalStore} from "@/vue-global";
-import {strings} from "@/strings";
+import {stringsByLang} from "@/strings";
 
 @Component
 export default class VerificationCode extends Vue {
@@ -15,7 +15,7 @@ export default class VerificationCode extends Vue {
 
   // for language support
   private get strings() {
-    return strings(globalStore.language);
+    return stringsByLang(globalStore.language);
   }
 }
 </script>

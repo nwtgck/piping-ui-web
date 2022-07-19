@@ -41,7 +41,7 @@ import urlJoin from 'url-join';
 import {mdiAlert, mdiChevronDown} from "@mdi/js";
 
 import {globalStore} from "@/vue-global";
-import {strings} from "@/strings";
+import {stringsByLang} from "@/strings";
 import * as pipingUiUtils from "@/piping-ui-utils";
 import type {Protection, VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
@@ -68,7 +68,7 @@ export default class DataDownloader extends Vue {
 
   // for language support
   private get strings() {
-    return strings(globalStore.language);
+    return stringsByLang(globalStore.language);
   }
 
   private get hasError(): boolean {

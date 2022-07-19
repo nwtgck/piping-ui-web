@@ -41,7 +41,7 @@
 import { Component, Vue, Prop, Emit} from 'vue-property-decorator';
 import licenses from '@/licenses.json';
 import {globalStore} from "@/vue-global";
-import {strings} from "@/strings";
+import {stringsByLang} from "@/strings";
 
 
 @Component
@@ -54,7 +54,7 @@ export default class Licenses extends Vue {
 
   // for language support
   private get strings() {
-    return strings(globalStore.language);
+    return stringsByLang(globalStore.language);
   }
 
   private removeLibVersion(libName: string): string {
