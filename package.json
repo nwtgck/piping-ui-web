@@ -1,6 +1,6 @@
 {
   "name": "piping-ui",
-  "version": "0.6.30-SNAPSHOT",
+  "version": "0.6.30",
   "private": true,
   "author": "Ryo Ota <nwtgck@nwtgck.org> (https://github.com/nwtgck)",
   "scripts": {
