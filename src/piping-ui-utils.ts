@@ -2,7 +2,7 @@ const FileSaverAsync = () => import('file-saver');
 const binconvAsync = () => import('binconv');
 const swDownloadAsync = () => import("@/sw-download");
 const utilsAsync = () => import("@/utils");
-import {appBarPromise} from "@/App.vue";
+import {appBarPromise} from "@/app-bar-promise";
 
 // Decrypt & Download
 export async function decryptingDownload(
