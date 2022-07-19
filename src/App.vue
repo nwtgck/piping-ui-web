@@ -51,15 +51,13 @@ import { Component, Vue } from 'vue-property-decorator';
 const PipingUI = () => import('@/components/PipingUI.vue');
 const MenuContent = () => import('@/components/MenuContent.vue');
 const Licenses = () => import("@/components/Licenses.vue");
-import {makePromise} from "@/utils";
 import {VERSION} from '@/version';
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings";
 import {mdiCached, mdiDotsVertical} from "@mdi/js";
 import enableDarkTheme from "@/enable-dark-theme";
+import {appBarPromiseResolverWhichShouldBeUsedInAppVue} from "@/app-bar-promise";
 
-const {promise: _appBarPromise, resolve: appBarPromiseResolver} = makePromise<Element>();
-export const appBarPromise = _appBarPromise;
 
 @Component({
   components: {
@@ -100,7 +98,7 @@ export default class App extends Vue {
 
   mounted() {
     // Resolve app bar element
-    appBarPromiseResolver((this.$refs['app_bar'] as Vue).$el);
+    appBarPromiseResolverWhichShouldBeUsedInAppVue((this.$refs['app_bar'] as Vue).$el);
   }
 
   showRefreshUI (e: CustomEvent<ServiceWorkerRegistration>) {
