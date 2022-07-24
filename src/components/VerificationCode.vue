@@ -4,18 +4,14 @@
   </v-alert>
 </template>
 
-<script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+<script setup lang="ts">
+import {defineProps, computed} from "vue";
 import {globalStore} from "@/vue-global";
 import {stringsByLang} from "@/strings";
 
-@Component
-export default class VerificationCode extends Vue {
-  @Prop() public value!: string;
+const props = defineProps<{
+  value: string,
+}>()
 
-  // for language support
-  private get strings() {
-    return stringsByLang(globalStore.language);
-  }
-}
+const strings = computed(() => stringsByLang(globalStore.language))
 </script>
