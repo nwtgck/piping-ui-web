@@ -9,7 +9,7 @@ import {
   VerifiedParcel,
   verifiedParcelType
 } from "@/datatypes";
-import {strings} from "@/strings";
+import {stringsByLang} from "@/strings";
 import type {Validation} from "io-ts";
 const utilsAsync = () => import("@/utils");
 
@@ -127,7 +127,7 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
         return {
           type: "error",
           errorMessage(lang) {
-            return strings(lang)['key_exchange_error'](keyExchangeRes.errorCode);
+            return stringsByLang(lang)['key_exchange_error'](keyExchangeRes.errorCode);
           }
         };
       }
@@ -147,7 +147,7 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
         return {
           type: "error",
           errorMessage(lang) {
-            return strings(lang)['key_exchange_error']('invalid_parcel_format');
+            return stringsByLang(lang)['key_exchange_error']('invalid_parcel_format');
           }
         };
       }
@@ -157,7 +157,7 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
         return {
           type: "error",
           errorMessage(lang) {
-            return strings(lang)['sender_not_verified'];
+            return stringsByLang(lang)['sender_not_verified'];
           }
         };
       }

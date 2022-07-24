@@ -37,7 +37,7 @@
                       :label="strings['text_placeholder']"
                       v-model="inputText"
                       clearable
-                      :clear-icon="icons.mdiCloseCircle"
+                      :clear-icon="icons.mdiClose"
                       outlined
           ></v-textarea>
         </div>
@@ -49,6 +49,7 @@
                     @blur="attachProtocolToUrl()"
                     ref="server_url_ref"
                     clearable
+                    :clear-icon="icons.mdiClose"
                     style="margin-bottom: 0.8em;"
                     class="readable-font"
         >
@@ -71,6 +72,7 @@
                     ref="secret_path_ref"
                     class="ma-0 pa-0 readable-font"
                     clearable
+                    :clear-icon="icons.mdiClose"
         >
           <template v-slot:item="{ index, item }">
             <span class="readable-font">{{ item }}</span>
@@ -207,11 +209,11 @@ const DataViewer = () => import("@/components/DataViewer.vue");
 const DataDownloader = () => import('@/components/DataDownloader.vue');
 import {DataDownloaderProps} from "@/components/DataDownloader.vue";
 import * as t from 'io-ts';
-import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiCloseCircle, mdiClose, mdiEye, mdiEyeOff, mdiKey, mdiShieldHalfFull, mdiText} from "@mdi/js";
+import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiClose, mdiEye, mdiEyeOff, mdiKey, mdiShieldHalfFull, mdiText} from "@mdi/js";
 
 import {keys} from "@/local-storage-keys";
 import {globalStore} from "@/vue-global";
-import {strings} from "@/strings";
+import {stringsByLang} from "@/strings";
 import * as filePond from "filepond";
 import {baseAndExt} from "@/utils";
 import type {Protection} from "@/datatypes";
@@ -318,7 +320,6 @@ export default class PipingUI extends Vue {
     mdiDownload,
     mdiDelete,
     mdiFileFind,
-    mdiCloseCircle,
     mdiClose,
     mdiEye,
     mdiEyeOff,
@@ -329,7 +330,7 @@ export default class PipingUI extends Vue {
 
   // for language support
   private get strings() {
-    return strings(globalStore.language);
+    return stringsByLang(globalStore.language);
   }
 
   // FIXME: Should be removed
