@@ -132,7 +132,7 @@ const ja: typeof defaultStr = {
     const versionUrl = urlJoin(p.serverUrl, "/version");
     return utils.sanitizeHtmlAllowingATag(`エラーが発生しました。サーバーが0.9.4より低い可能性があります。 <a href="${versionUrl}" target="_blank">${versionUrl}</a> でバージョンの確認できます。`);
   },
-  data_uploader_xhr_upload_error: 'アップロード中にエラが発生しました',
+  data_uploader_xhr_upload_error: 'アップロード中にエラーが発生しました',
   cancel: 'キャンセル',
   view_in_viewer: '表示',
   decrypting: '復号中...',
