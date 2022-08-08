@@ -53,7 +53,7 @@
     "@types/file-saver": "^2.0.5",
     "@types/mocha": "^8.2.3",
     "@types/openpgp": "^4.4.18",
-    "@types/react": "^18.0.15",
+    "@types/react": "^18.0.16",
     "@types/react-dom": "^18.0.6",
     "@types/sanitize-html": "^2.6.2",
     "@types/smoothscroll-polyfill": "^0.3.1",
