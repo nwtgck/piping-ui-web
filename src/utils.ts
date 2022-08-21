@@ -171,6 +171,10 @@ export function sendToServiceWorker(message: any): Promise<MessageEvent> {
 
 // Check fetch()'s streaming upload support with Piping Server
 export async function supportsFetchStreamingUpload(pipingServerUrl: string): Promise<boolean> {
+  // FIXME: Safari is always unsupported
+  if (typeof (window as any).safari !== 'undefined') {
+    return false;
+  }
   const stream = new ReadableStream( {
     pull(controller) {
       controller.enqueue(new Uint8Array([65, 66, 67]));
