@@ -5,6 +5,18 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [0.7.0] - 2022-08-21
+### Changed
+- Update dependencies
+- Disable service worker cache
+- Add file extension in view mode when downloading transferred file without extension
+
+### Added
+- Support streaming encrypted upload
+
+### Fixed
+- Copy correct text to clipboard
+
 ## [0.6.30] - 2022-07-19
 ### Changed
 - Update dependencies
@@ -358,7 +370,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 ### Added
 - First release
 
-[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.6.30...HEAD
+[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/nwtgck/piping-ui-web/compare/v0.6.30...v0.7.0
 [0.6.30]: https://github.com/nwtgck/piping-ui-web/compare/v0.6.29...v0.6.30
 [0.6.29]: https://github.com/nwtgck/piping-ui-web/compare/v0.6.28...v0.6.29
 [0.6.28]: https://github.com/nwtgck/piping-ui-web/compare/v0.6.27...v0.6.28

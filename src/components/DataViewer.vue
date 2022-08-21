@@ -16,8 +16,7 @@
         <span style="">{{ strings['waiting_for_sender'] }}</span>
       </v-alert>
 
-      <!-- NOTE: Don't use v-if because the "sibling" element uses "ref" and the ref is loaded in mounted(), but don't know why "sibling" affects. -->
-      <span v-show="props.protection.type === 'passwordless' && verificationStep.type === 'verification_code_arrived'">
+      <span v-if="props.protection.type === 'passwordless' && verificationStep.type === 'verification_code_arrived'">
         <VerificationCode :value="verificationStep.verificationCode"/>
       </span>
 
@@ -109,7 +108,7 @@
         <div style="text-align: right">
           <v-tooltip v-model="showsCopied" bottom>
             <template v-slot:activator="{}">
-              <v-btn ref="text_copy_button" style="background-color: #dcdcdc; margin-bottom: 0.3em;">
+              <v-btn @click="copyToClipboard()" style="background-color: #dcdcdc; margin-bottom: 0.3em;">
                 <!-- (from: https://iconify.design/icon-sets/octicon/clippy.html) -->
                 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" focusable="false" width="1.5em" height="1.5em" style="-ms-transform: rotate(360deg); -webkit-transform: rotate(360deg); transform: rotate(360deg);" preserveAspectRatio="xMidYMid meet" viewBox="0 0 14 16"><path fill-rule="evenodd" d="M2 13h4v1H2v-1zm5-6H2v1h5V7zm2 3V8l-3 3 3 3v-2h5v-2H9zM4.5 9H2v1h2.5V9zM2 12h2.5v-1H2v1zm9 1h1v2c-.02.28-.11.52-.3.7-.19.18-.42.28-.7.3H1c-.55 0-1-.45-1-1V4c0-.55.45-1 1-1h3c0-1.11.89-2 2-2 1.11 0 2 .89 2 2h3c.55 0 1 .45 1 1v5h-1V6H1v9h10v-2zM2 5h8c0-.55-.45-1-1-1H8c-.55 0-1-.45-1-1s-.45-1-1-1-1 .45-1 1-.45 1-1 1H3c-.55 0-1 .45-1 1z" fill="#000000"/></svg>
               </v-btn>
@@ -118,8 +117,7 @@
           </v-tooltip>
         </div>
         <pre v-html="linkifiedText"
-             class="text-view"
-             ref="text_viewer"/>
+             class="text-view"/>
       </div>
 
       <div v-if="isCancelable" style="text-align: right">
@@ -161,7 +159,7 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 import urlJoin from 'url-join';
 import linkifyHtml from 'linkifyjs/html';
 const FileSaverAsync = () => import('file-saver');
-import Clipboard from 'clipboard';
+const clipboardCopyAsync = () => import("clipboard-copy").then(p => p.default);
 import * as fileType from 'file-type/browser';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
 import {uint8ArrayToBlob} from 'binconv/dist/src/uint8ArrayToBlob';
@@ -169,7 +167,7 @@ import {blobToReadableStream} from 'binconv/dist/src/blobToReadableStream';
 import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle, mdiEye, mdiEyeOff, mdiKey, mdiFeatureSearchOutline} from "@mdi/js";
 
 import {globalStore} from "@/vue-global";
-import {strings} from "@/strings";
+import {stringsByLang} from "@/strings";
 import * as utils from '@/utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
 import AsyncComputed from 'vue-async-computed-decorator';
@@ -194,11 +192,6 @@ export type DataViewerProps = {
 })
 export default class DataViewer extends Vue {
   @Prop() private props!: DataViewerProps;
-
-  $refs!: {
-    text_copy_button: Vue
-    text_viewer: Element,
-  };
 
   // Progress bar setting
   private progressSetting: {loadedBytes: number, totalBytes?: number} = {
@@ -236,7 +229,7 @@ export default class DataViewer extends Vue {
 
   // for language support
   private get strings() {
-    return strings(globalStore.language);
+    return stringsByLang(globalStore.language);
   }
 
   private get progressPercentage(): number | null {
@@ -298,6 +291,14 @@ export default class DataViewer extends Vue {
     }));
   }
 
+  private async copyToClipboard() {
+    this.showsCopied = true;
+    const clipboardCopy = await clipboardCopyAsync()
+    await clipboardCopy(this.text);
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    this.showsCopied = false;
+  }
+
   constructor() {
     super();
     this.xhr = new XMLHttpRequest();
@@ -307,17 +308,6 @@ export default class DataViewer extends Vue {
     // Scroll to this element
     // NOTE: no need to add `await`
     pipingUiUtils.scrollTo(this.$el);
-
-    // Setting for copying to clipboard
-    new Clipboard(this.$refs.text_copy_button.$el, {
-      target: () => {
-        this.showsCopied = true;
-        setTimeout(() => {
-          this.showsCopied = false;
-        }, 2000);
-        return this.$refs.text_viewer
-      }
-    });
 
     // Key exchange
     const keyExchangeRes = await (await pipingUiAuthAsync).keyExchangeAndReceiveVerified(
@@ -452,7 +442,18 @@ export default class DataViewer extends Vue {
 
   private async save(): Promise<void> {
     const FileSaver = await FileSaverAsync();
-    FileSaver.saveAs(this.blob, this.props.secretPath);
+    const fileName = await (async () => {
+      // If secret path has extension
+      if (this.props.secretPath.match(/.+\..+/)) {
+        return this.props.secretPath;
+      }
+      const fileTypeResult = await fileType.fromStream(blobToReadableStream(this.blob));
+      if (fileTypeResult === undefined) {
+        return this.props.secretPath;
+      }
+      return `${this.props.secretPath}.${fileTypeResult.ext}`;
+    })();
+    FileSaver.saveAs(this.blob, fileName);
   }
 }
 </script>

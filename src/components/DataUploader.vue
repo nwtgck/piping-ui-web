@@ -47,7 +47,7 @@
         <v-progress-linear indeterminate />
       </div>
 
-      <div v-show="isEncrypting">
+      <div v-show="isNonStreamingEncrypting">
         <div style="text-align: center">
           {{ strings['encrypting'] }}
         </div>
@@ -100,15 +100,17 @@
 </template>
 
 <script lang="ts">
+/* eslint-disable no-console */
 import {Component, Prop, Vue} from 'vue-property-decorator';
 import urlJoin from 'url-join';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
 import {stringToUint8Array} from 'binconv/dist/src/stringToUint8Array';
+import {blobToReadableStream} from 'binconv/dist/src/blobToReadableStream';
 
 import * as utils from '@/utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
 import {globalStore} from "@/vue-global";
-import {strings} from "@/strings";
+import {stringsByLang} from "@/strings";
 import {mdiAlert, mdiCancel, mdiCheck, mdiChevronDown, mdiCloseCircle} from "@mdi/js";
 import AsyncComputed from 'vue-async-computed-decorator';
 import type {Protection, VerificationStep, VerifiedParcel} from "@/datatypes";
@@ -153,7 +155,7 @@ export default class DataUploader extends Vue {
   private xhr: XMLHttpRequest;
   private canceled: boolean = false;
   private isCompressing: boolean = false;
-  private isEncrypting: boolean = false;
+  private isNonStreamingEncrypting: boolean = false;
   private verificationStep: VerificationStep = {type: 'initial'};
 
   private icons = {
@@ -218,7 +220,7 @@ export default class DataUploader extends Vue {
   }
 
   private get isReadyToUpload(): boolean {
-    const notCompressingAndEncrypting = !this.isCompressing && !this.isEncrypting;
+    const notCompressingAndEncrypting = !this.isCompressing && !this.isNonStreamingEncrypting;
     if (this.props.protection.type === 'passwordless') {
       return this.verificationStep.type === 'verified' && this.verificationStep.verified && notCompressingAndEncrypting;
     } else {
@@ -228,7 +230,7 @@ export default class DataUploader extends Vue {
 
   // for language support
   private get strings() {
-    return strings(globalStore.language);
+    return stringsByLang(globalStore.language);
   }
 
   constructor() {
@@ -314,24 +316,53 @@ export default class DataUploader extends Vue {
       }
     })();
 
-    const {body, bodyLength} = await (async () => {
-      // If password protection is disabled
-      if (password === undefined) {
-        // Return as plain
-        return {body: plainBody, bodyLength: plainBody.size};
-      } else {
-        this.isEncrypting = true;
-        // Convert plain body blob to Uint8Array
-        const plainBodyArray: Uint8Array = await blobToUint8Array(plainBody);
-        // Get encrypted
-        // NOTE: In the future, ReadableStream can be uploaded.
-        // (see: https://github.com/whatwg/fetch/pull/425#issuecomment-518899855)
-        const encrypted: Uint8Array = await utils.encrypt(plainBodyArray, password);
-        this.isEncrypting = false;
-        return {body: encrypted, bodyLength: encrypted.byteLength};
-      }
-    })();
+    // If password protection is disabled
+    if (password === undefined) {
+      this.uploadByXhr(plainBody, plainBody.size);
+      return
+    }
 
+    // Check whether fetch()'s streaming upload is supported
+    const supportsStreamingUpload = await (async () => {
+      try {
+        return utils.supportsFetchStreamingUpload(this.props.serverUrl);
+      } catch {
+        return false;
+      }
+    })()
+    console.log("streaming upload support: ", supportsStreamingUpload);
+
+    // fetch()'s streaming upload is not supported
+    if (!supportsStreamingUpload) {
+      this.isNonStreamingEncrypting = true;
+      // Convert plain body blob to Uint8Array
+      const plainBodyArray: Uint8Array = await blobToUint8Array(plainBody);
+      // Get encrypted
+      const encrypted: Uint8Array = await utils.encrypt(plainBodyArray, password);
+      this.isNonStreamingEncrypting = false;
+      this.uploadByXhr(encrypted, encrypted.byteLength);
+      return;
+    }
+
+    // Convert plain body to ReadableStream
+    const plainStream = blobToReadableStream(plainBody);
+    // Attach progress
+    const plainStreamWithProgress = this.getReadableStreamWithProgress(plainStream, plainBody.size);
+    // Encrypt
+    const encryptedStream = await utils.encryptStream(plainStreamWithProgress, password);
+    try {
+      // Upload encrypted stream
+      await fetch(this.uploadPath, {
+        method: 'POST',
+        body: encryptedStream,
+        duplex: 'half',
+      } as any);
+    } catch {
+      this.errorMessageDelegate = () => this.strings['data_uploader_xhr_upload_error'];
+    }
+  }
+
+  private uploadByXhr(body: Blob | Uint8Array, bodyLength: number) {
     // Send
     this.xhr.open('POST', this.uploadPath, true);
     this.xhr.responseType = 'text';
@@ -360,12 +391,31 @@ export default class DataUploader extends Vue {
       this.errorMessageDelegate = () => this.strings['data_uploader_xhr_onerror']({serverUrl: this.props.serverUrl});
     };
     this.xhr.upload.onerror = () => {
-      this.errorMessageDelegate = () => this.strings['data_uploader_xhr_upload_onerror'];
+      this.errorMessageDelegate = () => this.strings['data_uploader_xhr_upload_error'];
     };
     this.xhr.send(body);
     // Initialize progress bar
     this.progressSetting.loadedBytes = 0;
     this.progressSetting.totalBytes = bodyLength;
+  }
+
+  private getReadableStreamWithProgress(baseStream: ReadableStream<Uint8Array>, baseLength: number): ReadableStream<Uint8Array> {
+    const reader = baseStream.getReader();
+    // Initialize progress bar
+    this.progressSetting.loadedBytes = 0;
+    this.progressSetting.totalBytes = baseLength;
+    const self = this;
+    return new ReadableStream({
+      async pull(ctrl) {
+        const res = await reader.read();
+        if (res.done) {
+          ctrl.close();
+          return;
+        }
+        self.progressSetting.loadedBytes += res.value.byteLength;
+        ctrl.enqueue(res.value);
+      }
+    });
   }
 
   private cancelUpload(): void {

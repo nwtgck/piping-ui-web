@@ -63,7 +63,7 @@
 import { Component, Vue, Watch, Prop, Emit } from 'vue-property-decorator';
 import {globalStore} from "@/vue-global";
 import {keys} from "@/local-storage-keys";
-import {strings} from "@/strings";
+import {stringsByLang} from "@/strings";
 import enableDarkTheme from "@/enable-dark-theme";
 
 
@@ -83,7 +83,7 @@ export default class MenuContent extends Vue {
   ];
   // for language support
   private get strings() {
-    return strings(globalStore.language);
+    return stringsByLang(globalStore.language);
   }
 
   set language(l: string){

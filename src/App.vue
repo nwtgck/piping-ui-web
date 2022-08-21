@@ -1,6 +1,6 @@
 <template>
   <v-app id="app">
-    <v-app-bar app ref="app_bar">
+    <v-app-bar app ref="appBarRef">
       <v-toolbar-title style="margin-right: 0.6em;">
         <!-- Show version on app title -->
         <v-tooltip bottom>
@@ -10,7 +10,7 @@
               <span class="font-weight-light">UI</span>
             </span>
           </template>
-          <span>{{ version }}</span>
+          <span>{{ VERSION }}</span>
         </v-tooltip>
       </v-toolbar-title>
 
@@ -18,7 +18,7 @@
       <v-btn v-if="pwa.updateExists"
              @click="refreshApp"
              depressed color="blue" dark small outlined>
-        <v-icon dark left>{{ icons.mdiCached }}</v-icon>{{ strings['pwa_update'] }}
+        <v-icon dark left>{{ mdiCached }}</v-icon>{{ strings['pwa_update'] }}
       </v-btn>
       <v-spacer></v-spacer>
 
@@ -26,7 +26,7 @@
       <v-menu :close-on-content-click="false">
         <template v-slot:activator="{ on }">
           <v-btn icon v-on="on">
-            <v-icon>{{ icons.mdiDotsVertical }}</v-icon>
+            <v-icon>{{ mdiDotsVertical }}</v-icon>
           </v-btn>
         </template>
 
@@ -46,86 +46,61 @@
   </v-app>
 </template>
 
-<script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+<script setup lang="ts">
+import {ref, computed, onMounted, reactive} from "vue";
+import { type Vue } from 'vue-property-decorator';
 const PipingUI = () => import('@/components/PipingUI.vue');
 const MenuContent = () => import('@/components/MenuContent.vue');
 const Licenses = () => import("@/components/Licenses.vue");
-import {makePromise} from "@/utils";
 import {VERSION} from '@/version';
 import {globalStore} from "@/vue-global";
-import {strings} from "@/strings";
+import {stringsByLang} from "@/strings";
 import {mdiCached, mdiDotsVertical} from "@mdi/js";
-import enableDarkTheme from "@/enable-dark-theme";
+import {appBarPromiseResolverWhichShouldBeUsedInAppVue} from "@/app-bar-promise";
 
-const {promise: _appBarPromise, resolve: appBarPromiseResolver} = makePromise<Element>();
-export const appBarPromise = _appBarPromise;
+const appBarRef = ref<Vue>();
+const licenseDialog = ref(false);
 
-@Component({
-  components: {
-    PipingUI,
-    MenuContent,
-    Licenses,
+const pwa = reactive<{refreshing: boolean, registration?: ServiceWorkerRegistration, updateExists: boolean}>({
+  refreshing: false,
+  registration: undefined,
+  updateExists: false
+});
+
+// for language support
+const strings = computed(() => stringsByLang(globalStore.language));
+
+document.addEventListener(
+  'swUpdated', showRefreshUI as EventListenerOrEventListenerObject, { once: true }
+);
+
+onMounted(() => {
+  // Resolve app bar element
+  appBarPromiseResolverWhichShouldBeUsedInAppVue(appBarRef.value!.$el);
+});
+
+function showRefreshUI (e: CustomEvent<ServiceWorkerRegistration>) {
+  pwa.registration = e.detail;
+  pwa.updateExists = true;
+}
+
+// Update PWA app
+function refreshApp () {
+  pwa.updateExists = false;
+  if (pwa.registration === undefined || !pwa.registration.waiting) {
+    return;
   }
-})
-export default class App extends Vue {
-  private licenseDialog: boolean = false;
-  private icons = {
-    mdiCached,
-    mdiDotsVertical,
-  };
-
-  pwa: {refreshing: boolean, registration?: ServiceWorkerRegistration, updateExists: boolean} = {
-    refreshing: false,
-    registration: undefined,
-    updateExists: false
-  };
-  private version = VERSION;
-
-  // for language support
-  private get strings() {
-    return strings(globalStore.language);
-  }
-
-  created () {
-    document.addEventListener(
-      'swUpdated', this.showRefreshUI as EventListenerOrEventListenerObject, { once: true }
-    );
-  }
-
-  beforeMount() {
-    // Dark theme setting
-    this.$vuetify.theme.dark = enableDarkTheme();
-  }
-
-  mounted() {
-    // Resolve app bar element
-    appBarPromiseResolver((this.$refs['app_bar'] as Vue).$el);
-  }
-
-  showRefreshUI (e: CustomEvent<ServiceWorkerRegistration>) {
-    this.pwa.registration = e.detail;
-    this.pwa.updateExists = true;
-  }
-
-  // Update PWA app
-  refreshApp () {
-    this.pwa.updateExists = false;
-    if (this.pwa.registration === undefined || !this.pwa.registration.waiting) {
-      return;
-    }
-    this.pwa.registration.waiting.postMessage({
-      type: 'skip-waiting'
-    });
-    navigator.serviceWorker.addEventListener(
-      'controllerchange', () => {
-        if (this.pwa.refreshing) return;
-        this.pwa.refreshing = true;
-        window.location.reload();
-      },
-      {once: true}
-    );
-  }
+  pwa.registration.waiting.postMessage({
+    type: 'skip-waiting'
+  });
+  navigator.serviceWorker.addEventListener(
+    'controllerchange', () => {
+      if (pwa.refreshing) return;
+      pwa.refreshing = true;
+      window.location.reload();
+    },
+    {once: true}
+  );
 }
 </script>
 
