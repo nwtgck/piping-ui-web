@@ -46,7 +46,7 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
   // NOTE: kty should be 'EC' because it's ECDH key
   const publicKeyJwk = await crypto.subtle.exportKey(
     'jwk',
-    keyPair.publicKey!
+    keyPair.publicKey
   ) as JsonWebKey & {kty: 'EC'};
   const keyExchangeParcel: KeyExchangeV1Parcel = {
     version: KEY_EXCHANGE_VERSION,
@@ -82,7 +82,7 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
   );
   const keyBits: ArrayBuffer = await crypto.subtle.deriveBits(
     { name: 'ECDH', public: peerPublicKey },
-    keyPair.privateKey!,
+    keyPair.privateKey,
     KEY_BITS,
   );
   const verificationCode = await generateVerificationCode(publicKeyJwk, peerPublicKeyExchangeV1.encryptPublicJwk);
