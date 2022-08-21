@@ -34,7 +34,10 @@ module.exports = {
         /\.map$/,
         '_redirects',
         // Ignore piping-ui.auth caching because the logic can be changeable in the future
-        /piping-ui-auth.*\.js/
+        /piping-ui-auth.*\.js/,
+        // Exclude all
+        // TODO: disable workbox later
+        /.*/,
       ],
     },
   }
