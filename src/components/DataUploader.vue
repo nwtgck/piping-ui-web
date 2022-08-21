@@ -322,18 +322,12 @@ export default class DataUploader extends Vue {
       return
     }
 
-    // Check whether fetch()'s streaming upload is supported
-    const supportsStreamingUpload = await (async () => {
-      try {
-        return utils.supportsFetchStreamingUpload(this.props.serverUrl);
-      } catch {
-        return false;
-      }
-    })()
-    console.log("streaming upload support: ", supportsStreamingUpload);
+    // Check whether fetch() upload streaming is supported
+    const supportsUploadStreaming = await utils.supportsFetchUploadStreaming(this.props.serverUrl);
+    console.log("streaming upload support: ", supportsUploadStreaming);
 
-    // fetch()'s streaming upload is not supported
-    if (!supportsStreamingUpload) {
+    // fetch() upload streaming is not supported
+    if (!supportsUploadStreaming) {
       this.isNonStreamingEncrypting = true;
       // Convert plain body blob to Uint8Array
       const plainBodyArray: Uint8Array = await blobToUint8Array(plainBody);
