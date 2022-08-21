@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [0.7.1] - 2022-08-21
+### Fixed
+- Always non-streaming encrypted upload in Safari
+
 ## [0.7.0] - 2022-08-21
 ### Changed
 - Update dependencies
@@ -370,7 +374,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 ### Added
 - First release
 
-[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/nwtgck/piping-ui-web/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/nwtgck/piping-ui-web/compare/v0.6.30...v0.7.0
 [0.6.30]: https://github.com/nwtgck/piping-ui-web/compare/v0.6.29...v0.6.30
 [0.6.29]: https://github.com/nwtgck/piping-ui-web/compare/v0.6.28...v0.6.29
