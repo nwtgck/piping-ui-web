@@ -442,7 +442,18 @@ export default class DataViewer extends Vue {
 
   private async save(): Promise<void> {
     const FileSaver = await FileSaverAsync();
-    FileSaver.saveAs(this.blob, this.props.secretPath);
+    const fileName = await (async () => {
+      // If secret path has extension
+      if (this.props.secretPath.match(/.+\..+/)) {
+        return this.props.secretPath;
+      }
+      const fileTypeResult = await fileType.fromStream(blobToReadableStream(this.blob));
+      if (fileTypeResult === undefined) {
+        return this.props.secretPath;
+      }
+      return `${this.props.secretPath}.${fileTypeResult.ext}`;
+    })();
+    FileSaver.saveAs(this.blob, fileName);
   }
 }
 </script>
