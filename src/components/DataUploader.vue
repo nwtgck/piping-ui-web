@@ -350,7 +350,7 @@ export default class DataUploader extends Vue {
         method: 'POST',
         body: encryptedStream,
         duplex: 'half',
-      } as any);
+      } as RequestInit);
     } catch {
       this.errorMessageDelegate = () => this.strings['data_uploader_xhr_upload_error'];
     }

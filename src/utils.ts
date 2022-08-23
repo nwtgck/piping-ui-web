@@ -179,7 +179,7 @@ export async function supportsFetchUploadStreaming(pipingServerUrl: string): Pro
       method: 'POST',
       body: stream,
       duplex: 'half',
-    } as any)
+    } as RequestInit)
       // Without this, Safari causes an error "Unhandled Promise Rejection: NotSupportedError: ReadableStream uploading is not supported"
       .catch(() => "fetch_error");
     const getResPromise = fetch(url);
