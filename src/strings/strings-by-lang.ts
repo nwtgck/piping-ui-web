@@ -1,6 +1,7 @@
 import {en} from "@/strings/en";
 import {ja} from "@/strings/ja";
 
+// TODO: Use `strings` instead of this
 export function stringsByLang(language: string): typeof defaultStr {
   if(language.startsWith("en")) {
     return en;
