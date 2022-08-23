@@ -343,7 +343,7 @@ export default class DataUploader extends Vue {
     // Attach progress
     const plainStreamWithProgress = this.getReadableStreamWithProgress(plainStream, plainBody.size);
     // Encrypt
-    const encryptedStream = await utils.encryptStream(plainStreamWithProgress, password);
+    const encryptedStream = await utils.encrypt(plainStreamWithProgress, password);
     try {
       // Upload encrypted stream
       await fetch(this.uploadPath, {
