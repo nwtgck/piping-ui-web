@@ -41,7 +41,7 @@
 import { Component, Vue, Prop, Emit} from 'vue-property-decorator';
 import licenses from '@/licenses.json';
 import {globalStore} from "@/vue-global";
-import {stringsByLang} from "@/strings";
+import {stringsByLang} from "@/strings/strings-by-lang";
 
 
 @Component

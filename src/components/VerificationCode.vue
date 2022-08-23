@@ -7,7 +7,7 @@
 <script setup lang="ts">
 import {defineProps, computed} from "vue";
 import {globalStore} from "@/vue-global";
-import {stringsByLang} from "@/strings";
+import {stringsByLang} from "@/strings/strings-by-lang";
 
 const props = defineProps<{
   value: string,

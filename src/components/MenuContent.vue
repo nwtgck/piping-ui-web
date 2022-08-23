@@ -63,7 +63,7 @@
 import { Component, Vue, Watch, Prop, Emit } from 'vue-property-decorator';
 import {globalStore} from "@/vue-global";
 import {keys} from "@/local-storage-keys";
-import {stringsByLang} from "@/strings";
+import {stringsByLang} from "@/strings/strings-by-lang";
 import enableDarkTheme from "@/enable-dark-theme";
 
 

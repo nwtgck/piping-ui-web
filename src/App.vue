@@ -54,7 +54,7 @@ const MenuContent = () => import('@/components/MenuContent.vue');
 const Licenses = () => import("@/components/Licenses.vue");
 import {VERSION} from '@/version';
 import {globalStore} from "@/vue-global";
-import {stringsByLang} from "@/strings";
+import {stringsByLang} from "@/strings/strings-by-lang";
 import {mdiCached, mdiDotsVertical} from "@mdi/js";
 import {appBarPromiseResolverWhichShouldBeUsedInAppVue} from "@/app-bar-promise";
 

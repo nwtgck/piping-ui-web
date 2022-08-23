@@ -167,7 +167,7 @@ import {blobToReadableStream} from 'binconv/dist/src/blobToReadableStream';
 import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle, mdiEye, mdiEyeOff, mdiKey, mdiFeatureSearchOutline} from "@mdi/js";
 
 import {globalStore} from "@/vue-global";
-import {stringsByLang} from "@/strings";
+import {stringsByLang} from "@/strings/strings-by-lang";
 import * as utils from '@/utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
 import AsyncComputed from 'vue-async-computed-decorator';
