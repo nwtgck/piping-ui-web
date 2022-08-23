@@ -40,8 +40,8 @@
 <script lang="ts">
 import { Component, Vue, Prop, Emit} from 'vue-property-decorator';
 import licenses from '@/licenses.json';
-import {globalStore} from "@/vue-global";
 import {stringsByLang} from "@/strings/strings-by-lang";
+import {language} from "@/language";
 
 
 @Component
@@ -54,7 +54,7 @@ export default class Licenses extends Vue {
 
   // for language support
   private get strings() {
-    return stringsByLang(globalStore.language);
+    return stringsByLang(language.value);
   }
 
   private removeLibVersion(libName: string): string {

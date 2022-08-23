@@ -218,6 +218,7 @@ import * as filePond from "filepond";
 import {baseAndExt} from "@/utils";
 import type {Protection} from "@/datatypes";
 import buildConstants from "@/build-constants";
+import {language} from "@/language";
 
 (async () => require('filepond/dist/filepond.min.css'))();
 
@@ -330,7 +331,7 @@ export default class PipingUI extends Vue {
 
   // for language support
   private get strings() {
-    return stringsByLang(globalStore.language);
+    return stringsByLang(language.value);
   }
 
   // FIXME: Should be removed

@@ -65,6 +65,7 @@ import {globalStore} from "@/vue-global";
 import {keys} from "@/local-storage-keys";
 import {stringsByLang} from "@/strings/strings-by-lang";
 import enableDarkTheme from "@/enable-dark-theme";
+import {language} from "@/language";
 
 
 // Available languages
@@ -83,16 +84,14 @@ export default class MenuContent extends Vue {
   ];
   // for language support
   private get strings() {
-    return stringsByLang(globalStore.language);
+    return stringsByLang(language.value);
   }
 
   set language(l: string){
-    globalStore.language = l;
-    // Store to Local Storage
-    window.localStorage.setItem(keys.language, l);
+    language.value = l;
   }
   get language(): string {
-    return globalStore.language;
+    return language.value;
   }
 
   private get recordsServerUrlHistory(): boolean {

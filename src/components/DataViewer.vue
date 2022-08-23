@@ -175,6 +175,7 @@ import type {Protection, VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import {BlobUrlManager} from "@/blob-url-manager";
 import {pipingUiAuthAsync} from "@/pipingUiAuthWithWebpackChunkName"
+import {language} from "@/language";
 
 
 export type DataViewerProps = {
@@ -229,7 +230,7 @@ export default class DataViewer extends Vue {
 
   // for language support
   private get strings() {
-    return stringsByLang(globalStore.language);
+    return stringsByLang(language.value);
   }
 
   private get progressPercentage(): number | null {
@@ -321,7 +322,7 @@ export default class DataViewer extends Vue {
 
     // If error
     if (keyExchangeRes.type === "error") {
-      this.errorMessage = () => keyExchangeRes.errorMessage(globalStore.language);
+      this.errorMessage = () => keyExchangeRes.errorMessage(language.value);
       return;
     }
     const {key} = keyExchangeRes;

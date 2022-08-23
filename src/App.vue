@@ -53,8 +53,7 @@ const PipingUI = () => import('@/components/PipingUI.vue');
 const MenuContent = () => import('@/components/MenuContent.vue');
 const Licenses = () => import("@/components/Licenses.vue");
 import {VERSION} from '@/version';
-import {globalStore} from "@/vue-global";
-import {stringsByLang} from "@/strings/strings-by-lang";
+import {strings} from "@/strings/strings";
 import {mdiCached, mdiDotsVertical} from "@mdi/js";
 import {appBarPromiseResolverWhichShouldBeUsedInAppVue} from "@/app-bar-promise";
 
@@ -66,9 +65,6 @@ const pwa = reactive<{refreshing: boolean, registration?: ServiceWorkerRegistrat
   registration: undefined,
   updateExists: false
 });
-
-// for language support
-const strings = computed(() => stringsByLang(globalStore.language));
 
 document.addEventListener(
   'swUpdated', showRefreshUI as EventListenerOrEventListenerObject, { once: true }
