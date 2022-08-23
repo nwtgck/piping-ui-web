@@ -5,13 +5,10 @@
 </template>
 
 <script setup lang="ts">
-import {defineProps, computed} from "vue";
-import {globalStore} from "@/vue-global";
-import {stringsByLang} from "@/strings";
+import {defineProps} from "vue";
+import {strings} from "@/strings/strings";
 
 const props = defineProps<{
   value: string,
 }>()
-
-const strings = computed(() => stringsByLang(globalStore.language))
 </script>

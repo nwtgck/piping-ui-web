@@ -41,11 +41,12 @@ import urlJoin from 'url-join';
 import {mdiAlert, mdiChevronDown} from "@mdi/js";
 
 import {globalStore} from "@/vue-global";
-import {stringsByLang} from "@/strings";
+import {stringsByLang} from "@/strings/strings-by-lang";
 import * as pipingUiUtils from "@/piping-ui-utils";
 import type {Protection, VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import {pipingUiAuthAsync} from "@/pipingUiAuthWithWebpackChunkName"
+import {language} from "@/language";
 
 export type DataDownloaderProps = {
   downloadNo: number,
@@ -68,7 +69,7 @@ export default class DataDownloader extends Vue {
 
   // for language support
   private get strings() {
-    return stringsByLang(globalStore.language);
+    return stringsByLang(language.value);
   }
 
   private get hasError(): boolean {
@@ -116,7 +117,7 @@ export default class DataDownloader extends Vue {
 
     // If error
     if (keyExchangeRes.type === "error") {
-      this.errorMessage = () => keyExchangeRes.errorMessage(globalStore.language);
+      this.errorMessage = () => keyExchangeRes.errorMessage(language.value);
       return;
     }
     const {key} = keyExchangeRes;
