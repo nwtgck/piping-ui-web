@@ -96,14 +96,7 @@ export async function sanitizeHtmlAllowingATag(dirtyHtml: string): Promise<strin
   });
 }
 
-export async function encrypt(bytes: Uint8Array, password: string | Uint8Array): Promise<Uint8Array> {
-  const uint8ArrayToReadableStream = await uint8ArrayToReadableStreamAsync();
-  const readableStreamToUint8Array = await readableStreamToUint8ArrayAsync();
-  const encrypted = await encryptStream(uint8ArrayToReadableStream(bytes), password);
-  return readableStreamToUint8Array(encrypted);
-}
-
-export async function encryptStream(stream: ReadableStream<Uint8Array>, password: string | Uint8Array): Promise<ReadableStream<Uint8Array>> {
+export async function encrypt<T extends Uint8Array | ReadableStream<Uint8Array>>(stream: T, password: string | Uint8Array): Promise<T> {
   const openpgp = await openpgpAsync();
   // Encrypt with PGP
   const encryptResult = await openpgp.encrypt({
@@ -113,7 +106,7 @@ export async function encryptStream(stream: ReadableStream<Uint8Array>, password
     armor: false
   });
   // Get encrypted
-  const encrypted: ReadableStream<Uint8Array> = encryptResult.message.packets.write();
+  const encrypted: T = encryptResult.message.packets.write();
   return encrypted;
 }
 
@@ -186,7 +179,7 @@ export async function supportsFetchUploadStreaming(pipingServerUrl: string): Pro
       method: 'POST',
       body: stream,
       duplex: 'half',
-    } as any)
+    } as RequestInit)
       // Without this, Safari causes an error "Unhandled Promise Rejection: NotSupportedError: ReadableStream uploading is not supported"
       .catch(() => "fetch_error");
     const getResPromise = fetch(url);

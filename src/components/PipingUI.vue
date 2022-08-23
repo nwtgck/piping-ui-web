@@ -439,7 +439,7 @@ export default class PipingUI extends Vue {
     // Disable "Powered by PQINA" link
     filePond.setOptions({
       credits: false,
-    } as any);
+    });
 
     // Update random strings
     this.updateRandomStrs();
