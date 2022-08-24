@@ -6,6 +6,9 @@ const JSZipAsync = () => import('jszip').then(p => p.default);
 const sanitizeHtmlAsync  = () => import("sanitize-html").then(p => p.default);
 const openpgpAsync = memorizeFunc(async () => {
   const openpgp = await import('openpgp');
+  // Allow unauthenticated stream
+  // (see: https://github.com/openpgpjs/openpgpjs/releases/tag/v4.0.0)
+  openpgp.config.allow_unauthenticated_stream = true;
   await openpgp.initWorker({ path: 'openpgp/openpgp.worker.min.js' });
   return openpgp;
 });
@@ -110,14 +113,14 @@ export async function encrypt<T extends Uint8Array | ReadableStream<Uint8Array>>
   return encrypted;
 }
 
-export async function decrypt(bytes: Uint8Array, password: string | Uint8Array): Promise<Uint8Array> {
+export async function decrypt<T extends Uint8Array | ReadableStream<Uint8Array>>(encrypted: T, password: string | Uint8Array): Promise<T> {
   const openpgp = await openpgpAsync();
   const plain = (await openpgp.decrypt({
-    message: await openpgp.message.read(bytes),
+    message: await openpgp.message.read(encrypted),
     // FIXME: convert Uint8Array password to string in better way
     passwords: [password.toString()],
     format: 'binary'
-  })).data as Uint8Array;
+  })).data;
   return plain;
 }
 
@@ -140,27 +143,6 @@ export function makePromise<T>(): {promise: Promise<T>, resolve: (value: T | Pro
     reject  = _reject;
   });
   return {promise, resolve, reject};
-}
-
-/**
- * Send a message to Service Worker
- * base: https://googlechrome.github.io/samples/service-worker/post-message/
- * @param message
- */
-export function sendToServiceWorker(message: any): Promise<MessageEvent> {
-  return new Promise((resolve, reject) => {
-    if (!("serviceWorker" in navigator)) {
-      reject(new Error("Service Worker not supported"));
-      return;
-    }
-    if (navigator.serviceWorker.controller === null) {
-      reject(new Error("navigator.serviceWorker.controller is null"));
-      return;
-    }
-    const messageChannel = new MessageChannel();
-    messageChannel.port1.onmessage = resolve;
-    navigator.serviceWorker.controller.postMessage(message, [messageChannel.port2]);
-  });
 }
 
 // Check fetch() upload streaming support with Piping Server

@@ -14,7 +14,7 @@ export const supportsSwDownload: Promise<boolean> = (async () => {
     await new Promise(resolve => setTimeout(resolve, 500));
     try {
       // Check whether response can be received
-      const res = await fetch('/sw-download-support');
+      const res = await fetch('/sw-download-support/v2');
       // Success
       if (res.status === 200) {
         return await res.text() === 'OK';
