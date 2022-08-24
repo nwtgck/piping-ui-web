@@ -9,45 +9,26 @@ export async function decryptingDownload(
   {downloadUrl, fileName, key, decryptErrorMessage}:
   {downloadUrl: string, fileName: string, key: string | Uint8Array | undefined, decryptErrorMessage: string}
 ) {
-  type Protection = {type: 'raw'} | {type: 'string', key: string} | {type: 'uint8array', key: string};
-
   const swDownload = await swDownloadAsync();
   // If supporting stream-download via Service Worker
   if (await swDownload.supportsSwDownload) {
-    const binconv = await binconvAsync();
-    const protection: Protection = (() => {
-      if (key === undefined) {
-        return {type: 'raw'} as const;
-      } else if (typeof key === 'string') {
-        return {type: 'string', key: key} as const;
-      } else {
-        return {
-          type: 'uint8array',
-          key: binconv.uint8ArrayToBase64(key),
-        } as const;
-      }
-    })();
-
     const utils = await utilsAsync();
-    // Create download info to tell to Service Worker
-    const downloadInfo = {
-      url: downloadUrl,
-      filename: fileName,
-      protection,
-      decryptErrorMessage: decryptErrorMessage,
-    };
-    // Enroll download-info
-    const enrollDownloadInfoRes: MessageEvent = await utils.sendToServiceWorker({
-      type: 'enroll-download-info',
-      downloadInfo,
-    });
-    // Get download-info ID
-    const {downloadInfoId} = enrollDownloadInfoRes.data;
+    const res = await fetch(downloadUrl);
+    const readableStream: ReadableStream<Uint8Array> = await (() => {
+      if (key === undefined) {
+        return res.body!;
+      }
+      return utils.decrypt(res.body!, key);
+    })();
+    // Enroll download ReadableStream
+    const enrollDownloadRes: MessageEvent = await enrollDownloadReadableStream(readableStream);
+    // Get download ID
+    const {downloadId} = enrollDownloadRes.data;
     // Download via Service Worker
     const aTag = document.createElement('a');
-    // NOTE: '/sw-download' can be received by Service Worker in src/sw.js
+    // NOTE: '/sw-download/v2' can be received by Service Worker in src/sw.js
     // NOTE: URL fragment is passed to Service Worker but not passed to Web server
-    aTag.href = `/sw-download#${downloadInfoId}`;
+    aTag.href = `/sw-download/v2#?id=${downloadId}&filename=${fileName}`;
     aTag.target = "_blank";
     aTag.click();
   } else {
@@ -82,4 +63,24 @@ export async function scrollTo(element: Element): Promise<void> {
   const appBar = await appBarPromise;
   const moveTop = element.getBoundingClientRect().y - appBar.clientHeight;
   window.scrollBy({ top: moveTop, left: 0, behavior: 'smooth' });
+}
+
+// (base: https://googlechrome.github.io/samples/service-worker/post-message/)
+export function enrollDownloadReadableStream(readableStream: ReadableStream): Promise<MessageEvent> {
+  return new Promise((resolve, reject) => {
+    if (!("serviceWorker" in navigator)) {
+      reject(new Error("Service Worker not supported"));
+      return;
+    }
+    if (navigator.serviceWorker.controller === null) {
+      reject(new Error("navigator.serviceWorker.controller is null"));
+      return;
+    }
+    const messageChannel = new MessageChannel();
+    messageChannel.port1.onmessage = resolve;
+    navigator.serviceWorker.controller.postMessage({
+      type: 'enroll-download',
+      readableStream,
+    }, [messageChannel.port2, readableStream] as Transferable[]);
+  });
 }

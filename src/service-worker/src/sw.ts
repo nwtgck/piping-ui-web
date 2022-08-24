@@ -1,19 +1,10 @@
 /// <reference lib="webworker" />
 // (from: https://medium.com/@dougallrich/give-users-control-over-app-updates-in-vue-cli-3-pwas-20453aedc1f2)
 
-declare var self: ServiceWorkerGlobalScope;
-// TODO: Not use any
-declare var openpgp: any;
-
-// Backup the native ReadableStream because OpenPGP.js might modify it on Firefox
-const NativeReadableStream = ReadableStream;
-import {createReadableStreamWrapper} from '@mattiasbuelens/web-streams-adapter';
-import {base64ToUint8Array} from 'binconv/dist/src/base64ToUint8Array';
-importScripts('openpgp/openpgp.min.js');
-
-// Create convert functions
-const toPolyfillReadable = createReadableStreamWrapper(ReadableStream);
-const toNativeReadable = createReadableStreamWrapper(NativeReadableStream);
+// export empty type because of tsc --isolatedModules flag
+// (from: https://www.devextent.com/create-service-worker-typescript/)
+export type {};
+declare const self: ServiceWorkerGlobalScope;
 
 // Generate random string with specific length
 function generateRandomString(len: number): string {
@@ -25,26 +16,14 @@ function generateRandomString(len: number): string {
   return [...randomArr].map(n => chars[n % chars.length]).join('');
 }
 
-// TODO: duplicate code
-type Protection = {type: 'raw'} | {type: 'string', key: string} | {type: 'uint8array', key: string};
+const idToReadableStream: Map<string, ReadableStream> = new Map();
 
-// TODO: Use io-ts
-type DownloadInfo = {
-  url: string,
-  filename: string,
-  protection: Protection,
-  decryptErrorMessage: string,
-};
-
-// ID => download-info
-const idToDownloadInfo: {[id: string]: DownloadInfo} = {};
-
-// Generate unique download-info ID
-function generateUniqueDownloadInfoId(): string {
+// Generate unique download ID
+function generateUniqueDownloadId(): string {
   // eslint-disable-next-line no-constant-condition
   while(true) {
     const downloadInfoId = generateRandomString(128);
-    if (!(downloadInfoId in idToDownloadInfo)) {
+    if (!idToReadableStream.has(downloadInfoId)) {
       return downloadInfoId;
     }
   }
@@ -61,35 +40,18 @@ self.addEventListener('message', (e: ExtendableMessageEvent) => {
     case 'skip-waiting':
       self.skipWaiting();
       break;
-    case 'enroll-download-info': {
-      // Get download info
-      const downloadInfo = e.data.downloadInfo;
-      if (!("url" in downloadInfo)) {
-        console.error('downloadInfo.url is missing');
-        return;
-      }
-      if (!("filename" in downloadInfo)) {
-        console.error('downloadInfo.filename is missing');
-        return;
-      }
-      if (!("protection" in downloadInfo)) {
-        console.error('downloadInfo.protection is missing');
-        return;
-      }
-      if (!("type" in downloadInfo.protection)) {
-        console.error('downloadInfo.protection.type is missing');
-        return;
-      }
-      if (!("decryptErrorMessage" in downloadInfo)) {
-        console.error('downloadInfo.decryptErrorMessage is missing');
+    case 'enroll-download': {
+      const readableStream = e.data.readableStream;
+      if (!(readableStream instanceof ReadableStream)) {
+        console.error('data.readableStream is not ReadableStream');
         return;
       }
       // Generate unique ID
-      const id = generateUniqueDownloadInfoId();
+      const id = generateUniqueDownloadId();
       // Enroll info with the ID
-      idToDownloadInfo[id] = downloadInfo;
+      idToReadableStream.set(id, readableStream);
       e.ports[0].postMessage({
-        downloadInfoId: id,
+        downloadId: id,
       });
       break;
     }
@@ -102,83 +64,47 @@ self.addEventListener('message', (e: ExtendableMessageEvent) => {
 // Support for stream download
 self.addEventListener('fetch', (event: FetchEvent) => {
   const url = new URL(event.request.url);
-  if (url.pathname === '/sw-download-support') {
+  if (url.pathname === '/sw-download-support/v2') {
     // Return "OK"
     event.respondWith(new Response(
-      new NativeReadableStream({
+      new ReadableStream({
         start(controller: ReadableStreamDefaultController) {
           controller.enqueue(new Uint8Array([79, 75]));
           controller.close();
         }
       })
     ));
-  } else if (url.pathname === '/sw-download') {
-    // Get download-info ID
-    const downloadInfoId = decodeURIComponent(url.hash.substring(1));
-
-    if (!(downloadInfoId in idToDownloadInfo)) {
-      console.error(`download-info ID ${downloadInfoId} not found`);
+  } else if (url.pathname === '/sw-download/v2') {
+    const fragmentQuery = new URL(`a://a${url.hash.substring(1)}`).searchParams;
+    // Get download ID
+    const id = fragmentQuery.get("id");
+    if (id === null) {
+      console.error("id not found", url);
       return;
     }
-
-    // Get download info
-    const downloadInfo = idToDownloadInfo[downloadInfoId];
-    // Delete the entry
-    delete idToDownloadInfo[downloadInfoId];
-
-    const targetUrl = downloadInfo.url;
-    let filename = downloadInfo.filename;
-    const protection = downloadInfo.protection;
-    const decryptErrorMessage = downloadInfo.decryptErrorMessage;
-
-    const password = (() => {
-      switch (protection.type) {
-        case "raw":
-          return undefined;
-        case "string":
-          return protection.key;
-        case "uint8array":
-          return base64ToUint8Array(protection.key);
-      }
-    })();
+    const filename = fragmentQuery.get("filename");
+    if (filename === null) {
+      console.error("filename not found", url);
+      return;
+    }
+    const readableStream = idToReadableStream.get(id);
+    if (readableStream === undefined) {
+      console.error(`download ID ${id} not found`);
+      return;
+    }
+    idToReadableStream.delete(id);
 
     event.respondWith((async () => {
-      const res = await fetch(targetUrl);
-      // @ts-ignore to solve an error: TS2339: Property 'entries' does not exist on type 'Headers'.
-      const headers = new Headers([...res.headers.entries()]);
       // (from: https://github.com/jimmywarting/StreamSaver.js/blob/314e64b8984484a3e8d39822c9b86a345eb36454/sw.js#L120-L122)
       // Make filename RFC5987 compatible
-      filename = encodeURIComponent(filename).replace(/['()]/g, escape).replace(/\*/g, '%2A');
-      headers.set('Content-Disposition', "attachment; filename*=UTF-8''" + filename);
-      // Plain ReadableStream
-      let plainStream = res.body;
-      // If encrypted
-      if (password !== undefined) {
-        try {
-          // Allow unauthenticated stream
-          // (see: https://github.com/openpgpjs/openpgpjs/releases/tag/v4.0.0)
-          openpgp.config.allow_unauthenticated_stream = true;
-          // Decrypt the response body
-          const decrypted = await openpgp.decrypt({
-            message: await openpgp.message.read(toPolyfillReadable(res.body!)),
-            // FIXME: convert Uint8Array password to string in better way
-            passwords: [password.toString()],
-            format: 'binary'
-          });
-          plainStream = decrypted.data;
-        } catch (err) {
-          // Show "Password might be wrong" message
-          // This message should be displayed in browser
-          return new Response(decryptErrorMessage, {
-            status: 400,
-          });
-        }
-      }
+      const escapedFilename = encodeURIComponent(filename).replace(/['()]/g, escape).replace(/\*/g, '%2A');
+      const headers = new Headers([
+        ['Content-Disposition', "attachment; filename*=UTF-8''" + escapedFilename],
+      ]);
 
-      const downloadableRes = new Response(toNativeReadable(plainStream!) as ReadableStream, {
-        headers
+      return new Response(readableStream, {
+        headers,
       });
-      return downloadableRes;
     })());
   }
 });
