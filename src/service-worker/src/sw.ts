@@ -94,18 +94,15 @@ self.addEventListener('fetch', (event: FetchEvent) => {
     }
     idToReadableStream.delete(id);
 
-    event.respondWith((async () => {
-      // (from: https://github.com/jimmywarting/StreamSaver.js/blob/314e64b8984484a3e8d39822c9b86a345eb36454/sw.js#L120-L122)
-      // Make filename RFC5987 compatible
-      const escapedFilename = encodeURIComponent(filename).replace(/['()]/g, escape).replace(/\*/g, '%2A');
-      const headers = new Headers([
-        ['Content-Disposition', "attachment; filename*=UTF-8''" + escapedFilename],
-      ]);
-
-      return new Response(readableStream, {
-        headers,
-      });
-    })());
+    // (from: https://github.com/jimmywarting/StreamSaver.js/blob/314e64b8984484a3e8d39822c9b86a345eb36454/sw.js#L120-L122)
+    // Make filename RFC5987 compatible
+    const escapedFilename = encodeURIComponent(filename).replace(/['()]/g, escape).replace(/\*/g, '%2A');
+    const headers = new Headers([
+      ['Content-Disposition', "attachment; filename*=UTF-8''" + escapedFilename],
+    ]);
+    event.respondWith(new Response(readableStream, {
+      headers,
+    }));
   }
 });
 
