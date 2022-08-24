@@ -6,6 +6,9 @@ const JSZipAsync = () => import('jszip').then(p => p.default);
 const sanitizeHtmlAsync  = () => import("sanitize-html").then(p => p.default);
 const openpgpAsync = memorizeFunc(async () => {
   const openpgp = await import('openpgp');
+  // Allow unauthenticated stream
+  // (see: https://github.com/openpgpjs/openpgpjs/releases/tag/v4.0.0)
+  openpgp.config.allow_unauthenticated_stream = true;
   await openpgp.initWorker({ path: 'openpgp/openpgp.worker.min.js' });
   return openpgp;
 });
