@@ -151,15 +151,13 @@ export default class DataDownloader extends Vue {
       FileSaver.saveAs(binconv.uint8ArrayToBlob(plain), this.props.secretPath);
       return;
     }
-    console.log("downloading streaming decrypting with the Service Worker...");
+    console.log("downloading streaming and decrypting with the Service Worker...");
     const utils = await utilsAsync();
     const res = await fetch(this.downloadPath);
-    const readableStream: ReadableStream<Uint8Array> = await (() => {
-      if (key === undefined) {
-        return res.body!;
-      }
-      return utils.decrypt(res.body!, key);
-    })();
+    let readableStream: ReadableStream<Uint8Array> = res.body!
+    if (key !== undefined) {
+      readableStream = await utils.decrypt(res.body!, key);
+    }
     // Enroll download ReadableStream
     const enrollDownloadRes: MessageEvent = await enrollDownloadReadableStream(readableStream);
     // Get download ID
