@@ -36,17 +36,20 @@
 <script lang="ts">
 /* eslint-disable no-console */
 
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import {Component, Prop, Vue} from 'vue-property-decorator';
 import urlJoin from 'url-join';
 import {mdiAlert, mdiChevronDown} from "@mdi/js";
-
-import {globalStore} from "@/vue-global";
 import {stringsByLang} from "@/strings/strings-by-lang";
 import * as pipingUiUtils from "@/piping-ui-utils";
 import type {Protection, VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import {pipingUiAuthAsync} from "@/pipingUiAuthWithWebpackChunkName"
 import {language} from "@/language";
+
+const FileSaverAsync = () => import('file-saver');
+const binconvAsync = () => import('binconv');
+const swDownloadAsync = () => import("@/sw-download");
+const utilsAsync = () => import("@/utils");
 
 export type DataDownloaderProps = {
   downloadNo: number,
@@ -122,13 +125,83 @@ export default class DataDownloader extends Vue {
     }
     const {key} = keyExchangeRes;
 
-    // Decrypting & Download
-    await pipingUiUtils.decryptingDownload({
-      downloadUrl: this.downloadPath,
-      fileName: this.props.secretPath,
-      key,
-      decryptErrorMessage: this.strings['password_might_be_wrong'],
-    });
+    const swDownload = await swDownloadAsync();
+    // If not supporting stream-download via Service Worker
+    if (!swDownload.supportsSwDownload()) {
+      // If password-protection is disabled
+      if (key === undefined) {
+        console.log("downloading with dynamic <a href> click...");
+        // Download or show on browser sometimes
+        const aTag = document.createElement('a');
+        aTag.href = this.downloadPath;
+        aTag.target = "_blank";
+        aTag.download = this.props.secretPath;
+        aTag.click();
+        return;
+      }
+      console.log("downloading and decrypting with FileSaver.saveAs()...");
+      const binconv = await binconvAsync();
+      // Get response
+      const res = await fetch(this.downloadPath);
+      const resBody = await binconv.blobToUint8Array(await res.blob());
+      // Decrypt the response body
+      let plain: Uint8Array;
+      try {
+        plain = await (await utilsAsync()).decrypt(resBody, key);
+      } catch (e) {
+        console.log("failed to decrypt", e);
+        this.errorMessage = () => this.strings['password_might_be_wrong'];
+        return;
+      }
+      // Save
+      const FileSaver = await FileSaverAsync();
+      FileSaver.saveAs(binconv.uint8ArrayToBlob(plain), this.props.secretPath);
+      return;
+    }
+    console.log("downloading streaming and decrypting with the Service Worker...");
+    const utils = await utilsAsync();
+    const res = await fetch(this.downloadPath);
+    let readableStream: ReadableStream<Uint8Array> = res.body!
+    if (key !== undefined) {
+      try {
+        readableStream = await utils.decrypt(res.body!, key);
+      } catch (e) {
+        console.log("failed to decrypt", e);
+        this.errorMessage = () => this.strings['password_might_be_wrong'];
+        return;
+      }
+    }
+    // Enroll download ReadableStream
+    const enrollDownloadRes: MessageEvent = await enrollDownloadReadableStream(readableStream);
+    // Get download ID
+    const {downloadId} = enrollDownloadRes.data;
+    // Download via Service Worker
+    const aTag = document.createElement('a');
+    // NOTE: '/sw-download/v2' can be received by Service Worker in src/sw.js
+    // NOTE: URL fragment is passed to Service Worker but not passed to Web server
+    aTag.href = `/sw-download/v2#?id=${downloadId}&filename=${(this.props.secretPath)}`;
+    aTag.target = "_blank";
+    aTag.click();
   }
+}
+
+// (base: https://googlechrome.github.io/samples/service-worker/post-message/)
+function enrollDownloadReadableStream(readableStream: ReadableStream): Promise<MessageEvent> {
+  return new Promise((resolve, reject) => {
+    if (!("serviceWorker" in navigator)) {
+      reject(new Error("Service Worker not supported"));
+      return;
+    }
+    if (navigator.serviceWorker.controller === null) {
+      reject(new Error("navigator.serviceWorker.controller is null"));
+      return;
+    }
+    const messageChannel = new MessageChannel();
+    messageChannel.port1.onmessage = resolve;
+    navigator.serviceWorker.controller.postMessage({
+      type: 'enroll-download',
+      readableStream,
+    }, [messageChannel.port2, readableStream] as Transferable[]);
+  });
 }
 </script>

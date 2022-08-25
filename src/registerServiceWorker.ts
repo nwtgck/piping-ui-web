@@ -14,8 +14,7 @@ if (process.env.NODE_ENV === 'production') {
     async registered () {
       console.log('Service worker has been registered.');
       // NOTE: Timing to load and evaluate supportsSwDownload is important because the support flag is cached.
-      const swDownload = await swDownloadAsync();
-      console.log('Support streaming download:', await swDownload.supportsSwDownload);
+      await swDownloadAsync();
     },
     cached () {
       console.log('Content has been cached for offline use.')
