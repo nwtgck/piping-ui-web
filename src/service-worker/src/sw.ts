@@ -55,6 +55,28 @@ self.addEventListener('message', (e: ExtendableMessageEvent) => {
       });
       break;
     }
+    case 'enroll-download-with-channel': {
+      // Create ReadableStream from chunks over the channel
+      const readableStream = new ReadableStream({
+        start(ctrl) {
+          e.ports[0].onmessage = (ev) => {
+            if (ev.data.done) {
+              ctrl.close();
+              return;
+            }
+            ctrl.enqueue(ev.data.value);
+          };
+        }
+      });
+      // Generate unique ID
+      const id = generateUniqueDownloadId();
+      // Enroll info with the ID
+      idToReadableStream.set(id, readableStream);
+      e.ports[0].postMessage({
+        downloadId: id,
+      });
+      break;
+    }
     default:
       // NOOP
       break;

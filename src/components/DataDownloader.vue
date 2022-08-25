@@ -171,10 +171,8 @@ export default class DataDownloader extends Vue {
         return;
       }
     }
-    // Enroll download ReadableStream
-    const enrollDownloadRes: MessageEvent = await enrollDownloadReadableStream(readableStream);
-    // Get download ID
-    const {downloadId} = enrollDownloadRes.data;
+    // Enroll download ReadableStream and get download ID
+    const {downloadId} = await enrollDownloadReadableStream(readableStream);
     // Download via Service Worker
     const aTag = document.createElement('a');
     // NOTE: '/sw-download/v2' can be received by Service Worker in src/sw.js
@@ -186,8 +184,10 @@ export default class DataDownloader extends Vue {
 }
 
 // (base: https://googlechrome.github.io/samples/service-worker/post-message/)
-function enrollDownloadReadableStream(readableStream: ReadableStream): Promise<MessageEvent> {
-  return new Promise((resolve, reject) => {
+async function enrollDownloadReadableStream(readableStream: ReadableStream<Uint8Array>): Promise<{ downloadId: string }> {
+  const utils = await utilsAsync();
+  // eslint-disable-next-line no-async-promise-executor
+  return new Promise(async (resolve, reject) => {
     if (!("serviceWorker" in navigator)) {
       reject(new Error("Service Worker not supported"));
       return;
@@ -196,12 +196,36 @@ function enrollDownloadReadableStream(readableStream: ReadableStream): Promise<M
       reject(new Error("navigator.serviceWorker.controller is null"));
       return;
     }
+    if (utils.canTransferReadableStream()) {
+      const messageChannel = new MessageChannel();
+      messageChannel.port1.onmessage = (e: MessageEvent) => resolve({
+        downloadId: e.data.downloadId,
+      });
+      navigator.serviceWorker.controller.postMessage({
+        type: 'enroll-download',
+        readableStream,
+      }, [messageChannel.port2, readableStream] as Transferable[]);
+      return;
+    }
+    console.log("Fallback to posting chunks of ReadableStream over MessageChannel, instead of transferring the stream directly")
     const messageChannel = new MessageChannel();
-    messageChannel.port1.onmessage = resolve;
+    messageChannel.port1.onmessage = (e: MessageEvent) => resolve({
+      downloadId: e.data.downloadId,
+    });
     navigator.serviceWorker.controller.postMessage({
-      type: 'enroll-download',
-      readableStream,
-    }, [messageChannel.port2, readableStream] as Transferable[]);
+      type: 'enroll-download-with-channel',
+    }, [messageChannel.port2]);
+
+    const reader = readableStream.getReader();
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const result = await reader.read();
+      if (result.done) {
+        messageChannel.port1.postMessage({ done: true });
+        break;
+      }
+      messageChannel.port1.postMessage(result, [result.value.buffer]);
+    }
   });
 }
 </script>

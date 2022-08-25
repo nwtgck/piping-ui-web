@@ -7,10 +7,6 @@ export function supportsSwDownload(): boolean {
 
 // Check support for streaming-download via Service Worker
 (async () => {
-  // Safari is always unsupported
-  if (typeof (window as any).safari !== 'undefined') {
-    return false;
-  }
   if (!("serviceWorker" in navigator)) {
     return false;
   }
