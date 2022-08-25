@@ -126,48 +126,51 @@ export default class DataDownloader extends Vue {
     const {key} = keyExchangeRes;
 
     const swDownload = await swDownloadAsync();
-    // If supporting stream-download via Service Worker
-    if (await swDownload.supportsSwDownload) {
-      const utils = await utilsAsync();
-      const res = await fetch(this.downloadPath);
-      const readableStream: ReadableStream<Uint8Array> = await (() => {
-        if (key === undefined) {
-          return res.body!;
-        }
-        return utils.decrypt(res.body!, key);
-      })();
-      // Enroll download ReadableStream
-      const enrollDownloadRes: MessageEvent = await enrollDownloadReadableStream(readableStream);
-      // Get download ID
-      const {downloadId} = enrollDownloadRes.data;
-      // Download via Service Worker
-      const aTag = document.createElement('a');
-      // NOTE: '/sw-download/v2' can be received by Service Worker in src/sw.js
-      // NOTE: URL fragment is passed to Service Worker but not passed to Web server
-      aTag.href = `/sw-download/v2#?id=${downloadId}&filename=${(this.props.secretPath)}`;
-      aTag.target = "_blank";
-      aTag.click();
-    } else {
-      const binconv = await binconvAsync();
+    // If not supporting stream-download via Service Worker
+    if (!swDownload.supportsSwDownload()) {
       // If password-protection is disabled
       if (key === undefined) {
+        console.log("downloading with dynamic <a href> click...");
         // Download or show on browser sometimes
         const aTag = document.createElement('a');
         aTag.href = this.downloadPath;
         aTag.target = "_blank";
         aTag.download = this.props.secretPath;
         aTag.click();
-      } else {
-        // Get response
-        const res = await fetch(this.downloadPath);
-        const resBody = await binconv.blobToUint8Array(await res.blob());
-        // Decrypt the response body
-        const plain = await (await utilsAsync()).decrypt(resBody, key);
-        // Save
-        const FileSaver = await FileSaverAsync();
-        FileSaver.saveAs(binconv.uint8ArrayToBlob(plain), this.props.secretPath);
+        return;
       }
+      console.log("downloading and decrypting with FileSaver.saveAs()...");
+      const binconv = await binconvAsync();
+      // Get response
+      const res = await fetch(this.downloadPath);
+      const resBody = await binconv.blobToUint8Array(await res.blob());
+      // Decrypt the response body
+      const plain = await (await utilsAsync()).decrypt(resBody, key);
+      // Save
+      const FileSaver = await FileSaverAsync();
+      FileSaver.saveAs(binconv.uint8ArrayToBlob(plain), this.props.secretPath);
+      return;
     }
+    console.log("downloading streaming decrypting with the Service Worker...");
+    const utils = await utilsAsync();
+    const res = await fetch(this.downloadPath);
+    const readableStream: ReadableStream<Uint8Array> = await (() => {
+      if (key === undefined) {
+        return res.body!;
+      }
+      return utils.decrypt(res.body!, key);
+    })();
+    // Enroll download ReadableStream
+    const enrollDownloadRes: MessageEvent = await enrollDownloadReadableStream(readableStream);
+    // Get download ID
+    const {downloadId} = enrollDownloadRes.data;
+    // Download via Service Worker
+    const aTag = document.createElement('a');
+    // NOTE: '/sw-download/v2' can be received by Service Worker in src/sw.js
+    // NOTE: URL fragment is passed to Service Worker but not passed to Web server
+    aTag.href = `/sw-download/v2#?id=${downloadId}&filename=${(this.props.secretPath)}`;
+    aTag.target = "_blank";
+    aTag.click();
   }
 }
 
