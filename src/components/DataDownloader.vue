@@ -145,7 +145,14 @@ export default class DataDownloader extends Vue {
       const res = await fetch(this.downloadPath);
       const resBody = await binconv.blobToUint8Array(await res.blob());
       // Decrypt the response body
-      const plain = await (await utilsAsync()).decrypt(resBody, key);
+      let plain: Uint8Array;
+      try {
+        plain = await (await utilsAsync()).decrypt(resBody, key);
+      } catch (e) {
+        console.log("failed to decrypt", e);
+        this.errorMessage = () => this.strings['password_might_be_wrong'];
+        return;
+      }
       // Save
       const FileSaver = await FileSaverAsync();
       FileSaver.saveAs(binconv.uint8ArrayToBlob(plain), this.props.secretPath);
@@ -156,7 +163,13 @@ export default class DataDownloader extends Vue {
     const res = await fetch(this.downloadPath);
     let readableStream: ReadableStream<Uint8Array> = res.body!
     if (key !== undefined) {
-      readableStream = await utils.decrypt(res.body!, key);
+      try {
+        readableStream = await utils.decrypt(res.body!, key);
+      } catch (e) {
+        console.log("failed to decrypt", e);
+        this.errorMessage = () => this.strings['password_might_be_wrong'];
+        return;
+      }
     }
     // Enroll download ReadableStream
     const enrollDownloadRes: MessageEvent = await enrollDownloadReadableStream(readableStream);
