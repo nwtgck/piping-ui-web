@@ -16,17 +16,26 @@ function generateRandomString(len: number): string {
   return [...randomArr].map(n => chars[n % chars.length]).join('');
 }
 
-const idToReadableStream: Map<string, ReadableStream> = new Map();
+type SwDownload = {
+  headers: [string, string][],
+  readableStream: ReadableStream,
+};
 
-// Generate unique download ID
-function generateUniqueDownloadId(): string {
+const idToSwDownload: Map<string, SwDownload> = new Map();
+
+// Generate unique sw-download ID
+function generateUniqueSwDownloadId(): string {
   // eslint-disable-next-line no-constant-condition
   while(true) {
-    const downloadInfoId = generateRandomString(128);
-    if (!idToReadableStream.has(downloadInfoId)) {
-      return downloadInfoId;
+    const id = generateRandomString(128);
+    if (!idToSwDownload.has(id)) {
+      return id;
     }
   }
+}
+
+function isHeaders(arg: unknown): arg is [string, string][] {
+  return Array.isArray(arg) && arg.every(e => Array.isArray(e) && e.length === 2 && typeof e[0] === "string" && typeof e[1] === "string");
 }
 
 // This is the code piece that GenerateSW mode can't provide for us.
@@ -41,21 +50,33 @@ self.addEventListener('message', (e: ExtendableMessageEvent) => {
       self.skipWaiting();
       break;
     case 'enroll-download': {
-      const readableStream = e.data.readableStream;
+      const {headers, readableStream} = e.data;
+      if (!isHeaders(headers)) {
+        console.error('data.headers is invalid');
+        return;
+      }
       if (!(readableStream instanceof ReadableStream)) {
         console.error('data.readableStream is not ReadableStream');
         return;
       }
       // Generate unique ID
-      const id = generateUniqueDownloadId();
+      const id = generateUniqueSwDownloadId();
       // Enroll info with the ID
-      idToReadableStream.set(id, readableStream);
+      idToSwDownload.set(id, {
+        headers,
+        readableStream,
+      });
       e.ports[0].postMessage({
-        downloadId: id,
+        swDownloadId: id,
       });
       break;
     }
     case 'enroll-download-with-channel': {
+      const {headers} = e.data;
+      if (!isHeaders(headers)) {
+        console.error('data.headers is invalid');
+        return;
+      }
       // Create ReadableStream from chunks over the channel
       const readableStream = new ReadableStream({
         start(ctrl) {
@@ -69,11 +90,14 @@ self.addEventListener('message', (e: ExtendableMessageEvent) => {
         }
       });
       // Generate unique ID
-      const id = generateUniqueDownloadId();
+      const id = generateUniqueSwDownloadId();
       // Enroll info with the ID
-      idToReadableStream.set(id, readableStream);
+      idToSwDownload.set(id, {
+        headers,
+        readableStream,
+      });
       e.ports[0].postMessage({
-        downloadId: id,
+        swDownloadId: id,
       });
       break;
     }
@@ -98,31 +122,20 @@ self.addEventListener('fetch', (event: FetchEvent) => {
     ));
   } else if (url.pathname === '/sw-download/v2') {
     const fragmentQuery = new URL(`a://a${url.hash.substring(1)}`).searchParams;
-    // Get download ID
+    // Get sw-download ID
     const id = fragmentQuery.get("id");
     if (id === null) {
       console.error("id not found", url);
       return;
     }
-    const filename = fragmentQuery.get("filename");
-    if (filename === null) {
-      console.error("filename not found", url);
-      return;
-    }
-    const readableStream = idToReadableStream.get(id);
-    if (readableStream === undefined) {
+    const swDownload = idToSwDownload.get(id);
+    if (swDownload === undefined) {
       console.error(`download ID ${id} not found`);
       return;
     }
-    idToReadableStream.delete(id);
-
-    // (from: https://github.com/jimmywarting/StreamSaver.js/blob/314e64b8984484a3e8d39822c9b86a345eb36454/sw.js#L120-L122)
-    // Make filename RFC5987 compatible
-    const escapedFilename = encodeURIComponent(filename).replace(/['()]/g, escape).replace(/\*/g, '%2A');
-    const headers = new Headers([
-      ['Content-Disposition', "attachment; filename*=UTF-8''" + escapedFilename],
-    ]);
-    event.respondWith(new Response(readableStream, {
+    idToSwDownload.delete(id);
+    const headers = new Headers(swDownload.headers);
+    event.respondWith(new Response(swDownload.readableStream, {
       headers,
     }));
   }
