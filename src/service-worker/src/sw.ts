@@ -120,6 +120,7 @@ self.addEventListener('fetch', (event: FetchEvent) => {
     // Make filename RFC5987 compatible
     const escapedFilename = encodeURIComponent(filename).replace(/['()]/g, escape).replace(/\*/g, '%2A');
     const headers = new Headers([
+      ['Content-Type', "image/jpeg"],
       ['Content-Disposition', "attachment; filename*=UTF-8''" + escapedFilename],
     ]);
     event.respondWith(new Response(readableStream, {
