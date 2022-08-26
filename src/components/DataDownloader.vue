@@ -45,6 +45,7 @@ import type {Protection, VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import {pipingUiAuthAsync} from "@/pipingUiAuthWithWebpackChunkName"
 import {language} from "@/language";
+import * as fileType from 'file-type/browser';
 
 const FileSaverAsync = () => import('file-saver');
 const binconvAsync = () => import('binconv');
@@ -171,20 +172,36 @@ export default class DataDownloader extends Vue {
         return;
       }
     }
-    // Enroll download ReadableStream and get download ID
-    const {downloadId} = await enrollDownloadReadableStream(readableStream);
+    const [readableStreamForDownload, readableStreamForFileType] = readableStream.tee();
+    const fileTypeResult = await fileType.fromStream(readableStreamForFileType);
+    let fileName = this.props.secretPath;
+    if (fileTypeResult !== undefined && !fileName.match(/.+\..+/)) {
+      fileName = `${fileName}.${fileTypeResult.ext}`;
+    }
+    // (from: https://github.com/jimmywarting/StreamSaver.js/blob/314e64b8984484a3e8d39822c9b86a345eb36454/sw.js#L120-L122)
+    // Make filename RFC5987 compatible
+    const escapedFileName = encodeURIComponent(fileName).replace(/['()]/g, escape).replace(/\*/g, '%2A');
+    // FIXME: Use `[string, string][]` instead. But lint causes an error "0:0  error  Parsing error: Cannot read properties of undefined (reading 'map')"
+    const headers: string[][] = [
+      // Without "Content-Type", Safari in iOS 15 adds ".html" to the downloading file
+      ...( fileTypeResult === undefined ? [] : [ [ "Content-Type", fileTypeResult.mime ] ] ),
+      ['Content-Disposition', "attachment; filename*=UTF-8''" + escapedFileName],
+    ];
+    // Enroll download ReadableStream and get sw-download ID
+    const {swDownloadId} = await enrollDownload(headers, readableStreamForDownload);
     // Download via Service Worker
     const aTag = document.createElement('a');
     // NOTE: '/sw-download/v2' can be received by Service Worker in src/sw.js
     // NOTE: URL fragment is passed to Service Worker but not passed to Web server
-    aTag.href = `/sw-download/v2#?id=${downloadId}&filename=${(this.props.secretPath)}`;
+    aTag.href = `/sw-download/v2#?id=${swDownloadId}`;
     aTag.target = "_blank";
     aTag.click();
   }
 }
 
 // (base: https://googlechrome.github.io/samples/service-worker/post-message/)
-async function enrollDownloadReadableStream(readableStream: ReadableStream<Uint8Array>): Promise<{ downloadId: string }> {
+// FIXME: Use `[string, string][]` instead. But lint causes an error "0:0  error  Parsing error: Cannot read properties of undefined (reading 'map')"
+async function enrollDownload(headers: string[][], readableStream: ReadableStream<Uint8Array>): Promise<{ swDownloadId: string }> {
   const utils = await utilsAsync();
   // eslint-disable-next-line no-async-promise-executor
   return new Promise(async (resolve, reject) => {
@@ -199,10 +216,11 @@ async function enrollDownloadReadableStream(readableStream: ReadableStream<Uint8
     if (utils.canTransferReadableStream()) {
       const messageChannel = new MessageChannel();
       messageChannel.port1.onmessage = (e: MessageEvent) => resolve({
-        downloadId: e.data.downloadId,
+        swDownloadId: e.data.swDownloadId,
       });
       navigator.serviceWorker.controller.postMessage({
         type: 'enroll-download',
+        headers,
         readableStream,
       }, [messageChannel.port2, readableStream] as Transferable[]);
       return;
@@ -210,10 +228,11 @@ async function enrollDownloadReadableStream(readableStream: ReadableStream<Uint8
     console.log("Fallback to posting chunks of ReadableStream over MessageChannel, instead of transferring the stream directly")
     const messageChannel = new MessageChannel();
     messageChannel.port1.onmessage = (e: MessageEvent) => resolve({
-      downloadId: e.data.downloadId,
+      swDownloadId: e.data.swDownloadId,
     });
     navigator.serviceWorker.controller.postMessage({
       type: 'enroll-download-with-channel',
+      headers,
     }, [messageChannel.port2]);
 
     const reader = readableStream.getReader();
