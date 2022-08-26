@@ -45,6 +45,7 @@ import type {Protection, VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import {pipingUiAuthAsync} from "@/pipingUiAuthWithWebpackChunkName"
 import {language} from "@/language";
+import * as fileType from 'file-type/browser';
 
 const FileSaverAsync = () => import('file-saver');
 const binconvAsync = () => import('binconv');
@@ -171,15 +172,23 @@ export default class DataDownloader extends Vue {
         return;
       }
     }
+    const [readableStreamForDownload, readableStreamForFileType] = readableStream.tee();
+    const fileTypeResult = await fileType.fromStream(readableStreamForFileType);
+    let fileName = this.props.secretPath;
+    if (fileTypeResult !== undefined && !fileName.match(/.+\..+/)) {
+      fileName = `${fileName}.${fileTypeResult.ext}`;
+    }
     // (from: https://github.com/jimmywarting/StreamSaver.js/blob/314e64b8984484a3e8d39822c9b86a345eb36454/sw.js#L120-L122)
     // Make filename RFC5987 compatible
-    const escapedFilename = encodeURIComponent(this.props.secretPath).replace(/['()]/g, escape).replace(/\*/g, '%2A');
+    const escapedFileName = encodeURIComponent(fileName).replace(/['()]/g, escape).replace(/\*/g, '%2A');
     // FIXME: Use `[string, string][]` instead. But lint causes an error "0:0  error  Parsing error: Cannot read properties of undefined (reading 'map')"
     const headers: string[][] = [
-      ['Content-Disposition', "attachment; filename*=UTF-8''" + escapedFilename],
+      // Without "Content-Type", Safari in iOS 15 adds ".html" to the downloading file
+      ...( fileTypeResult === undefined ? [] : [ [ "Content-Type", fileTypeResult.mime ] ] ),
+      ['Content-Disposition', "attachment; filename*=UTF-8''" + escapedFileName],
     ];
     // Enroll download ReadableStream and get sw-download ID
-    const {swDownloadId} = await enrollDownload(headers, readableStream);
+    const {swDownloadId} = await enrollDownload(headers, readableStreamForDownload);
     // Download via Service Worker
     const aTag = document.createElement('a');
     // NOTE: '/sw-download/v2' can be received by Service Worker in src/sw.js
