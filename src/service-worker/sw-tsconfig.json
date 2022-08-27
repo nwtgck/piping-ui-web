@@ -12,9 +12,7 @@
     "outDir": "dist",
     "rootDir": "./",
     "baseUrl": ".",
-    "types": [
-      "workbox-sw",
-    ],
+    "types": [],
     "paths": {
       "*": ["types/*"]
     }
@@ -26,4 +24,3 @@
     "node_modules/*"
   ]
 }
-

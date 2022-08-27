@@ -3,8 +3,8 @@ const path = require('path');
 module.exports = {
   target: 'webworker',
   output: {
-    filename: 'sw.js',
-    path: path.resolve(__dirname, 'dist', 'src')
+    filename: 'service-worker.js',
+    path: path.resolve(__dirname, '../../public')
   },
   module: {
     rules: [

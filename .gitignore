@@ -6,6 +6,7 @@ node_modules
 /public/openpgp
 /public/sitemap.xml
 /public/robots.txt
+/public/service-worker.js
 /src/service-worker/dist
 
 # local env files
