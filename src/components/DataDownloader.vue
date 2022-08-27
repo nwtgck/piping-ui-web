@@ -165,7 +165,7 @@ export default class DataDownloader extends Vue {
     let readableStream: ReadableStream<Uint8Array> = res.body!
     if (key !== undefined) {
       try {
-        readableStream = await utils.decrypt(res.body!, key);
+        readableStream = await utils.decryptStream(res.body!, key);
       } catch (e) {
         console.log("failed to decrypt", e);
         this.errorMessage = () => this.strings['password_might_be_wrong'];
