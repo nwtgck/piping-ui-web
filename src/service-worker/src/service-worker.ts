@@ -38,6 +38,12 @@ function isHeaders(arg: unknown): arg is [string, string][] {
   return Array.isArray(arg) && arg.every(e => Array.isArray(e) && e.length === 2 && typeof e[0] === "string" && typeof e[1] === "string");
 }
 
+self.addEventListener('activate', (e: ExtendableEvent) => {
+  // Activate Service Worker's "fetch" without user reload at the first time
+  // (from: https://stackoverflow.com/a/41224941)
+  e.waitUntil(self.clients.claim());
+});
+
 // This is the code piece that GenerateSW mode can't provide for us.
 // This code listens for the user's confirmation to update the app.
 self.addEventListener('message', (e: ExtendableMessageEvent) => {
