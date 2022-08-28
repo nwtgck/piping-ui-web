@@ -131,6 +131,7 @@ export default class DataDownloader extends Vue {
     if (!swDownload.supportsSwDownload()) {
       // If password-protection is disabled
       if (key === undefined) {
+        // NOTE: Should use streaming-download via Service Worker as possible because it can detect MIME type and attach a file extension.
         console.log("downloading with dynamic <a href> click...");
         // Download or show on browser sometimes
         const aTag = document.createElement('a');
@@ -159,9 +160,10 @@ export default class DataDownloader extends Vue {
       FileSaver.saveAs(binconv.uint8ArrayToBlob(plain), this.props.secretPath);
       return;
     }
-    console.log("downloading streaming and decrypting with the Service Worker...");
+    console.log("downloading streaming with the Service Worker and decrypting if need...");
     const utils = await utilsAsync();
     const res = await fetch(this.downloadPath);
+    const contentLengthStr: string | undefined = key === undefined ? res.headers.get("Content-Length") ?? undefined : undefined;
     let readableStream: ReadableStream<Uint8Array> = res.body!
     if (key !== undefined) {
       try {
@@ -183,6 +185,7 @@ export default class DataDownloader extends Vue {
     const escapedFileName = encodeURIComponent(fileName).replace(/['()]/g, escape).replace(/\*/g, '%2A');
     // FIXME: Use `[string, string][]` instead. But lint causes an error "0:0  error  Parsing error: Cannot read properties of undefined (reading 'map')"
     const headers: string[][] = [
+      ... ( contentLengthStr === undefined ? [] : [ [ "Content-Length", contentLengthStr ] ] ),
       // Without "Content-Type", Safari in iOS 15 adds ".html" to the downloading file
       ...( fileTypeResult === undefined ? [] : [ [ "Content-Type", fileTypeResult.mime ] ] ),
       ['Content-Disposition', "attachment; filename*=UTF-8''" + escapedFileName],
