@@ -109,14 +109,14 @@ import {blobToReadableStream} from 'binconv/dist/src/blobToReadableStream';
 
 import * as utils from '@/utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
-import {globalStore} from "@/vue-global";
-import {stringsByLang} from "@/strings";
+import {stringsByLang} from "@/strings/strings-by-lang";
 import {mdiAlert, mdiCancel, mdiCheck, mdiChevronDown, mdiCloseCircle} from "@mdi/js";
 import AsyncComputed from 'vue-async-computed-decorator';
 import type {Protection, VerificationStep, VerifiedParcel} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import {pipingUiAuthAsync} from "@/pipingUiAuthWithWebpackChunkName"
 import {type ActualFileObject} from "filepond";
+import {language} from "@/language";
 
 
 export type DataUploaderProps = {
@@ -230,7 +230,7 @@ export default class DataUploader extends Vue {
 
   // for language support
   private get strings() {
-    return stringsByLang(globalStore.language);
+    return stringsByLang(language.value);
   }
 
   constructor() {

@@ -36,16 +36,21 @@
 <script lang="ts">
 /* eslint-disable no-console */
 
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import {Component, Prop, Vue} from 'vue-property-decorator';
 import urlJoin from 'url-join';
 import {mdiAlert, mdiChevronDown} from "@mdi/js";
-
-import {globalStore} from "@/vue-global";
-import {stringsByLang} from "@/strings";
+import {stringsByLang} from "@/strings/strings-by-lang";
 import * as pipingUiUtils from "@/piping-ui-utils";
 import type {Protection, VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import {pipingUiAuthAsync} from "@/pipingUiAuthWithWebpackChunkName"
+import {language} from "@/language";
+import * as fileType from 'file-type/browser';
+
+const FileSaverAsync = () => import('file-saver');
+const binconvAsync = () => import('binconv');
+const swDownloadAsync = () => import("@/sw-download");
+const utilsAsync = () => import("@/utils");
 
 export type DataDownloaderProps = {
   downloadNo: number,
@@ -68,7 +73,7 @@ export default class DataDownloader extends Vue {
 
   // for language support
   private get strings() {
-    return stringsByLang(globalStore.language);
+    return stringsByLang(language.value);
   }
 
   private get hasError(): boolean {
@@ -116,18 +121,133 @@ export default class DataDownloader extends Vue {
 
     // If error
     if (keyExchangeRes.type === "error") {
-      this.errorMessage = () => keyExchangeRes.errorMessage(globalStore.language);
+      this.errorMessage = () => keyExchangeRes.errorMessage(language.value);
       return;
     }
     const {key} = keyExchangeRes;
 
-    // Decrypting & Download
-    await pipingUiUtils.decryptingDownload({
-      downloadUrl: this.downloadPath,
-      fileName: this.props.secretPath,
-      key,
-      decryptErrorMessage: this.strings['password_might_be_wrong'],
-    });
+    const swDownload = await swDownloadAsync();
+    // If not supporting stream-download via Service Worker
+    if (!swDownload.supportsSwDownload()) {
+      // If password-protection is disabled
+      if (key === undefined) {
+        // NOTE: Should use streaming-download via Service Worker as possible because it can detect MIME type and attach a file extension.
+        console.log("downloading with dynamic <a href> click...");
+        // Download or show on browser sometimes
+        const aTag = document.createElement('a');
+        aTag.href = this.downloadPath;
+        aTag.target = "_blank";
+        aTag.download = this.props.secretPath;
+        aTag.click();
+        return;
+      }
+      console.log("downloading and decrypting with FileSaver.saveAs()...");
+      const binconv = await binconvAsync();
+      // Get response
+      const res = await fetch(this.downloadPath);
+      const resBody = await binconv.blobToUint8Array(await res.blob());
+      // Decrypt the response body
+      let plain: Uint8Array;
+      try {
+        plain = await (await utilsAsync()).decrypt(resBody, key);
+      } catch (e) {
+        console.log("failed to decrypt", e);
+        this.errorMessage = () => this.strings['password_might_be_wrong'];
+        return;
+      }
+      // Save
+      const FileSaver = await FileSaverAsync();
+      FileSaver.saveAs(binconv.uint8ArrayToBlob(plain), this.props.secretPath);
+      return;
+    }
+    console.log("downloading streaming with the Service Worker and decrypting if need...");
+    const utils = await utilsAsync();
+    const res = await fetch(this.downloadPath);
+    const contentLengthStr: string | undefined = key === undefined ? res.headers.get("Content-Length") ?? undefined : undefined;
+    let readableStream: ReadableStream<Uint8Array> = res.body!
+    if (key !== undefined) {
+      try {
+        readableStream = await utils.decryptStream(res.body!, key);
+      } catch (e) {
+        console.log("failed to decrypt", e);
+        this.errorMessage = () => this.strings['password_might_be_wrong'];
+        return;
+      }
+    }
+    const [readableStreamForDownload, readableStreamForFileType] = readableStream.tee();
+    const fileTypeResult = await fileType.fromStream(readableStreamForFileType);
+    let fileName = this.props.secretPath;
+    if (fileTypeResult !== undefined && !fileName.match(/.+\..+/)) {
+      fileName = `${fileName}.${fileTypeResult.ext}`;
+    }
+    // (from: https://github.com/jimmywarting/StreamSaver.js/blob/314e64b8984484a3e8d39822c9b86a345eb36454/sw.js#L120-L122)
+    // Make filename RFC5987 compatible
+    const escapedFileName = encodeURIComponent(fileName).replace(/['()]/g, escape).replace(/\*/g, '%2A');
+    // FIXME: Use `[string, string][]` instead. But lint causes an error "0:0  error  Parsing error: Cannot read properties of undefined (reading 'map')"
+    const headers: string[][] = [
+      ... ( contentLengthStr === undefined ? [] : [ [ "Content-Length", contentLengthStr ] ] ),
+      // Without "Content-Type", Safari in iOS 15 adds ".html" to the downloading file
+      ...( fileTypeResult === undefined ? [] : [ [ "Content-Type", fileTypeResult.mime ] ] ),
+      ['Content-Disposition', "attachment; filename*=UTF-8''" + escapedFileName],
+    ];
+    // Enroll download ReadableStream and get sw-download ID
+    const {swDownloadId} = await enrollDownload(headers, readableStreamForDownload);
+    // Download via Service Worker
+    const aTag = document.createElement('a');
+    // NOTE: '/sw-download/v2' can be received by Service Worker in src/sw.js
+    // NOTE: URL fragment is passed to Service Worker but not passed to Web server
+    aTag.href = `/sw-download/v2#?id=${swDownloadId}`;
+    aTag.target = "_blank";
+    aTag.click();
   }
+}
+
+// (base: https://googlechrome.github.io/samples/service-worker/post-message/)
+// FIXME: Use `[string, string][]` instead. But lint causes an error "0:0  error  Parsing error: Cannot read properties of undefined (reading 'map')"
+async function enrollDownload(headers: string[][], readableStream: ReadableStream<Uint8Array>): Promise<{ swDownloadId: string }> {
+  const utils = await utilsAsync();
+  // eslint-disable-next-line no-async-promise-executor
+  return new Promise(async (resolve, reject) => {
+    if (!("serviceWorker" in navigator)) {
+      reject(new Error("Service Worker not supported"));
+      return;
+    }
+    if (navigator.serviceWorker.controller === null) {
+      reject(new Error("navigator.serviceWorker.controller is null"));
+      return;
+    }
+    if (utils.canTransferReadableStream()) {
+      const messageChannel = new MessageChannel();
+      messageChannel.port1.onmessage = (e: MessageEvent) => resolve({
+        swDownloadId: e.data.swDownloadId,
+      });
+      navigator.serviceWorker.controller.postMessage({
+        type: 'enroll-download',
+        headers,
+        readableStream,
+      }, [messageChannel.port2, readableStream] as Transferable[]);
+      return;
+    }
+    console.log("Fallback to posting chunks of ReadableStream over MessageChannel, instead of transferring the stream directly")
+    const messageChannel = new MessageChannel();
+    messageChannel.port1.onmessage = (e: MessageEvent) => resolve({
+      swDownloadId: e.data.swDownloadId,
+    });
+    navigator.serviceWorker.controller.postMessage({
+      type: 'enroll-download-with-channel',
+      headers,
+    }, [messageChannel.port2]);
+
+    const reader = readableStream.getReader();
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const result = await reader.read();
+      if (result.done) {
+        messageChannel.port1.postMessage({ done: true });
+        break;
+      }
+      messageChannel.port1.postMessage(result, [result.value.buffer]);
+    }
+  });
 }
 </script>

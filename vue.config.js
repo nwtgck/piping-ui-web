@@ -23,22 +23,4 @@ module.exports = {
   },
   // (from: https://github.com/vuetifyjs/vuetify/issues/8279#issuecomment-517900297)
   transpileDependencies: ['vuetify'],
-  // (from: https://medium.com/@dougallrich/give-users-control-over-app-updates-in-vue-cli-3-pwas-20453aedc1f2)
-  pwa: {
-    workboxPluginMode: 'InjectManifest',
-    workboxOptions: {
-      swSrc: './src/service-worker/dist/src/sw.js',
-      swDest: 'service-worker.js',
-      importWorkboxFrom: 'local',
-      exclude: [
-        /\.map$/,
-        '_redirects',
-        // Ignore piping-ui.auth caching because the logic can be changeable in the future
-        /piping-ui-auth.*\.js/,
-        // Exclude all
-        // TODO: disable workbox later
-        /.*/,
-      ],
-    },
-  }
 };

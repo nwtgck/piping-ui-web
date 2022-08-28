@@ -9,7 +9,7 @@ import {
   VerifiedParcel,
   verifiedParcelType
 } from "@/datatypes";
-import {stringsByLang} from "@/strings";
+import {stringsByLang} from "@/strings/strings-by-lang";
 import type {Validation} from "io-ts";
 const utilsAsync = () => import("@/utils");
 

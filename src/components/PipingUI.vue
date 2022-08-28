@@ -213,11 +213,12 @@ import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiClose, mdiEye, mdiEye
 
 import {keys} from "@/local-storage-keys";
 import {globalStore} from "@/vue-global";
-import {stringsByLang} from "@/strings";
+import {stringsByLang} from "@/strings/strings-by-lang";
 import * as filePond from "filepond";
 import {baseAndExt} from "@/utils";
 import type {Protection} from "@/datatypes";
 import buildConstants from "@/build-constants";
+import {language} from "@/language";
 
 (async () => require('filepond/dist/filepond.min.css'))();
 
@@ -330,7 +331,7 @@ export default class PipingUI extends Vue {
 
   // for language support
   private get strings() {
-    return stringsByLang(globalStore.language);
+    return stringsByLang(language.value);
   }
 
   // FIXME: Should be removed

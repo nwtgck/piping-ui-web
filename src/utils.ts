@@ -1,14 +1,10 @@
 /* eslint-disable no-console */
-import {memorizeFunc} from "@/memorize-func";
 import {type ActualFileObject} from "filepond";
 
 const JSZipAsync = () => import('jszip').then(p => p.default);
 const sanitizeHtmlAsync  = () => import("sanitize-html").then(p => p.default);
-const openpgpAsync = memorizeFunc(async () => {
-  const openpgp = await import('openpgp');
-  await openpgp.initWorker({ path: 'openpgp/openpgp.worker.min.js' });
-  return openpgp;
-});
+const openpgpAsync = () => import("@/openpgp-import");
+
 const uint8ArrayToHexStringAsync = () => import("binconv/dist/src/uint8ArrayToHexString").then(p => p.default);
 const uint8ArrayToReadableStreamAsync = () => import("binconv/dist/src/uint8ArrayToReadableStream").then(p => p.default);
 const readableStreamToUint8ArrayAsync = () => import("binconv/dist/src/readableStreamToUint8Array").then(p => p.default);
@@ -97,7 +93,8 @@ export async function sanitizeHtmlAllowingATag(dirtyHtml: string): Promise<strin
 }
 
 export async function encrypt<T extends Uint8Array | ReadableStream<Uint8Array>>(stream: T, password: string | Uint8Array): Promise<T> {
-  const openpgp = await openpgpAsync();
+  const {openpgpWithWorker} = await openpgpAsync();
+  const openpgp = await openpgpWithWorker;
   // Encrypt with PGP
   const encryptResult = await openpgp.encrypt({
     message: openpgp.message.fromBinary(stream),
@@ -110,15 +107,28 @@ export async function encrypt<T extends Uint8Array | ReadableStream<Uint8Array>>
   return encrypted;
 }
 
-export async function decrypt(bytes: Uint8Array, password: string | Uint8Array): Promise<Uint8Array> {
-  const openpgp = await openpgpAsync();
+export async function decrypt(encrypted: Uint8Array, password: string | Uint8Array): Promise<Uint8Array> {
+  const {openpgpWithWorker} = await openpgpAsync();
+  const openpgp = await openpgpWithWorker;
   const plain = (await openpgp.decrypt({
-    message: await openpgp.message.read(bytes),
+    message: await openpgp.message.read(encrypted),
     // FIXME: convert Uint8Array password to string in better way
     passwords: [password.toString()],
     format: 'binary'
-  })).data as Uint8Array;
+  })).data;
   return plain;
+}
+
+export async function decryptStream(encrypted: ReadableStream<Uint8Array>, password: string | Uint8Array): Promise<ReadableStream<Uint8Array>> {
+  const {openpgpWithWorker, toPolyfillReadableIfNeed, toNativeReadableIfNeed} = await openpgpAsync();
+  const openpgp = await openpgpWithWorker;
+  const plain = (await openpgp.decrypt({
+    message: await openpgp.message.read(toPolyfillReadableIfNeed(encrypted)),
+    // FIXME: convert Uint8Array password to string in better way
+    passwords: [password.toString()],
+    format: 'binary',
+  })).data;
+  return toNativeReadableIfNeed(plain) as ReadableStream<Uint8Array>;
 }
 
 export async function sha256(input: string): Promise<string> {
@@ -140,27 +150,6 @@ export function makePromise<T>(): {promise: Promise<T>, resolve: (value: T | Pro
     reject  = _reject;
   });
   return {promise, resolve, reject};
-}
-
-/**
- * Send a message to Service Worker
- * base: https://googlechrome.github.io/samples/service-worker/post-message/
- * @param message
- */
-export function sendToServiceWorker(message: any): Promise<MessageEvent> {
-  return new Promise((resolve, reject) => {
-    if (!("serviceWorker" in navigator)) {
-      reject(new Error("Service Worker not supported"));
-      return;
-    }
-    if (navigator.serviceWorker.controller === null) {
-      reject(new Error("navigator.serviceWorker.controller is null"));
-      return;
-    }
-    const messageChannel = new MessageChannel();
-    messageChannel.port1.onmessage = resolve;
-    navigator.serviceWorker.controller.postMessage(message, [messageChannel.port2]);
-  });
 }
 
 // Check fetch() upload streaming support with Piping Server
@@ -198,6 +187,23 @@ export async function supportsFetchUploadStreaming(pipingServerUrl: string): Pro
     return text === 'ABC';
   } catch (e) {
     console.error("failed to detect fetch upload streaming", e);
+    return false;
+  }
+}
+
+/**
+ * Feature detection whether ReadableStream is Transferable or not
+ */
+export function canTransferReadableStream(): boolean {
+  const messageChannel = new MessageChannel();
+  const r = new ReadableStream();
+  try {
+    messageChannel.port1.postMessage(r, {
+      transfer: [r] as any as Transferable[],
+    });
+    return true;
+  } catch (e) {
+    // Safari causes an error "DataCloneError: The object can not be cloned."
     return false;
   }
 }
