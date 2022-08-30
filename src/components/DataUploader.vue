@@ -117,6 +117,7 @@ import VerificationCode from "@/components/VerificationCode.vue";
 import {pipingUiAuthAsync} from "@/pipingUiAuthWithWebpackChunkName"
 import {type ActualFileObject} from "filepond";
 import {language} from "@/language";
+import {globalStore} from "@/vue-global";
 
 
 export type DataUploaderProps = {
@@ -325,9 +326,10 @@ export default class DataUploader extends Vue {
     // Check whether fetch() upload streaming is supported
     const supportsUploadStreaming = await utils.supportsFetchUploadStreaming(this.props.serverUrl);
     console.log("streaming upload support: ", supportsUploadStreaming);
+    console.log("force disable streaming upload: ", globalStore.forceDisableStreamingUpload);
 
     // fetch() upload streaming is not supported
-    if (!supportsUploadStreaming) {
+    if (globalStore.forceDisableStreamingUpload || !supportsUploadStreaming) {
       this.isNonStreamingEncrypting = true;
       // Convert plain body blob to Uint8Array
       const plainBodyArray: Uint8Array = await blobToUint8Array(plainBody);

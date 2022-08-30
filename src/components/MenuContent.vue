@@ -52,6 +52,13 @@
         </v-list-item-action>
       </v-list-item>
 
+      <v-list-item>
+        <v-list-item-title>Force disable streaming upload</v-list-item-title>
+        <v-list-item-action>
+          <v-switch v-model="globalStore.forceDisableStreamingUpload"></v-switch>
+        </v-list-item-action>
+      </v-list-item>
+
       <v-list-item @click="input(true)">
         <v-list-item-title>{{ strings['open_source_licenses'] }}</v-list-item-title>
       </v-list-item>
@@ -76,6 +83,8 @@ export default class MenuContent extends Vue {
   // v-model is licenseDialog
   @Prop() public value!: boolean;
   @Emit() public input(value: boolean) {}
+
+  private globalStore = globalStore;
 
   get enableDarkTheme() {
     return enableDarkTheme.value;
