@@ -52,6 +52,13 @@
         </v-list-item-action>
       </v-list-item>
 
+      <v-list-item>
+        <v-list-item-title>Force disable streaming upload</v-list-item-title>
+        <v-list-item-action>
+          <v-switch v-model="globalStore.forceDisableStreamingUpload"></v-switch>
+        </v-list-item-action>
+      </v-list-item>
+
       <v-list-item @click="input(true)">
         <v-list-item-title>{{ strings['open_source_licenses'] }}</v-list-item-title>
       </v-list-item>
@@ -60,11 +67,11 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Watch, Prop, Emit } from 'vue-property-decorator';
+import { Component, Vue, Prop, Emit } from 'vue-property-decorator';
 import {globalStore} from "@/vue-global";
 import {keys} from "@/local-storage-keys";
 import {stringsByLang} from "@/strings/strings-by-lang";
-import enableDarkTheme from "@/enable-dark-theme";
+import {enableDarkTheme} from "@/enable-dark-theme";
 import {language} from "@/language";
 
 
@@ -77,7 +84,17 @@ export default class MenuContent extends Vue {
   @Prop() public value!: boolean;
   @Emit() public input(value: boolean) {}
 
-  private enableDarkTheme: boolean = false;
+  private globalStore = globalStore;
+
+  get enableDarkTheme() {
+    return enableDarkTheme.value;
+  }
+  set enableDarkTheme(v: boolean) {
+    enableDarkTheme.value = v;
+    // Enable dark theme
+    this.$vuetify.theme.dark = v;
+  }
+
   private availableLanguages: {lang: Language, str: string}[] = [
     {lang: 'en', str: 'English'},
     {lang: 'ja', str: '日本語'},
@@ -111,8 +128,6 @@ export default class MenuContent extends Vue {
   }
 
   mounted () {
-    this.enableDarkTheme = enableDarkTheme();
-
     // Load server url recording setting
     const recordsServerUrlHistory = window.localStorage.getItem((keys.recordsServerUrlHistory));
     if (recordsServerUrlHistory !== null) {
@@ -124,14 +139,6 @@ export default class MenuContent extends Vue {
     if (recordsSecretPathHistory !== null) {
       globalStore.recordsSecretPathHistory = recordsSecretPathHistory === "true";
     }
-  }
-
-  @Watch('enableDarkTheme')
-  onEnableDarkTheme() {
-    // Enable dark theme
-    this.$vuetify.theme.dark = this.enableDarkTheme;
-    // Save dark theme setting in Local Storage
-    window.localStorage.setItem(keys.darkTheme, this.enableDarkTheme.toString());
   }
 }
 </script>

@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [0.9.0] - 2022-08-30
+### Change
+- Force disable streaming-upload because Chrome Stable 105.0.5195.52 causes an error "Failed to load resource: net::ERR_FAILED", which will be enabled again after Chrome fixed
+
 ## [0.8.0] - 2022-08-28
 ### Added
 - Support streaming-download support for Safari
@@ -390,7 +394,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 ### Added
 - First release
 
-[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/nwtgck/piping-ui-web/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/nwtgck/piping-ui-web/compare/v0.7.3...v0.8.0
 [0.7.3]: https://github.com/nwtgck/piping-ui-web/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/nwtgck/piping-ui-web/compare/v0.7.1...v0.7.2

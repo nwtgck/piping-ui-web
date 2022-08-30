@@ -1,6 +1,6 @@
 import Vue from 'vue';
 import Vuetify from 'vuetify/lib';
-import enableDarkTheme from "@/enable-dark-theme";
+import {enableDarkTheme} from "@/enable-dark-theme";
 
 Vue.use(Vuetify);
 
@@ -9,6 +9,6 @@ export default new Vuetify({
     iconfont: 'mdiSvg',
   },
   theme: {
-    dark: enableDarkTheme(),
+    dark: enableDarkTheme.value,
   },
 });
