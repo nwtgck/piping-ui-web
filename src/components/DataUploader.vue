@@ -1,5 +1,5 @@
 <template>
-  <v-expansion-panel active="true">
+  <v-expansion-panel ref="rootElement" active="true">
     <v-expansion-panel-header :disable-icon-rotate="isDoneUpload || hasError">
       <span>{{ strings['upload'] }} #{{ props.uploadNo }}</span>
       <!-- Percentage -->
@@ -101,7 +101,7 @@
 
 <script lang="ts">
 /* eslint-disable no-console */
-import {Component, Prop, Vue} from 'vue-property-decorator';
+import Vue, {computed, defineComponent, onMounted, PropType, ref, watch} from "vue";
 import urlJoin from 'url-join';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
 import {stringToUint8Array} from 'binconv/dist/src/stringToUint8Array';
@@ -111,7 +111,6 @@ import * as utils from '@/utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
 import {stringsByLang} from "@/strings/strings-by-lang";
 import {mdiAlert, mdiCancel, mdiCheck, mdiChevronDown, mdiCloseCircle} from "@mdi/js";
-import AsyncComputed from 'vue-async-computed-decorator';
 import type {Protection, VerificationStep, VerifiedParcel} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import {pipingUiAuthAsync} from "@/pipingUiAuthWithWebpackChunkName"
@@ -129,296 +128,309 @@ export type DataUploaderProps = {
 };
 
 // NOTE: Automatically upload when mounted
-@Component({
+export default defineComponent({
   components: {
     VerificationCode,
   },
-})
-export default class DataUploader extends Vue {
-  @Prop() private props!: DataUploaderProps;
-
-  // Progress bar setting
-  private progressSetting: {loadedBytes: number, totalBytes?: number} = {
-    loadedBytes: 0,
-    totalBytes: undefined,
-  };
-
-  private readableBytesString = utils.readableBytesString;
-
-  // NOTE: Function makes dynamic language-switch support possible
-  //       Delegation is to reassign this value
-  private errorMessageDelegate: () => string | Promise<string> =
-    () => "";
-  @AsyncComputed()
-  async errorMessage(): Promise<string> {
-    return this.errorMessageDelegate();
-  }
-  private xhr: XMLHttpRequest;
-  private canceled: boolean = false;
-  private isCompressing: boolean = false;
-  private isNonStreamingEncrypting: boolean = false;
-  private verificationStep: VerificationStep = {type: 'initial'};
-
-  private icons = {
-    mdiCloseCircle,
-    mdiCheck,
-    mdiCancel,
-  };
-
-  private get progressPercentage(): number | null {
-    if (this.progressSetting.totalBytes === undefined) {
-      return null;
-    } else if (this.progressSetting.totalBytes === 0) {
-      return 100;
-    } else {
-      return this.progressSetting.loadedBytes / this.progressSetting.totalBytes * 100;
-    }
-  }
-
-  private get isDoneUpload(): boolean {
-    return this.progressPercentage === 100;
-  }
-
-  private get uploadPath(): string {
-    return urlJoin(this.props.serverUrl, this.props.secretPath);
-  }
-
-  @AsyncComputed()
-  private async hasError(): Promise<boolean> {
-    return await this.errorMessageDelegate() !== "";
-  }
-
-  private get headerIcon(): string {
-    // NOTE: getter `hasError` is created by @AsyncComputed
-    const self = (this as unknown as {hasError: boolean});
-    if (self.hasError) {
-      return mdiAlert;
-    } else if (this.canceled) {
-      return mdiCloseCircle;
-    } else if (this.isDoneUpload) {
-      return mdiCheck;
-    } else {
-      return mdiChevronDown;
-    }
-  }
-
-  private get headerIconColor(): string | undefined {
-    // NOTE: Getter `hasError` is created by @AsyncComputed
-    const self = (this as unknown as {hasError: boolean});
-    if (self.hasError) {
-      return "error";
-    } else if (this.canceled) {
-      return "warning";
-    } else if (this.isDoneUpload) {
-      return "teal";
-    } else {
-      return undefined
-    }
-  }
-
-  private get isCancelable(): boolean {
-    return this.isReadyToUpload && !this.isDoneUpload && !this.hasError && !this.canceled;
-  }
-
-  private get isReadyToUpload(): boolean {
-    const notCompressingAndEncrypting = !this.isCompressing && !this.isNonStreamingEncrypting;
-    if (this.props.protection.type === 'passwordless') {
-      return this.verificationStep.type === 'verified' && this.verificationStep.verified && notCompressingAndEncrypting;
-    } else {
-      return notCompressingAndEncrypting;
-    }
-  }
-
-  // for language support
-  private get strings() {
-    return stringsByLang(language.value);
-  }
-
-  constructor() {
-    super();
-    this.xhr = new XMLHttpRequest();
-  }
-
-  async mounted() {
-    // Scroll to this element
-    // NOTE: no need to add `await`
-    pipingUiUtils.scrollTo(this.$el);
-
-    switch (this.props.protection.type) {
-      case 'raw':
-        // Send
-        await this.send(undefined);
-        break;
-      case 'password':
-        // Send
-        await this.send(this.props.protection.password);
-        break;
-      case 'passwordless': {
-        // Key exchange
-        const keyExchangeRes = await (await pipingUiAuthAsync).keyExchange(this.props.serverUrl, 'sender', this.props.secretPath);
-        if (keyExchangeRes.type === 'error') {
-          this.verificationStep = {type: 'error'};
-          this.errorMessageDelegate = () => this.strings['key_exchange_error'](keyExchangeRes.errorCode);
-          return;
-        }
-        const {key, verificationCode} = keyExchangeRes;
-        this.verificationStep = {type: 'verification_code_arrived', verificationCode, key};
-        break;
-      }
-    }
-  }
-
-  private async verify(verified: boolean) {
-    if (this.verificationStep.type !== 'verification_code_arrived') {
-      throw new Error("Unexpected state: this.verificationStep.type should be 'verification_code_arrived'");
-    }
-    const {key} = this.verificationStep;
-    this.verificationStep = {type: 'verified', verified};
-
-
-    const verifiedParcel: VerifiedParcel = {
-      verified,
-    };
-    const encryptedVerifiedParcel = await utils.encrypt(
-      stringToUint8Array(JSON.stringify(verifiedParcel)),
-      key,
-    );
-    const path = urlJoin(this.props.serverUrl, await (await pipingUiAuthAsync).verifiedPath(this.props.secretPath));
-    // Send verified or not
-    await fetch(path, {
-      method: 'POST',
-      body: encryptedVerifiedParcel,
+  props: {
+    props: { type: Object as PropType<DataUploaderProps>, required: true },
+  },
+  setup(props, context) {
+    // Progress bar setting
+    const progressSetting = ref<{loadedBytes: number, totalBytes?: number}>({
+      loadedBytes: 0,
+      totalBytes: undefined,
     });
 
-    // If verified, send
-    if (verified) {
-      await this.send(key);
-    }
-  }
+    const readableBytesString = utils.readableBytesString;
 
-  private async send(password: string | Uint8Array | undefined) {
-    const data: ActualFileObject[] | string = this.props.data;
+    // NOTE: Function makes dynamic language-switch support possible
+    //       Delegation is to reassign this value
+    const errorMessageDelegate = ref<() => string | Promise<string>>(() => "");
 
-    const plainBody: Blob = await (async () => {
-      // Text
-      if (typeof data === "string") {
-        return new Blob([data]);
-        // One file
-      } else if (data.length === 1) {
-        return data[0];
-        // Multiple files
+    const errorMessage = ref<string>("");
+    watch([errorMessageDelegate, language], async () => {
+      errorMessage.value = await errorMessageDelegate.value();
+    });
+
+    const xhr: XMLHttpRequest = new XMLHttpRequest();
+    const canceled = ref(false);
+    const isCompressing = ref(false);
+    const isNonStreamingEncrypting = ref(false);
+    const verificationStep = ref<VerificationStep>({type: 'initial'});
+
+    const icons = {
+      mdiCloseCircle,
+      mdiCheck,
+      mdiCancel,
+    };
+
+    const progressPercentage = computed<number | null>(() => {
+      if (progressSetting.value.totalBytes === undefined) {
+        return null;
+      } else if (progressSetting.value.totalBytes === 0) {
+        return 100;
       } else {
-        const files: ActualFileObject[] = data;
-        this.isCompressing = true;
-        // Zip files
-        const zipBlob: Blob = await utils.zipFilesAsBlob(files);
-        this.isCompressing = false;
-        return zipBlob;
-      }
-    })();
-
-    // If password protection is disabled
-    if (password === undefined) {
-      this.uploadByXhr(plainBody, plainBody.size);
-      return
-    }
-
-    // Check whether fetch() upload streaming is supported
-    const supportsUploadStreaming = await utils.supportsFetchUploadStreaming(this.props.serverUrl);
-    console.log("streaming upload support: ", supportsUploadStreaming);
-    console.log("force disable streaming upload: ", globalStore.forceDisableStreamingUpload);
-
-    // fetch() upload streaming is not supported
-    if (globalStore.forceDisableStreamingUpload || !supportsUploadStreaming) {
-      this.isNonStreamingEncrypting = true;
-      // Convert plain body blob to Uint8Array
-      const plainBodyArray: Uint8Array = await blobToUint8Array(plainBody);
-      // Get encrypted
-      const encrypted: Uint8Array = await utils.encrypt(plainBodyArray, password);
-      this.isNonStreamingEncrypting = false;
-      this.uploadByXhr(encrypted, encrypted.byteLength);
-      return;
-    }
-
-    // Convert plain body to ReadableStream
-    const plainStream = blobToReadableStream(plainBody);
-    // Attach progress
-    const plainStreamWithProgress = this.getReadableStreamWithProgress(plainStream, plainBody.size);
-    // Encrypt
-    const encryptedStream = await utils.encrypt(plainStreamWithProgress, password);
-    try {
-      // Upload encrypted stream
-      await fetch(this.uploadPath, {
-        method: 'POST',
-        body: encryptedStream,
-        duplex: 'half',
-      } as RequestInit);
-    } catch {
-      this.errorMessageDelegate = () => this.strings['data_uploader_xhr_upload_error'];
-    }
-  }
-
-  private uploadByXhr(body: Blob | Uint8Array, bodyLength: number) {
-    // Send
-    this.xhr.open('POST', this.uploadPath, true);
-    this.xhr.responseType = 'text';
-    // Update progress bar
-    this.xhr.upload.onprogress = (ev) => {
-      this.progressSetting.loadedBytes = ev.loaded;
-      this.progressSetting.totalBytes  = ev.total;
-    };
-    this.xhr.upload.onload = () => {
-      // Send finished
-      if (this.xhr.status === 200) {
-        if (this.progressSetting.totalBytes !== undefined) {
-          this.progressSetting.loadedBytes = this.progressSetting.totalBytes;
-        }
-      }
-    };
-    this.xhr.onload = () => {
-      if (this.xhr.status !== 200) {
-        this.errorMessageDelegate = () => this.strings['xhr_status_error']({
-          status: this.xhr.status,
-          response: this.xhr.responseText
-        });
-      }
-    };
-    this.xhr.onerror = (ev) => {
-      this.errorMessageDelegate = () => this.strings['data_uploader_xhr_onerror']({serverUrl: this.props.serverUrl});
-    };
-    this.xhr.upload.onerror = () => {
-      this.errorMessageDelegate = () => this.strings['data_uploader_xhr_upload_error'];
-    };
-    this.xhr.send(body);
-    // Initialize progress bar
-    this.progressSetting.loadedBytes = 0;
-    this.progressSetting.totalBytes = bodyLength;
-  }
-
-  private getReadableStreamWithProgress(baseStream: ReadableStream<Uint8Array>, baseLength: number): ReadableStream<Uint8Array> {
-    const reader = baseStream.getReader();
-    // Initialize progress bar
-    this.progressSetting.loadedBytes = 0;
-    this.progressSetting.totalBytes = baseLength;
-    const self = this;
-    return new ReadableStream({
-      async pull(ctrl) {
-        const res = await reader.read();
-        if (res.done) {
-          ctrl.close();
-          return;
-        }
-        self.progressSetting.loadedBytes += res.value.byteLength;
-        ctrl.enqueue(res.value);
+        return progressSetting.value.loadedBytes / progressSetting.value.totalBytes * 100;
       }
     });
-  }
 
-  private cancelUpload(): void {
-    this.xhr.abort();
-    this.canceled = true;
+    const isDoneUpload = computed<boolean>(() => {
+      return progressPercentage.value === 100;
+    });
+
+    const uploadPath = computed<string>(() => urlJoin(props.props.serverUrl, props.props.secretPath));
+
+    const hasError = ref<boolean>(false);
+    watch(errorMessageDelegate, async () => {
+      hasError.value = await errorMessageDelegate.value() !== "";
+    });
+
+    const headerIcon = computed<string>(() => {
+      if (hasError.value) {
+       return mdiAlert;
+      } else if (canceled.value) {
+       return mdiCloseCircle;
+      } else if (isDoneUpload.value) {
+       return mdiCheck;
+      } else {
+       return mdiChevronDown;
+      }
+    });
+
+    const headerIconColor = computed<string | undefined>(() => {
+      if (hasError.value) {
+        return "error";
+      } else if (canceled.value) {
+        return "warning";
+      } else if (isDoneUpload.value) {
+        return "teal";
+      } else {
+        return undefined
+      }
+    });
+
+    const isReadyToUpload = computed<boolean>(() => {
+      const notCompressingAndEncrypting = !isCompressing.value && !isNonStreamingEncrypting.value;
+      if (props.props.protection.type === 'passwordless') {
+        return verificationStep.value.type === 'verified' && verificationStep.value.verified && notCompressingAndEncrypting;
+      } else {
+        return notCompressingAndEncrypting;
+      }
+    });
+
+    const isCancelable = computed<boolean>(() =>
+      isReadyToUpload && !isDoneUpload.value && !hasError.value && !canceled.value
+    );
+
+    // for language support
+    const strings = computed(() => stringsByLang(language.value));
+
+    const rootElement = ref<Vue>();
+
+    onMounted(async () => {
+      // Scroll to this element
+      // NOTE: no need to add `await`
+      pipingUiUtils.scrollTo(rootElement.value!.$el);
+
+      switch (props.props.protection.type) {
+        case 'raw':
+          // Send
+          await send(undefined);
+          break;
+        case 'password':
+          // Send
+          await send(props.props.protection.password);
+          break;
+        case 'passwordless': {
+          // Key exchange
+          const keyExchangeRes = await (await pipingUiAuthAsync).keyExchange(props.props.serverUrl, 'sender', props.props.secretPath);
+          if (keyExchangeRes.type === 'error') {
+            verificationStep.value = {type: 'error'};
+            errorMessageDelegate.value = () => strings.value['key_exchange_error'](keyExchangeRes.errorCode);
+            return;
+          }
+          const {key, verificationCode} = keyExchangeRes;
+          verificationStep.value = {type: 'verification_code_arrived', verificationCode, key};
+          break;
+        }
+      }
+    });
+
+    async function verify(verified: boolean) {
+      if (verificationStep.value.type !== 'verification_code_arrived') {
+        throw new Error("Unexpected state: this.verificationStep.type should be 'verification_code_arrived'");
+      }
+      const {key} = verificationStep.value;
+      verificationStep.value = {type: 'verified', verified};
+
+      const verifiedParcel: VerifiedParcel = {
+        verified,
+      };
+      const encryptedVerifiedParcel = await utils.encrypt(
+        stringToUint8Array(JSON.stringify(verifiedParcel)),
+        key,
+      );
+      const path = urlJoin(props.props.serverUrl, await (await pipingUiAuthAsync).verifiedPath(props.props.secretPath));
+      // Send verified or not
+      await fetch(path, {
+        method: 'POST',
+        body: encryptedVerifiedParcel,
+      });
+
+      // If verified, send
+      if (verified) {
+        await send(key);
+      }
+    }
+
+    async function send(password: string | Uint8Array | undefined) {
+      const data: ActualFileObject[] | string = props.props.data;
+
+      const plainBody: Blob = await (async () => {
+        // Text
+        if (typeof data === "string") {
+          return new Blob([data]);
+          // One file
+        } else if (data.length === 1) {
+          return data[0];
+          // Multiple files
+        } else {
+          const files: ActualFileObject[] = data;
+          isCompressing.value = true;
+          // Zip files
+          const zipBlob: Blob = await utils.zipFilesAsBlob(files);
+          isCompressing.value = false;
+          return zipBlob;
+        }
+      })();
+
+      // If password protection is disabled
+      if (password === undefined) {
+        uploadByXhr(plainBody, plainBody.size);
+        return
+      }
+
+      // Check whether fetch() upload streaming is supported
+      const supportsUploadStreaming = await utils.supportsFetchUploadStreaming(props.props.serverUrl);
+      console.log("streaming upload support: ", supportsUploadStreaming);
+      console.log("force disable streaming upload: ", globalStore.forceDisableStreamingUpload);
+
+      // fetch() upload streaming is not supported
+      if (globalStore.forceDisableStreamingUpload || !supportsUploadStreaming) {
+        isNonStreamingEncrypting.value = true;
+        // Convert plain body blob to Uint8Array
+        const plainBodyArray: Uint8Array = await blobToUint8Array(plainBody);
+        // Get encrypted
+        const encrypted: Uint8Array = await utils.encrypt(plainBodyArray, password);
+        isNonStreamingEncrypting.value = false;
+        uploadByXhr(encrypted, encrypted.byteLength);
+        return;
+      }
+
+      // Convert plain body to ReadableStream
+      const plainStream = blobToReadableStream(plainBody);
+      // Attach progress
+      const plainStreamWithProgress = getReadableStreamWithProgress(plainStream, plainBody.size);
+      // Encrypt
+      const encryptedStream = await utils.encrypt(plainStreamWithProgress, password);
+      try {
+        // Upload encrypted stream
+        await fetch(uploadPath.value, {
+          method: 'POST',
+          body: encryptedStream,
+          duplex: 'half',
+        } as RequestInit);
+      } catch {
+        errorMessageDelegate.value = () => strings.value['data_uploader_xhr_upload_error'];
+      }
+    }
+
+    function uploadByXhr(body: Blob | Uint8Array, bodyLength: number) {
+      // Send
+      xhr.open('POST', uploadPath.value, true);
+      xhr.responseType = 'text';
+      // Update progress bar
+      xhr.upload.onprogress = (ev) => {
+        progressSetting.value.loadedBytes = ev.loaded;
+        progressSetting.value.totalBytes  = ev.total;
+      };
+      xhr.upload.onload = () => {
+        // Send finished
+        if (xhr.status === 200) {
+          if (progressSetting.value.totalBytes !== undefined) {
+            progressSetting.value.loadedBytes = progressSetting.value.totalBytes;
+          }
+        }
+      };
+      xhr.onload = () => {
+        if (xhr.status !== 200) {
+          errorMessageDelegate.value = () => strings.value['xhr_status_error']({
+            status: xhr.status,
+            response: xhr.responseText
+          });
+        }
+      };
+      xhr.onerror = (ev) => {
+        errorMessageDelegate.value = () => strings.value['data_uploader_xhr_onerror']({serverUrl: props.props.serverUrl});
+      };
+      xhr.upload.onerror = () => {
+        errorMessageDelegate.value = () => strings.value['data_uploader_xhr_upload_error'];
+      };
+      xhr.send(body);
+      // Initialize progress bar
+      progressSetting.value.loadedBytes = 0;
+      progressSetting.value.totalBytes = bodyLength;
+    }
+
+    function getReadableStreamWithProgress(baseStream: ReadableStream<Uint8Array>, baseLength: number): ReadableStream<Uint8Array> {
+      const reader = baseStream.getReader();
+      // Initialize progress bar
+      progressSetting.value.loadedBytes = 0;
+      progressSetting.value.totalBytes = baseLength;
+      return new ReadableStream({
+        async pull(ctrl) {
+          const res = await reader.read();
+          if (res.done) {
+            ctrl.close();
+            return;
+          }
+          progressSetting.value.loadedBytes += res.value.byteLength;
+          ctrl.enqueue(res.value);
+        }
+      });
+    }
+
+    function cancelUpload(): void {
+      xhr.abort();
+      canceled.value = true;
+    }
+
+    return {
+      progressSetting,
+      readableBytesString,
+      errorMessage,
+      canceled,
+      isCompressing,
+      isNonStreamingEncrypting,
+      verificationStep,
+      icons,
+      progressPercentage,
+      isDoneUpload,
+      uploadPath,
+      hasError,
+      headerIcon,
+      headerIconColor,
+      isReadyToUpload,
+      isCancelable,
+      strings,
+      rootElement,
+      send,
+      cancelUpload,
+      verify,
+    };
   }
-}
+});
 </script>
 
 <style scoped>
