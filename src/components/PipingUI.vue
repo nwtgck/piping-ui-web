@@ -175,7 +175,7 @@
         <v-expansion-panels v-model="expandedPanelIds" multiple>
           <template v-for="expandedPanel in expandedPanels">
             <template v-if="expandedPanel.type === 'data_uploader'">
-              <DataUploader :props="expandedPanel.props" :key="`upload-${expandedPanel.props.uploadNo}`"/>
+              <DataUploader :composedProps="expandedPanel.props" :key="`upload-${expandedPanel.props.uploadNo}`"/>
             </template>
             <template v-if="expandedPanel.type === 'data_viewer'">
               <DataViewer :props="expandedPanel.props" :key="`view-${expandedPanel.props.viewNo}`"/>
