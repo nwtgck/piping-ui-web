@@ -34,7 +34,7 @@
       <v-list-item>
         <v-list-item-title>{{ strings['dark_theme'] }}</v-list-item-title>
         <v-list-item-action>
-          <v-switch v-model="enableDarkTheme"></v-switch>
+          <dark-theme-switch />
         </v-list-item-action>
       </v-list-item>
 
@@ -71,29 +71,23 @@ import { Component, Vue, Prop, Emit } from 'vue-property-decorator';
 import {globalStore} from "@/vue-global";
 import {keys} from "@/local-storage-keys";
 import {stringsByLang} from "@/strings/strings-by-lang";
-import {enableDarkTheme} from "@/enable-dark-theme";
 import {language} from "@/language";
-
+import DarkThemeSwitch from "@/components/DarkThemeSwitch.vue";
 
 // Available languages
 type Language = 'en' | 'ja';
 
-@Component
+@Component({
+  components: {
+    DarkThemeSwitch,
+  },
+})
 export default class MenuContent extends Vue {
   // v-model is licenseDialog
   @Prop() public value!: boolean;
   @Emit() public input(value: boolean) {}
 
   private globalStore = globalStore;
-
-  get enableDarkTheme() {
-    return enableDarkTheme.value;
-  }
-  set enableDarkTheme(v: boolean) {
-    enableDarkTheme.value = v;
-    // Enable dark theme
-    this.$vuetify.theme.dark = v;
-  }
 
   private availableLanguages: {lang: Language, str: string}[] = [
     {lang: 'en', str: 'English'},
