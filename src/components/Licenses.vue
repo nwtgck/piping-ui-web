@@ -30,7 +30,7 @@
     </v-card-text>
     <v-divider></v-divider>
     <v-card-actions class="justify-end">
-      <v-btn color="blue darken-1" text @click="input(false)">
+      <v-btn color="blue darken-1" text @click="$emit('input', false)">
         {{ strings['close'] }}
       </v-btn>
     </v-card-actions>
@@ -38,32 +38,31 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop, Emit} from 'vue-property-decorator';
+import {defineComponent} from "vue";
 import licenses from '@/licenses.json';
-import {stringsByLang} from "@/strings/strings-by-lang";
-import {language} from "@/language";
+import {strings} from "@/strings/strings";
 
-
-@Component
-export default class Licenses extends Vue {
-  // value is licenseDialog to close
-  @Prop() public value!: boolean;
-  @Emit() public input(value: string) {}
-
-  private licenses = licenses;
-
-  // for language support
-  private get strings() {
-    return stringsByLang(language.value);
-  }
-
-  private removeLibVersion(libName: string): string {
-    const idx = libName.lastIndexOf('@');
-    if (idx === -1) {
-      return libName;
-    } else {
-      return libName.substring(0, idx);
+export default defineComponent({
+  props: {
+    value: { type: Boolean, required: true },
+  },
+  emits: {
+    input: (value: boolean) => {},
+  },
+  setup(props, context) {
+    function removeLibVersion(libName: string): string {
+      const idx = libName.lastIndexOf('@');
+      if (idx === -1) {
+        return libName;
+      } else {
+        return libName.substring(0, idx);
+      }
+    }
+    return {
+      licenses,
+      strings,
+      removeLibVersion,
     }
   }
-}
+});
 </script>
