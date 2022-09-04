@@ -59,7 +59,7 @@
         </v-list-item-action>
       </v-list-item>
 
-      <v-list-item @click="input(true)">
+      <v-list-item @click="$emit('input', true)">
         <v-list-item-title>{{ strings['open_source_licenses'] }}</v-list-item-title>
       </v-list-item>
     </v-list>
@@ -67,72 +67,74 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop, Emit } from 'vue-property-decorator';
+import {defineComponent, computed, onMounted} from "vue";
 import {globalStore} from "@/vue-global";
 import {keys} from "@/local-storage-keys";
-import {stringsByLang} from "@/strings/strings-by-lang";
+import {strings} from "@/strings/strings";
 import {language} from "@/language";
 import DarkThemeSwitch from "@/components/DarkThemeSwitch.vue";
+
 
 // Available languages
 type Language = 'en' | 'ja';
 
-@Component({
+export default defineComponent({
   components: {
     DarkThemeSwitch,
   },
-})
-export default class MenuContent extends Vue {
   // v-model is licenseDialog
-  @Prop() public value!: boolean;
-  @Emit() public input(value: boolean) {}
+  props: {
+    value: { type: Boolean, required: true },
+  },
+  emits: {
+    input: (value: boolean) => {},
+  },
+  setup(props, context) {
+    const availableLanguages: {lang: Language, str: string}[] = [
+      {lang: 'en', str: 'English'},
+      {lang: 'ja', str: '日本語'},
+    ];
+    const recordsServerUrlHistory = computed<boolean>({
+      get() {
+        return globalStore.recordsServerUrlHistory;
+      },
+      set(b: boolean) {
+        globalStore.recordsServerUrlHistory = b;
+        window.localStorage.setItem(keys.recordsServerUrlHistory, b+"");
+      },
+    });
+    const recordsSecretPathHistory = computed<boolean>({
+      get() {
+        return globalStore.recordsSecretPathHistory;
+      },
+      set(b: boolean) {
+        globalStore.recordsSecretPathHistory = b;
+        window.localStorage.setItem(keys.recordsSecretPathHistory, b+"");
+      },
+    });
 
-  private globalStore = globalStore;
+    onMounted(() => {
+      // Load server url recording setting
+      const recordsServerUrlHistory = window.localStorage.getItem((keys.recordsServerUrlHistory));
+      if (recordsServerUrlHistory !== null) {
+        globalStore.recordsServerUrlHistory = recordsServerUrlHistory === "true";
+      }
 
-  private availableLanguages: {lang: Language, str: string}[] = [
-    {lang: 'en', str: 'English'},
-    {lang: 'ja', str: '日本語'},
-  ];
-  // for language support
-  private get strings() {
-    return stringsByLang(language.value);
-  }
+      // Load secret path recording setting
+      const recordsSecretPathHistory = window.localStorage.getItem((keys.recordsSecretPathHistory));
+      if (recordsSecretPathHistory !== null) {
+        globalStore.recordsSecretPathHistory = recordsSecretPathHistory === "true";
+      }
+    });
 
-  set language(l: string){
-    language.value = l;
-  }
-  get language(): string {
-    return language.value;
-  }
-
-  private get recordsServerUrlHistory(): boolean {
-    return globalStore.recordsServerUrlHistory;
-  }
-  private set recordsServerUrlHistory(b: boolean) {
-    globalStore.recordsServerUrlHistory = b;
-    window.localStorage.setItem(keys.recordsServerUrlHistory, b+"");
-  }
-
-  private get recordsSecretPathHistory(): boolean {
-    return globalStore.recordsSecretPathHistory;
-  }
-  private set recordsSecretPathHistory(b: boolean) {
-    globalStore.recordsSecretPathHistory = b;
-    window.localStorage.setItem(keys.recordsSecretPathHistory, b+"");
-  }
-
-  mounted () {
-    // Load server url recording setting
-    const recordsServerUrlHistory = window.localStorage.getItem((keys.recordsServerUrlHistory));
-    if (recordsServerUrlHistory !== null) {
-      globalStore.recordsServerUrlHistory = recordsServerUrlHistory === "true";
-    }
-
-    // Load secret path recording setting
-    const recordsSecretPathHistory = window.localStorage.getItem((keys.recordsSecretPathHistory));
-    if (recordsSecretPathHistory !== null) {
-      globalStore.recordsSecretPathHistory = recordsSecretPathHistory === "true";
-    }
-  }
-}
+    return {
+      globalStore,
+      availableLanguages,
+      strings,
+      language,
+      recordsServerUrlHistory,
+      recordsSecretPathHistory,
+    };
+  },
+});
 </script>
