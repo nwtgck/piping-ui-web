@@ -1,15 +1,15 @@
 <template>
   <v-expansion-panel ref="rootElement">
     <v-expansion-panel-header :disable-icon-rotate="hasError">
-      <span>{{ strings['download_in_downloader'] }} #{{ props.downloadNo }}</span>
+      <span>{{ strings['download_in_downloader'] }} #{{ composedProps.downloadNo }}</span>
     </v-expansion-panel-header>
     <v-expansion-panel-content>
 
-      <v-alert type="info" v-if="props.protection.type === 'passwordless' && verificationStep.type === 'initial'">
+      <v-alert type="info" v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'initial'">
         <span style="">{{ strings['waiting_for_sender'] }}</span>
       </v-alert>
 
-      <span v-if="props.protection.type === 'passwordless' && verificationStep.type === 'verification_code_arrived'">
+      <span v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'verification_code_arrived'">
         <VerificationCode :value="verificationStep.verificationCode"/>
       </span>
 
@@ -34,14 +34,25 @@
 </template>
 
 <script lang="ts">
+import {type Protection} from "@/datatypes";
+
+export type DataDownloaderProps = {
+  downloadNo: number,
+  serverUrl: string,
+  secretPath: string,
+  protection: Protection,
+};
+</script>
+
+<script setup lang="ts">
 /* eslint-disable no-console */
 
-import Vue, {defineComponent, PropType, ref, computed, onMounted} from "vue";
+import Vue, {ref, computed, onMounted} from "vue";
 import urlJoin from 'url-join';
 import {mdiAlert, mdiChevronDown} from "@mdi/js";
 import {stringsByLang} from "@/strings/strings-by-lang";
 import * as pipingUiUtils from "@/piping-ui-utils";
-import type {Protection, VerificationStep} from "@/datatypes";
+import {type VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import {pipingUiAuthAsync} from "@/pipingUiAuthWithWebpackChunkName"
 import {language} from "@/language";
@@ -52,157 +63,132 @@ const binconvAsync = () => import('binconv');
 const swDownloadAsync = () => import("@/sw-download");
 const utilsAsync = () => import("@/utils");
 
-export type DataDownloaderProps = {
-  downloadNo: number,
-  serverUrl: string,
-  secretPath: string,
-  protection: Protection,
-};
+// eslint-disable-next-line no-undef
+const props = defineProps<{ composedProps: DataDownloaderProps }>();
 
-export default defineComponent({
-  components: {
-    VerificationCode,
-  },
-  props: {
-    props: { type: Object as PropType<DataDownloaderProps>, required: true },
-  },
-  setup(props, context) {
-    const errorMessage = ref<() => string>(() => "");
-    const verificationStep = ref<VerificationStep>({type: 'initial'});
-    // for language support
-    const strings = computed(() => stringsByLang(language.value));
-    const hasError = computed<boolean>(() => errorMessage.value() !== "");
-    const headerIcon = computed<string>(() => {
-      if (hasError.value) {
-        return mdiAlert;
-      } else {
-        return mdiChevronDown;
-      }
-    });
-    const headerIconColor = computed<string | undefined>(() => {
-      if (hasError.value) {
-        return "error";
-      } else {
-        return undefined
-      }
-    });
-    const isReadyToDownload = computed<boolean>(() => {
-      return props.props.protection.type === 'passwordless' ? verificationStep.value.type === 'verified' && verificationStep.value.verified : true
-    });
-    const downloadPath = computed<string>(() => {
-      return urlJoin(props.props.serverUrl, encodeURI(props.props.secretPath));
-    });
-    const rootElement = ref<Vue>();
+const errorMessage = ref<() => string>(() => "");
+const verificationStep = ref<VerificationStep>({type: 'initial'});
+// for language support
+const strings = computed(() => stringsByLang(language.value));
+const hasError = computed<boolean>(() => errorMessage.value() !== "");
+const headerIcon = computed<string>(() => {
+  if (hasError.value) {
+    return mdiAlert;
+  } else {
+    return mdiChevronDown;
+  }
+});
+const headerIconColor = computed<string | undefined>(() => {
+  if (hasError.value) {
+    return "error";
+  } else {
+    return undefined
+  }
+});
+const isReadyToDownload = computed<boolean>(() => {
+  return props.composedProps.protection.type === 'passwordless' ? verificationStep.value.type === 'verified' && verificationStep.value.verified : true
+});
+const downloadPath = computed<string>(() => {
+  return urlJoin(props.composedProps.serverUrl, encodeURI(props.composedProps.secretPath));
+});
+const rootElement = ref<Vue>();
 
-    // NOTE: Automatically download when mounted
-    onMounted(async () => {
-      // Scroll to this element
-      // NOTE: no need to add `await`
-      pipingUiUtils.scrollTo(rootElement.value!.$el);
+// NOTE: Automatically download when mounted
+onMounted(async () => {
+  // Scroll to this element
+  // NOTE: no need to add `await`
+  pipingUiUtils.scrollTo(rootElement.value!.$el);
 
-      // Key exchange
-      const keyExchangeRes = await (await pipingUiAuthAsync).keyExchangeAndReceiveVerified(
-        props.props.serverUrl,
-        props.props.secretPath,
-        props.props.protection,
-        (step: VerificationStep) => {
-          verificationStep.value = step;
-        }
-      );
+  // Key exchange
+  const keyExchangeRes = await (await pipingUiAuthAsync).keyExchangeAndReceiveVerified(
+      props.composedProps.serverUrl,
+      props.composedProps.secretPath,
+      props.composedProps.protection,
+      (step: VerificationStep) => {
+        verificationStep.value = step;
+      }
+  );
 
-      // If error
-      if (keyExchangeRes.type === "error") {
-        errorMessage.value = () => keyExchangeRes.errorMessage(language.value);
-        return;
-      }
-      const {key} = keyExchangeRes;
+  // If error
+  if (keyExchangeRes.type === "error") {
+    errorMessage.value = () => keyExchangeRes.errorMessage(language.value);
+    return;
+  }
+  const {key} = keyExchangeRes;
 
-      const swDownload = await swDownloadAsync();
-      // If not supporting stream-download via Service Worker
-      if (!swDownload.supportsSwDownload()) {
-        // If password-protection is disabled
-        if (key === undefined) {
-          // NOTE: Should use streaming-download via Service Worker as possible because it can detect MIME type and attach a file extension.
-          console.log("downloading with dynamic <a href> click...");
-          // Download or show on browser sometimes
-          const aTag = document.createElement('a');
-          aTag.href = downloadPath.value;
-          aTag.target = "_blank";
-          aTag.download = props.props.secretPath;
-          aTag.click();
-          return;
-        }
-        console.log("downloading and decrypting with FileSaver.saveAs()...");
-        const binconv = await binconvAsync();
-        // Get response
-        const res = await fetch(downloadPath.value);
-        const resBody = await binconv.blobToUint8Array(await res.blob());
-        // Decrypt the response body
-        let plain: Uint8Array;
-        try {
-          plain = await (await utilsAsync()).decrypt(resBody, key);
-        } catch (e) {
-          console.log("failed to decrypt", e);
-          errorMessage.value = () => strings.value['password_might_be_wrong'];
-          return;
-        }
-        // Save
-        const FileSaver = await FileSaverAsync();
-        FileSaver.saveAs(binconv.uint8ArrayToBlob(plain), props.props.secretPath);
-        return;
-      }
-      console.log("downloading streaming with the Service Worker and decrypting if need...");
-      const utils = await utilsAsync();
-      const res = await fetch(downloadPath.value);
-      const contentLengthStr: string | undefined = key === undefined ? res.headers.get("Content-Length") ?? undefined : undefined;
-      let readableStream: ReadableStream<Uint8Array> = res.body!
-      if (key !== undefined) {
-        try {
-          readableStream = await utils.decryptStream(res.body!, key);
-        } catch (e) {
-          console.log("failed to decrypt", e);
-          errorMessage.value = () => strings.value['password_might_be_wrong'];
-          return;
-        }
-      }
-      const [readableStreamForDownload, readableStreamForFileType] = readableStream.tee();
-      const fileTypeResult = await fileType.fromStream(readableStreamForFileType);
-      let fileName = props.props.secretPath;
-      if (fileTypeResult !== undefined && !fileName.match(/.+\..+/)) {
-        fileName = `${fileName}.${fileTypeResult.ext}`;
-      }
-      // (from: https://github.com/jimmywarting/StreamSaver.js/blob/314e64b8984484a3e8d39822c9b86a345eb36454/sw.js#L120-L122)
-      // Make filename RFC5987 compatible
-      const escapedFileName = encodeURIComponent(fileName).replace(/['()]/g, escape).replace(/\*/g, '%2A');
-      // FIXME: Use `[string, string][]` instead. But lint causes an error "0:0  error  Parsing error: Cannot read properties of undefined (reading 'map')"
-      const headers: string[][] = [
-        ... ( contentLengthStr === undefined ? [] : [ [ "Content-Length", contentLengthStr ] ] ),
-        // Without "Content-Type", Safari in iOS 15 adds ".html" to the downloading file
-        ...( fileTypeResult === undefined ? [] : [ [ "Content-Type", fileTypeResult.mime ] ] ),
-        ['Content-Disposition', "attachment; filename*=UTF-8''" + escapedFileName],
-      ];
-      // Enroll download ReadableStream and get sw-download ID
-      const {swDownloadId} = await enrollDownload(headers, readableStreamForDownload);
-      // Download via Service Worker
+  const swDownload = await swDownloadAsync();
+  // If not supporting stream-download via Service Worker
+  if (!swDownload.supportsSwDownload()) {
+    // If password-protection is disabled
+    if (key === undefined) {
+      // NOTE: Should use streaming-download via Service Worker as possible because it can detect MIME type and attach a file extension.
+      console.log("downloading with dynamic <a href> click...");
+      // Download or show on browser sometimes
       const aTag = document.createElement('a');
-      // NOTE: '/sw-download/v2' can be received by Service Worker in src/sw.js
-      // NOTE: URL fragment is passed to Service Worker but not passed to Web server
-      aTag.href = `/sw-download/v2#?id=${swDownloadId}`;
+      aTag.href = downloadPath.value;
       aTag.target = "_blank";
+      aTag.download = props.composedProps.secretPath;
       aTag.click();
-    });
-
-    return {
-      errorMessage,
-      verificationStep,
-      strings,
-      hasError,
-      headerIcon,
-      headerIconColor,
-      downloadPath,
-      rootElement,
-    };
-  },
+      return;
+    }
+    console.log("downloading and decrypting with FileSaver.saveAs()...");
+    const binconv = await binconvAsync();
+    // Get response
+    const res = await fetch(downloadPath.value);
+    const resBody = await binconv.blobToUint8Array(await res.blob());
+    // Decrypt the response body
+    let plain: Uint8Array;
+    try {
+      plain = await (await utilsAsync()).decrypt(resBody, key);
+    } catch (e) {
+      console.log("failed to decrypt", e);
+      errorMessage.value = () => strings.value['password_might_be_wrong'];
+      return;
+    }
+    // Save
+    const FileSaver = await FileSaverAsync();
+    FileSaver.saveAs(binconv.uint8ArrayToBlob(plain), props.composedProps.secretPath);
+    return;
+  }
+  console.log("downloading streaming with the Service Worker and decrypting if need...");
+  const utils = await utilsAsync();
+  const res = await fetch(downloadPath.value);
+  const contentLengthStr: string | undefined = key === undefined ? res.headers.get("Content-Length") ?? undefined : undefined;
+  let readableStream: ReadableStream<Uint8Array> = res.body!
+  if (key !== undefined) {
+    try {
+      readableStream = await utils.decryptStream(res.body!, key);
+    } catch (e) {
+      console.log("failed to decrypt", e);
+      errorMessage.value = () => strings.value['password_might_be_wrong'];
+      return;
+    }
+  }
+  const [readableStreamForDownload, readableStreamForFileType] = readableStream.tee();
+  const fileTypeResult = await fileType.fromStream(readableStreamForFileType);
+  let fileName = props.composedProps.secretPath;
+  if (fileTypeResult !== undefined && !fileName.match(/.+\..+/)) {
+    fileName = `${fileName}.${fileTypeResult.ext}`;
+  }
+  // (from: https://github.com/jimmywarting/StreamSaver.js/blob/314e64b8984484a3e8d39822c9b86a345eb36454/sw.js#L120-L122)
+  // Make filename RFC5987 compatible
+  const escapedFileName = encodeURIComponent(fileName).replace(/['()]/g, escape).replace(/\*/g, '%2A');
+  // FIXME: Use `[string, string][]` instead. But lint causes an error "0:0  error  Parsing error: Cannot read properties of undefined (reading 'map')"
+  const headers: string[][] = [
+    ... ( contentLengthStr === undefined ? [] : [ [ "Content-Length", contentLengthStr ] ] ),
+    // Without "Content-Type", Safari in iOS 15 adds ".html" to the downloading file
+    ...( fileTypeResult === undefined ? [] : [ [ "Content-Type", fileTypeResult.mime ] ] ),
+    ['Content-Disposition', "attachment; filename*=UTF-8''" + escapedFileName],
+  ];
+  // Enroll download ReadableStream and get sw-download ID
+  const {swDownloadId} = await enrollDownload(headers, readableStreamForDownload);
+  // Download via Service Worker
+  const aTag = document.createElement('a');
+  // NOTE: '/sw-download/v2' can be received by Service Worker in src/sw.js
+  // NOTE: URL fragment is passed to Service Worker but not passed to Web server
+  aTag.href = `/sw-download/v2#?id=${swDownloadId}`;
+  aTag.target = "_blank";
+  aTag.click();
 });
 
 // (base: https://googlechrome.github.io/samples/service-worker/post-message/)
