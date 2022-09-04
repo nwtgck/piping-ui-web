@@ -1,5 +1,5 @@
 <template>
-  <v-expansion-panel>
+  <v-expansion-panel ref="rootElement">
     <v-expansion-panel-header :disable-icon-rotate="hasError">
       <span>{{ strings['download_in_downloader'] }} #{{ props.downloadNo }}</span>
     </v-expansion-panel-header>
@@ -36,7 +36,7 @@
 <script lang="ts">
 /* eslint-disable no-console */
 
-import {Component, Prop, Vue} from 'vue-property-decorator';
+import Vue, {defineComponent, PropType, ref, computed, onMounted} from "vue";
 import urlJoin from 'url-join';
 import {mdiAlert, mdiChevronDown} from "@mdi/js";
 import {stringsByLang} from "@/strings/strings-by-lang";
@@ -59,148 +59,151 @@ export type DataDownloaderProps = {
   protection: Protection,
 };
 
-// NOTE: Automatically download when mounted
-@Component({
+export default defineComponent({
   components: {
     VerificationCode,
   },
-})
-export default class DataDownloader extends Vue {
-  @Prop() private props!: DataDownloaderProps;
-
-  private errorMessage: () => string = () => "";
-  private verificationStep: VerificationStep = {type: 'initial'};
-
-  // for language support
-  private get strings() {
-    return stringsByLang(language.value);
-  }
-
-  private get hasError(): boolean {
-    return this.errorMessage() !== "";
-  }
-
-  private get headerIcon(): string {
-    if (this.hasError) {
-      return mdiAlert;
-    } else {
-      return mdiChevronDown;
-    }
-  }
-
-  private get headerIconColor(): string | undefined {
-    if (this.hasError) {
-      return "error";
-    } else {
-      return undefined
-    }
-  }
-
-  private get isReadyToDownload(): boolean {
-    return this.props.protection.type === 'passwordless' ? this.verificationStep.type === 'verified' && this.verificationStep.verified : true
-  }
-
-  private get downloadPath(): string {
-    return urlJoin(this.props.serverUrl, encodeURI(this.props.secretPath));
-  }
-
-  async mounted() {
-    // Scroll to this element
-    // NOTE: no need to add `await`
-    pipingUiUtils.scrollTo(this.$el);
-
-    // Key exchange
-    const keyExchangeRes = await (await pipingUiAuthAsync).keyExchangeAndReceiveVerified(
-      this.props.serverUrl,
-      this.props.secretPath,
-      this.props.protection,
-      (step: VerificationStep) => {
-        this.verificationStep = step;
+  props: {
+    props: { type: Object as PropType<DataDownloaderProps>, required: true },
+  },
+  setup(props, context) {
+    const errorMessage = ref<() => string>(() => "");
+    const verificationStep = ref<VerificationStep>({type: 'initial'});
+    // for language support
+    const strings = computed(() => stringsByLang(language.value));
+    const hasError = computed<boolean>(() => errorMessage.value() !== "");
+    const headerIcon = computed<string>(() => {
+      if (hasError.value) {
+        return mdiAlert;
+      } else {
+        return mdiChevronDown;
       }
-    );
+    });
+    const headerIconColor = computed<string | undefined>(() => {
+      if (hasError.value) {
+        return "error";
+      } else {
+        return undefined
+      }
+    });
+    const isReadyToDownload = computed<boolean>(() => {
+      return props.props.protection.type === 'passwordless' ? verificationStep.value.type === 'verified' && verificationStep.value.verified : true
+    });
+    const downloadPath = computed<string>(() => {
+      return urlJoin(props.props.serverUrl, encodeURI(props.props.secretPath));
+    });
+    const rootElement = ref<Vue>();
 
-    // If error
-    if (keyExchangeRes.type === "error") {
-      this.errorMessage = () => keyExchangeRes.errorMessage(language.value);
-      return;
-    }
-    const {key} = keyExchangeRes;
+    // NOTE: Automatically download when mounted
+    onMounted(async () => {
+      // Scroll to this element
+      // NOTE: no need to add `await`
+      pipingUiUtils.scrollTo(rootElement.value!.$el);
 
-    const swDownload = await swDownloadAsync();
-    // If not supporting stream-download via Service Worker
-    if (!swDownload.supportsSwDownload()) {
-      // If password-protection is disabled
-      if (key === undefined) {
-        // NOTE: Should use streaming-download via Service Worker as possible because it can detect MIME type and attach a file extension.
-        console.log("downloading with dynamic <a href> click...");
-        // Download or show on browser sometimes
-        const aTag = document.createElement('a');
-        aTag.href = this.downloadPath;
-        aTag.target = "_blank";
-        aTag.download = this.props.secretPath;
-        aTag.click();
+      // Key exchange
+      const keyExchangeRes = await (await pipingUiAuthAsync).keyExchangeAndReceiveVerified(
+        props.props.serverUrl,
+        props.props.secretPath,
+        props.props.protection,
+        (step: VerificationStep) => {
+          verificationStep.value = step;
+        }
+      );
+
+      // If error
+      if (keyExchangeRes.type === "error") {
+        errorMessage.value = () => keyExchangeRes.errorMessage(language.value);
         return;
       }
-      console.log("downloading and decrypting with FileSaver.saveAs()...");
-      const binconv = await binconvAsync();
-      // Get response
-      const res = await fetch(this.downloadPath);
-      const resBody = await binconv.blobToUint8Array(await res.blob());
-      // Decrypt the response body
-      let plain: Uint8Array;
-      try {
-        plain = await (await utilsAsync()).decrypt(resBody, key);
-      } catch (e) {
-        console.log("failed to decrypt", e);
-        this.errorMessage = () => this.strings['password_might_be_wrong'];
+      const {key} = keyExchangeRes;
+
+      const swDownload = await swDownloadAsync();
+      // If not supporting stream-download via Service Worker
+      if (!swDownload.supportsSwDownload()) {
+        // If password-protection is disabled
+        if (key === undefined) {
+          // NOTE: Should use streaming-download via Service Worker as possible because it can detect MIME type and attach a file extension.
+          console.log("downloading with dynamic <a href> click...");
+          // Download or show on browser sometimes
+          const aTag = document.createElement('a');
+          aTag.href = downloadPath.value;
+          aTag.target = "_blank";
+          aTag.download = props.props.secretPath;
+          aTag.click();
+          return;
+        }
+        console.log("downloading and decrypting with FileSaver.saveAs()...");
+        const binconv = await binconvAsync();
+        // Get response
+        const res = await fetch(downloadPath.value);
+        const resBody = await binconv.blobToUint8Array(await res.blob());
+        // Decrypt the response body
+        let plain: Uint8Array;
+        try {
+          plain = await (await utilsAsync()).decrypt(resBody, key);
+        } catch (e) {
+          console.log("failed to decrypt", e);
+          errorMessage.value = () => strings.value['password_might_be_wrong'];
+          return;
+        }
+        // Save
+        const FileSaver = await FileSaverAsync();
+        FileSaver.saveAs(binconv.uint8ArrayToBlob(plain), props.props.secretPath);
         return;
       }
-      // Save
-      const FileSaver = await FileSaverAsync();
-      FileSaver.saveAs(binconv.uint8ArrayToBlob(plain), this.props.secretPath);
-      return;
-    }
-    console.log("downloading streaming with the Service Worker and decrypting if need...");
-    const utils = await utilsAsync();
-    const res = await fetch(this.downloadPath);
-    const contentLengthStr: string | undefined = key === undefined ? res.headers.get("Content-Length") ?? undefined : undefined;
-    let readableStream: ReadableStream<Uint8Array> = res.body!
-    if (key !== undefined) {
-      try {
-        readableStream = await utils.decryptStream(res.body!, key);
-      } catch (e) {
-        console.log("failed to decrypt", e);
-        this.errorMessage = () => this.strings['password_might_be_wrong'];
-        return;
+      console.log("downloading streaming with the Service Worker and decrypting if need...");
+      const utils = await utilsAsync();
+      const res = await fetch(downloadPath.value);
+      const contentLengthStr: string | undefined = key === undefined ? res.headers.get("Content-Length") ?? undefined : undefined;
+      let readableStream: ReadableStream<Uint8Array> = res.body!
+      if (key !== undefined) {
+        try {
+          readableStream = await utils.decryptStream(res.body!, key);
+        } catch (e) {
+          console.log("failed to decrypt", e);
+          errorMessage.value = () => strings.value['password_might_be_wrong'];
+          return;
+        }
       }
-    }
-    const [readableStreamForDownload, readableStreamForFileType] = readableStream.tee();
-    const fileTypeResult = await fileType.fromStream(readableStreamForFileType);
-    let fileName = this.props.secretPath;
-    if (fileTypeResult !== undefined && !fileName.match(/.+\..+/)) {
-      fileName = `${fileName}.${fileTypeResult.ext}`;
-    }
-    // (from: https://github.com/jimmywarting/StreamSaver.js/blob/314e64b8984484a3e8d39822c9b86a345eb36454/sw.js#L120-L122)
-    // Make filename RFC5987 compatible
-    const escapedFileName = encodeURIComponent(fileName).replace(/['()]/g, escape).replace(/\*/g, '%2A');
-    // FIXME: Use `[string, string][]` instead. But lint causes an error "0:0  error  Parsing error: Cannot read properties of undefined (reading 'map')"
-    const headers: string[][] = [
-      ... ( contentLengthStr === undefined ? [] : [ [ "Content-Length", contentLengthStr ] ] ),
-      // Without "Content-Type", Safari in iOS 15 adds ".html" to the downloading file
-      ...( fileTypeResult === undefined ? [] : [ [ "Content-Type", fileTypeResult.mime ] ] ),
-      ['Content-Disposition', "attachment; filename*=UTF-8''" + escapedFileName],
-    ];
-    // Enroll download ReadableStream and get sw-download ID
-    const {swDownloadId} = await enrollDownload(headers, readableStreamForDownload);
-    // Download via Service Worker
-    const aTag = document.createElement('a');
-    // NOTE: '/sw-download/v2' can be received by Service Worker in src/sw.js
-    // NOTE: URL fragment is passed to Service Worker but not passed to Web server
-    aTag.href = `/sw-download/v2#?id=${swDownloadId}`;
-    aTag.target = "_blank";
-    aTag.click();
-  }
-}
+      const [readableStreamForDownload, readableStreamForFileType] = readableStream.tee();
+      const fileTypeResult = await fileType.fromStream(readableStreamForFileType);
+      let fileName = props.props.secretPath;
+      if (fileTypeResult !== undefined && !fileName.match(/.+\..+/)) {
+        fileName = `${fileName}.${fileTypeResult.ext}`;
+      }
+      // (from: https://github.com/jimmywarting/StreamSaver.js/blob/314e64b8984484a3e8d39822c9b86a345eb36454/sw.js#L120-L122)
+      // Make filename RFC5987 compatible
+      const escapedFileName = encodeURIComponent(fileName).replace(/['()]/g, escape).replace(/\*/g, '%2A');
+      // FIXME: Use `[string, string][]` instead. But lint causes an error "0:0  error  Parsing error: Cannot read properties of undefined (reading 'map')"
+      const headers: string[][] = [
+        ... ( contentLengthStr === undefined ? [] : [ [ "Content-Length", contentLengthStr ] ] ),
+        // Without "Content-Type", Safari in iOS 15 adds ".html" to the downloading file
+        ...( fileTypeResult === undefined ? [] : [ [ "Content-Type", fileTypeResult.mime ] ] ),
+        ['Content-Disposition', "attachment; filename*=UTF-8''" + escapedFileName],
+      ];
+      // Enroll download ReadableStream and get sw-download ID
+      const {swDownloadId} = await enrollDownload(headers, readableStreamForDownload);
+      // Download via Service Worker
+      const aTag = document.createElement('a');
+      // NOTE: '/sw-download/v2' can be received by Service Worker in src/sw.js
+      // NOTE: URL fragment is passed to Service Worker but not passed to Web server
+      aTag.href = `/sw-download/v2#?id=${swDownloadId}`;
+      aTag.target = "_blank";
+      aTag.click();
+    });
+
+    return {
+      errorMessage,
+      verificationStep,
+      strings,
+      hasError,
+      headerIcon,
+      headerIconColor,
+      downloadPath,
+      rootElement,
+    };
+  },
+});
 
 // (base: https://googlechrome.github.io/samples/service-worker/post-message/)
 // FIXME: Use `[string, string][]` instead. But lint causes an error "0:0  error  Parsing error: Cannot read properties of undefined (reading 'map')"
