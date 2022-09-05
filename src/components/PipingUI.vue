@@ -178,7 +178,7 @@
               <DataUploader :composedProps="expandedPanel.props" :key="`upload-${expandedPanel.props.uploadNo}`"/>
             </template>
             <template v-if="expandedPanel.type === 'data_viewer'">
-              <DataViewer :props="expandedPanel.props" :key="`view-${expandedPanel.props.viewNo}`"/>
+              <DataViewer :composedProps="expandedPanel.props" :key="`view-${expandedPanel.props.viewNo}`"/>
             </template>
             <template v-if="expandedPanel.type === 'data_downloader'">
               <DataDownloader :composedProps="expandedPanel.props" :key="`download-${expandedPanel.props.downloadNo}`"/>

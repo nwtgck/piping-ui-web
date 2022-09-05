@@ -1,7 +1,7 @@
 <template>
-  <v-expansion-panel>
+  <v-expansion-panel ref="rootElement">
     <v-expansion-panel-header :disable-icon-rotate="isDoneDownload || hasError">
-      <span>{{ strings['view_in_viewer'] }} #{{ props.viewNo }}</span>
+      <span>{{ strings['view_in_viewer'] }} #{{ composedProps.viewNo }}</span>
       <!-- Percentage -->
       {{ progressPercentage ? `${progressPercentage.toFixed(2)} %` : "" }}
       <template v-slot:actions>
@@ -12,11 +12,11 @@
     </v-expansion-panel-header>
     <v-expansion-panel-content>
 
-      <v-alert type="info" v-if="props.protection.type === 'passwordless' && verificationStep.type === 'initial'">
+      <v-alert type="info" v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'initial'">
         <span style="">{{ strings['waiting_for_sender'] }}</span>
       </v-alert>
 
-      <span v-if="props.protection.type === 'passwordless' && verificationStep.type === 'verification_code_arrived'">
+      <span v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'verification_code_arrived'">
         <VerificationCode :value="verificationStep.verificationCode"/>
       </span>
 
@@ -55,7 +55,7 @@
       </v-simple-table>
 
       <!-- NOTE: The reason why don't use .protection.type === 'password' is that a user may forget to check "Protect with password" despite the data is encrypted with a password -->
-      <div v-if="props.protection.type !== 'passwordless' && isDoneDownload">
+      <div v-if="composedProps.protection.type !== 'passwordless' && isDoneDownload">
         <v-layout>
           <v-switch v-model="enablePasswordReinput"
                     inset
@@ -64,7 +64,7 @@
                     style="padding-left: 0.5em;"/>
 
           <v-text-field v-if="enablePasswordReinput"
-                        v-model="props.password"
+                        v-model="password"
                         :type="showsPassword ? 'text' : 'password'"
                         :label="strings['password']"
                         :append-icon="showsPassword ? icons.mdiEye : icons.mdiEyeOff"
@@ -76,7 +76,7 @@
         <div v-if="enablePasswordReinput" style="text-align: right">
           <v-btn color="primary"
                  text
-                 @click="decryptIfNeedAndViewBlob(props.protection.password)">
+                 @click="decryptIfNeedAndViewBlob(password)">
             <v-icon >{{ icons.mdiKey }}</v-icon>
             {{ strings['unlock'] }}
           </v-btn>
@@ -104,7 +104,7 @@
 
       <!-- Text viewer -->
       <!-- NOTE: Don't use v-if because the inner uses "ref" and the ref is loaded in mounted()-->
-      <div v-show="linkifiedText !== ''" style="text-align: center">
+      <div v-show="linkifiedText !== undefined" style="text-align: center">
         <div style="text-align: right">
           <v-tooltip v-model="showsCopied" bottom>
             <template v-slot:activator="{}">
@@ -153,9 +153,19 @@
 </template>
 
 <script lang="ts">
-/* eslint-disable no-console */
+import {type Protection} from "@/datatypes";
 
-import { Component, Prop, Vue } from 'vue-property-decorator';
+export type DataViewerProps = {
+  viewNo: number,
+  serverUrl: string,
+  secretPath: string,
+  protection: Protection,
+};
+</script>
+
+<script setup lang="ts">
+/* eslint-disable no-console */
+import Vue, {ref, computed, watch, onMounted} from "vue";
 import urlJoin from 'url-join';
 import linkifyHtml from 'linkifyjs/html';
 const FileSaverAsync = () => import('file-saver');
@@ -169,292 +179,266 @@ import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle, mdiE
 import {stringsByLang} from "@/strings/strings-by-lang";
 import * as utils from '@/utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
-import AsyncComputed from 'vue-async-computed-decorator';
-import type {Protection, VerificationStep} from "@/datatypes";
+import {type VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import {BlobUrlManager} from "@/blob-url-manager";
 import {pipingUiAuthAsync} from "@/pipingUiAuthWithWebpackChunkName"
 import {language} from "@/language";
 
+// eslint-disable-next-line no-undef
+const props = defineProps<{ composedProps: DataViewerProps }>();
 
-export type DataViewerProps = {
-  viewNo: number,
-  serverUrl: string,
-  secretPath: string,
-  protection: Protection,
+// Progress bar setting
+const progressSetting = ref<{loadedBytes: number, totalBytes?: number}>({
+  loadedBytes: 0,
+  totalBytes: undefined,
+});
+const readableBytesString = utils.readableBytesString;
+const errorMessage = ref<() => string>(() => "");
+const xhr: XMLHttpRequest = new XMLHttpRequest();
+const isDoneDownload = ref(false);
+const canceled = ref(false);
+const imgSrc= ref(new BlobUrlManager());
+const videoSrc= ref(new BlobUrlManager());
+const text = ref('');
+const enablePasswordReinput = ref(false);
+const password = ref(props.composedProps.protection.type === "password" ? props.composedProps.protection.password : undefined);
+const showsPassword = ref(false);
+const verificationStep = ref<VerificationStep>({type: 'initial'});
+let rawBlob = new Blob();
+let blob = new Blob();
+const showsCopied = ref(false);
+const isDecrypting = ref(false);
+
+// for language support
+const strings = computed(() => stringsByLang(language.value));
+
+const icons = {
+  mdiContentSave,
+  mdiCloseCircle,
+  mdiEye,
+  mdiEyeOff,
+  mdiKey,
+  mdiFeatureSearchOutline,
 };
 
+const progressPercentage = computed<number | null>(() => {
+  if (isDoneDownload.value) {
+    return 100;
+  } else if (progressSetting.value.totalBytes === undefined) {
+    return null;
+  } else if (progressSetting.value.totalBytes === 0) {
+    return 100;
+  } else {
+    return progressSetting.value.loadedBytes / progressSetting.value.totalBytes * 100;
+  }
+});
+
+const hasError = computed<boolean>(() => errorMessage.value() !== "");
+
+const headerIcon = computed<string>(() => {
+  if (hasError.value) {
+    return mdiAlert;
+  } else if (canceled.value) {
+    return mdiCloseCircle;
+  } else if (isDoneDownload.value) {
+    return mdiCheck;
+  } else {
+    return mdiChevronDown;
+  }
+});
+
+const headerIconColor = computed<string | undefined>(() => {
+  if (hasError.value) {
+    return "error";
+  } else if (canceled.value) {
+    return "warning";
+  } else if (isDoneDownload.value) {
+    return "teal";
+  } else {
+    return undefined
+  }
+});
+
+const isCancelable = computed<boolean>(() => {
+  return isReadyToDownload.value && !isDoneDownload && !hasError.value && !canceled.value;
+});
+
+const isReadyToDownload = computed<boolean>(() => {
+  return props.composedProps.protection.type === 'passwordless' ? verificationStep.value.type === 'verified' && verificationStep.value.verified : true
+});
+
+const downloadPath = computed<string>(() => {
+  return urlJoin(props.composedProps.serverUrl, props.composedProps.secretPath);
+});
+
+const linkifiedText = ref<string>();
+watch(text, async () => {
+  linkifiedText.value = await utils.sanitizeHtmlAllowingATag(linkifyHtml(text.value, {
+    defaultProtocol: 'https'
+  }));
+});
+
+async function copyToClipboard() {
+  showsCopied.value = true;
+  const clipboardCopy = await clipboardCopyAsync()
+  await clipboardCopy(text.value);
+  await new Promise(resolve => setTimeout(resolve, 2000));
+  showsCopied.value = false;
+}
+
+const rootElement = ref<Vue>();
+
 // NOTE: Automatically download when mounted
-@Component({
-  components: {
-    VerificationCode,
-  },
-})
-export default class DataViewer extends Vue {
-  @Prop() private props!: DataViewerProps;
+onMounted(async () => {
+  // Scroll to this element
+  // NOTE: no need to add `await`
+  pipingUiUtils.scrollTo(rootElement.value!.$el);
 
-  // Progress bar setting
-  private progressSetting: {loadedBytes: number, totalBytes?: number} = {
-    loadedBytes: 0,
-    totalBytes: undefined,
+  // Key exchange
+  const keyExchangeRes = await (await pipingUiAuthAsync).keyExchangeAndReceiveVerified(
+    props.composedProps.serverUrl,
+    props.composedProps.secretPath,
+    props.composedProps.protection,
+    (step: VerificationStep) => {
+      verificationStep.value = step;
+    }
+  );
+
+  // If error
+  if (keyExchangeRes.type === "error") {
+    errorMessage.value = () => keyExchangeRes.errorMessage(language.value);
+    return;
+  }
+  const {key} = keyExchangeRes;
+
+  xhr.open('GET', downloadPath.value);
+  xhr.responseType = 'blob';
+  xhr.onprogress = (ev) => {
+    console.log(`Download: ${ev.loaded}`)
   };
-
-  private readableBytesString = utils.readableBytesString;
-
-  private errorMessage: () => string = () => "";
-  private xhr: XMLHttpRequest;
-  private isDoneDownload: boolean = false;
-  private canceled: boolean = false;
-  private imgSrc: BlobUrlManager= new BlobUrlManager();
-  private videoSrc: BlobUrlManager= new BlobUrlManager();
-  private text: string = '';
-  private enablePasswordReinput: boolean = false;
-  private showsPassword: boolean = false;
-  private verificationStep: VerificationStep = {type: 'initial'};
-
-  private rawBlob: Blob = new Blob();
-  private blob: Blob = new Blob();
-
-  private showsCopied: boolean = false;
-  private isDecrypting: boolean = false;
-
-  private icons = {
-    mdiContentSave,
-    mdiCloseCircle,
-    mdiEye,
-    mdiEyeOff,
-    mdiKey,
-    mdiFeatureSearchOutline,
+  xhr.onreadystatechange = (ev) => {
+    if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
+      const length: string | null = xhr.getResponseHeader('Content-Length');
+      if (length !== null) {
+        progressSetting.value.totalBytes = parseInt(length, 10);
+      }
+    }
   };
-
-  // for language support
-  private get strings() {
-    return stringsByLang(language.value);
-  }
-
-  private get progressPercentage(): number | null {
-    if (this.isDoneDownload) {
-      return 100;
-    } else if (this.progressSetting.totalBytes === undefined) {
-      return null;
-    } else if (this.progressSetting.totalBytes === 0) {
-      return 100;
+  xhr.onprogress = (ev) => {
+    progressSetting.value.loadedBytes = ev.loaded;
+  };
+  xhr.onload = async (ev) => {
+    if (xhr.status === 200) {
+      isDoneDownload.value = true;
+      // Get raw response body
+      rawBlob = xhr.response;
+      // Decrypt and view blob if possible
+      decryptIfNeedAndViewBlob(key);
     } else {
-      return this.progressSetting.loadedBytes / this.progressSetting.totalBytes * 100;
+      const responseText = await utils.readBlobAsText(xhr.response);
+      errorMessage.value = () => strings.value['xhr_status_error']({
+        status: xhr.status,
+        response: responseText,
+      });
+    }
+  };
+  xhr.onerror = () => {
+    errorMessage.value = () => strings.value['data_viewer_xhr_onerror'];
+  };
+  xhr.send();
+});
+
+async function viewBlob() {
+  // Reset viewers
+  imgSrc.value.clearIfNeed();
+  videoSrc.value.clearIfNeed();
+  text.value = '';
+
+  const isText: boolean = await (async () => {
+    // NOTE: 4100 was used in FileType.minimumBytes in file-type until 13.1.2
+    const nBytes = 4100;
+    // Get first bytes from blob
+    const firstChunk: Uint8Array = await blobToUint8Array(blob.slice(0, nBytes));
+    return utils.isText(firstChunk);
+  })();
+
+  // If body is text
+  if (isText) {
+    // Set text
+    text.value = await utils.readBlobAsText(blob);
+  } else {
+    // Detect type of blob
+    const fileTypeResult = await fileType.fromStream(blobToReadableStream(blob));
+    if (fileTypeResult !== undefined) {
+      if (fileTypeResult.mime.startsWith("image/")) {
+        imgSrc.value.set(blob);
+      } else if (fileTypeResult.mime.startsWith("video/")) {
+        videoSrc.value.set(blob);
+      } else if (fileTypeResult.mime.startsWith("text/")) {
+        // Set text
+        text.value = await utils.readBlobAsText(blob);
+      }
     }
   }
+}
 
-  private get hasError(): boolean {
-    return this.errorMessage() !== "";
-  }
-
-  private get headerIcon(): string {
-    if (this.hasError) {
-      return mdiAlert;
-    } else if (this.canceled) {
-      return mdiCloseCircle;
-    } else if (this.isDoneDownload) {
-      return mdiCheck;
+async function decryptIfNeedAndViewBlob(password: string | Uint8Array | undefined) {
+  blob = await (async () => {
+    if (password === undefined) {
+      return rawBlob;
     } else {
-      return mdiChevronDown;
-    }
-  }
-
-  private get headerIconColor(): string | undefined {
-    if (this.hasError) {
-      return "error";
-    } else if (this.canceled) {
-      return "warning";
-    } else if (this.isDoneDownload) {
-      return "teal";
-    } else {
-      return undefined
-    }
-  }
-
-  private get isCancelable(): boolean {
-    return this.isReadyToDownload && !this.isDoneDownload && !this.hasError && !this.canceled;
-  }
-
-  private get isReadyToDownload(): boolean {
-    return this.props.protection.type === 'passwordless' ? this.verificationStep.type === 'verified' && this.verificationStep.verified : true
-  }
-
-  private get downloadPath(): string {
-    return urlJoin(this.props.serverUrl, this.props.secretPath);
-  }
-
-  @AsyncComputed()
-  private async linkifiedText(): Promise<string> {
-    return utils.sanitizeHtmlAllowingATag(linkifyHtml(this.text, {
-      defaultProtocol: 'https'
-    }));
-  }
-
-  private async copyToClipboard() {
-    this.showsCopied = true;
-    const clipboardCopy = await clipboardCopyAsync()
-    await clipboardCopy(this.text);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    this.showsCopied = false;
-  }
-
-  constructor() {
-    super();
-    this.xhr = new XMLHttpRequest();
-  }
-
-  async mounted() {
-    // Scroll to this element
-    // NOTE: no need to add `await`
-    pipingUiUtils.scrollTo(this.$el);
-
-    // Key exchange
-    const keyExchangeRes = await (await pipingUiAuthAsync).keyExchangeAndReceiveVerified(
-      this.props.serverUrl,
-      this.props.secretPath,
-      this.props.protection,
-      (step: VerificationStep) => {
-        this.verificationStep = step;
-      }
-    );
-
-    // If error
-    if (keyExchangeRes.type === "error") {
-      this.errorMessage = () => keyExchangeRes.errorMessage(language.value);
-      return;
-    }
-    const {key} = keyExchangeRes;
-
-    this.xhr.open('GET', this.downloadPath);
-    this.xhr.responseType = 'blob';
-    this.xhr.onprogress = (ev) => {
-      console.log(`Download: ${ev.loaded}`)
-    };
-    this.xhr.onreadystatechange = (ev) => {
-      if (this.xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
-        const length: string | null = this.xhr.getResponseHeader('Content-Length');
-        if (length !== null) {
-          this.progressSetting.totalBytes = parseInt(length, 10);
-        }
-      }
-    };
-    this.xhr.onprogress = (ev) => {
-      this.progressSetting.loadedBytes = ev.loaded;
-    };
-    this.xhr.onload = async (ev) => {
-      if (this.xhr.status === 200) {
-        this.isDoneDownload = true;
-        // Get raw response body
-        this.rawBlob = this.xhr.response;
-        // Decrypt and view blob if possible
-        this.decryptIfNeedAndViewBlob(key);
-      } else {
-        const responseText = await utils.readBlobAsText(this.xhr.response);
-        this.errorMessage = () => this.strings['xhr_status_error']({
-          status: this.xhr.status,
-          response: responseText,
-        });
-      }
-    };
-    this.xhr.onerror = () => {
-      this.errorMessage = () => this.strings['data_viewer_xhr_onerror'];
-    };
-    this.xhr.send();
-  }
-
-  private async viewBlob() {
-    // Reset viewers
-    this.imgSrc.clearIfNeed();
-    this.videoSrc.clearIfNeed();
-    this.text = '';
-
-    const isText: boolean = await (async () => {
-      // NOTE: 4100 was used in FileType.minimumBytes in file-type until 13.1.2
-      const nBytes = 4100;
-      // Get first bytes from blob
-      const firstChunk: Uint8Array = await blobToUint8Array(this.blob.slice(0, nBytes));
-      return utils.isText(firstChunk);
-    })();
-
-    // If body is text
-    if (isText) {
-      // Set text
-      this.text = await utils.readBlobAsText(this.blob);
-    } else {
-      // Detect type of blob
-      const fileTypeResult = await fileType.fromStream(blobToReadableStream(this.blob));
-      if (fileTypeResult !== undefined) {
-        if (fileTypeResult.mime.startsWith("image/")) {
-          this.imgSrc.set(this.blob);
-        } else if (fileTypeResult.mime.startsWith("video/")) {
-          this.videoSrc.set(this.blob);
-        } else if (fileTypeResult.mime.startsWith("text/")) {
-          // Set text
-          this.text = await utils.readBlobAsText(this.blob);
-        }
+      // Get response body
+      const resBody = await blobToUint8Array(rawBlob);
+      try {
+        isDecrypting.value = true;
+        // Decrypt the response body
+        const plain = await utils.decrypt(resBody, password);
+        enablePasswordReinput.value = false;
+        errorMessage.value = () => '';
+        return uint8ArrayToBlob(plain);
+      } catch (err) {
+        enablePasswordReinput.value = true;
+        errorMessage.value = () => strings.value['password_might_be_wrong'];
+        console.log('Decrypt error:', err);
+        return new Blob();
+      } finally {
+        isDecrypting.value = false;
       }
     }
+  })();
 
-  }
+  // View blob if possible
+  viewBlob();
+}
 
-  private async decryptIfNeedAndViewBlob(password: string | Uint8Array | undefined) {
-    this.blob = await (async () => {
-      if (password === undefined) {
-        return this.rawBlob;
-      } else {
-        // Get response body
-        const resBody = await blobToUint8Array(this.rawBlob);
-        try {
-          this.isDecrypting = true;
-          // Decrypt the response body
-          const plain = await utils.decrypt(resBody, password);
-          this.enablePasswordReinput = false;
-          this.errorMessage = () => '';
-          return uint8ArrayToBlob(plain);
-        } catch (err) {
-          this.enablePasswordReinput = true;
-          this.errorMessage = () => this.strings['password_might_be_wrong'];
-          console.log('Decrypt error:', err);
-          return new Blob();
-        } finally {
-          this.isDecrypting = false;
-        }
-      }
-    })();
+function viewRaw() {
+  blob = rawBlob;
+  enablePasswordReinput.value = false;
+  errorMessage.value = () => '';
+  // View blob if possible
+  viewBlob();
+}
 
-    // View blob if possible
-    this.viewBlob();
-  }
+function cancelDownload(): void {
+  xhr.abort();
+  canceled.value = true;
+}
 
-  private viewRaw() {
-    this.blob = this.rawBlob;
-    this.enablePasswordReinput = false;
-    this.errorMessage = () => '';
-    // View blob if possible
-    this.viewBlob();
-  }
-
-  private cancelDownload(): void {
-    this.xhr.abort();
-    this.canceled = true;
-  }
-
-  private async save(): Promise<void> {
-    const FileSaver = await FileSaverAsync();
-    const fileName = await (async () => {
-      // If secret path has extension
-      if (this.props.secretPath.match(/.+\..+/)) {
-        return this.props.secretPath;
-      }
-      const fileTypeResult = await fileType.fromStream(blobToReadableStream(this.blob));
-      if (fileTypeResult === undefined) {
-        return this.props.secretPath;
-      }
-      return `${this.props.secretPath}.${fileTypeResult.ext}`;
-    })();
-    FileSaver.saveAs(this.blob, fileName);
-  }
+async function save(): Promise<void> {
+  const FileSaver = await FileSaverAsync();
+  const fileName = await (async () => {
+    // If secret path has extension
+    if (props.composedProps.secretPath.match(/.+\..+/)) {
+      return props.composedProps.secretPath;
+    }
+    const fileTypeResult = await fileType.fromStream(blobToReadableStream(blob));
+    if (fileTypeResult === undefined) {
+      return props.composedProps.secretPath;
+    }
+    return `${props.composedProps.secretPath}.${fileTypeResult.ext}`;
+  })();
+  FileSaver.saveAs(blob, fileName);
 }
 </script>
 
