@@ -200,12 +200,12 @@
 <script setup lang="ts">
 import Vue, { ref, watch, computed, onMounted } from 'vue';
 const urlJoinAsync = () => import('url-join').then(p => p.default);
-import {DataUploaderProps} from '@/components/DataUploader.vue';
+import {type DataUploaderProps} from '@/components/DataUploader.vue';
 const DataUploader = () => import('@/components/DataUploader.vue');
-import {DataViewerProps} from "@/components/DataViewer.vue";
+import {type DataViewerProps} from "@/components/DataViewer.vue";
 const DataViewer = () => import("@/components/DataViewer.vue");
 const DataDownloader = () => import('@/components/DataDownloader.vue');
-import {DataDownloaderProps} from "@/components/DataDownloader.vue";
+import {type DataDownloaderProps} from "@/components/DataDownloader.vue";
 // NOTE: Use `const FilePond = () => import('vue-filepond').then(vueFilePond => vueFilePond.default())` and <file-pond> in template causes "[Vue warn]: Failed to mount component: template or render function not defined."
 const FilePondWrapper = () => import("@/components/FilePondWrapper.vue");
 import * as t from 'io-ts';
@@ -216,7 +216,7 @@ import {globalStore} from "@/vue-global";
 import {strings} from "@/strings/strings";
 import {type FilePondFile, type ActualFileObject} from "filepond";
 import {baseAndExt} from "@/utils";
-import type {Protection} from "@/datatypes";
+import {type Protection} from "@/datatypes";
 import buildConstants from "@/build-constants";
 
 const defaultServerUrls: ReadonlyArray<string> = buildConstants.pipingServerUrls;
