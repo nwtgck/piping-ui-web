@@ -276,13 +276,6 @@ const randomStrs = ref<string[]>([
   '',
 ]);
 
-// Progress bar setting
-const progressSetting = ref<{show: boolean, loadedBytes: number, totalBytes?: number}>({
-  show: false,
-  loadedBytes: 0,
-  totalBytes: undefined,
-});
-
 const uploadCount = ref<number>(0);
 const viewCount = ref<number>(0);
 const downloadCount = ref<number>(0);
