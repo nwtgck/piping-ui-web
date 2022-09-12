@@ -6,11 +6,11 @@
         <div style="text-align: center">
           <v-btn-toggle v-model="sendOrGet" mandatory>
             <v-btn text value="send">
-              {{ strings['send'] }}
+              {{ strings?.['send'] }}
               <v-icon right dark>{{ icons.mdiUpload }}</v-icon>
             </v-btn>
             <v-btn text value="get">
-              {{ strings['get'] }}
+              {{ strings?.['get'] }}
               <v-icon right dark>{{ icons.mdiDownload }}</v-icon>
             </v-btn>
           </v-btn-toggle>
@@ -23,7 +23,7 @@
                     v-model="isTextMode">
               <template v-slot:label>
                 <v-icon class="icon-and-text-margin">{{ icons.mdiText }}</v-icon>
-                {{ strings['text_mode'] }}
+                {{ strings?.['text_mode'] }}
               </template>
             </v-switch>
           </div>
@@ -32,7 +32,7 @@
                              :label-idle="filePondLabelIdle"
           />
           <v-textarea v-if="isTextMode"
-                      :label="strings['text_placeholder']"
+                      :label="strings?.['text_placeholder']"
                       v-model="inputText"
                       clearable
                       :clear-icon="icons.mdiClose"
@@ -40,7 +40,7 @@
           ></v-textarea>
         </div>
 
-        <v-combobox :label="strings['server_url']"
+        <v-combobox :label="strings?.['server_url']"
                     v-model="serverUrl"
                     :items="serverUrlHistory"
                     @change="onUpdateServerUrl()"
@@ -63,10 +63,10 @@
             </v-list-item-action>
           </template>
         </v-combobox>
-        <v-combobox :label="strings['secret_path']"
+        <v-combobox :label="strings?.['secret_path']"
                     v-model="secretPath"
                     :items="secretPathHistory"
-                    :placeholder="strings['secret_path_placeholder']"
+                    :placeholder="strings?.['secret_path_placeholder']"
                     ref="secret_path_ref"
                     class="ma-0 pa-0 readable-font"
                     clearable
@@ -108,7 +108,7 @@
                       class="ma-0 pa-0">
               <template v-slot:label>
                 <v-icon class="icon-and-text-margin" :color="protectionType === 'passwordless' ? 'blue' : ''">{{ icons.mdiShieldHalfFull }}</v-icon>
-                {{ strings['passwordless_protection'] }}
+                {{ strings?.['passwordless_protection'] }}
               </template>
             </v-switch>
           </v-row>
@@ -121,14 +121,14 @@
                       class="ma-0 pa-0" >
               <template v-slot:label>
                 <v-icon class="icon-and-text-margin" :color="protectionType === 'password' ? 'blue' : ''">{{ icons.mdiKey }}</v-icon>
-                {{ protectionType === 'password' ? '' : strings['protect_with_password'] }}
+                {{ protectionType === 'password' ? '' : strings?.['protect_with_password'] }}
               </template>
             </v-switch>
 
             <v-text-field v-if="protectionType === 'password'"
                           v-model="password"
                           :type="showsPassword ? 'text' : 'password'"
-                          :label="strings['password']"
+                          :label="strings?.['password']"
                           :append-icon="showsPassword ? icons.mdiEye : icons.mdiEyeOff"
                           @click:append="showsPassword = !showsPassword"
                           single-line
@@ -142,7 +142,7 @@
                  color="primary"
                  v-on:click="send()"
                  block>
-            {{ strings['send'] }}
+            {{ strings?.['send'] }}
             <v-icon right dark>{{ icons.mdiUpload }}</v-icon>
           </v-btn>
           <v-layout v-if="sendOrGet === 'get'">
@@ -151,7 +151,7 @@
                      dark
                      @click="view()"
                      block>
-                {{ strings['view'] }}
+                {{ strings?.['view'] }}
                 <v-icon right dark>{{ icons.mdiFileFind }}</v-icon>
               </v-btn>
             </v-flex>
@@ -160,7 +160,7 @@
                      @click="get()"
                      dark
                      block>
-                {{ strings['download'] }}
+                {{ strings?.['download'] }}
                 <v-icon right dark>{{ icons.mdiDownload }}</v-icon>
               </v-btn>
             </v-flex>
@@ -213,12 +213,11 @@ import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiClose, mdiEye, mdiEye
 
 import {keys} from "@/local-storage-keys";
 import {globalStore} from "@/vue-global";
-import {stringsByLang} from "@/strings/strings-by-lang";
+import {strings} from "@/strings/strings";
 import {type FilePondFile, type ActualFileObject} from "filepond";
 import {baseAndExt} from "@/utils";
 import type {Protection} from "@/datatypes";
 import buildConstants from "@/build-constants";
-import {language} from "@/language";
 
 const defaultServerUrls: ReadonlyArray<string> = buildConstants.pipingServerUrls;
 
@@ -315,9 +314,6 @@ const icons = {
   mdiText,
 };
 
-// for language support
-const strings = computed(() => stringsByLang(language.value));
-
 // FIXME: Should be removed
 // This for lazy v-model of Combobox
 const shouldBeRemoved = ref({
@@ -346,7 +342,10 @@ function onUpdateServerUrl() {
   window.localStorage.setItem(keys.selectedServerUrl, serverUrl.value);
 }
 
-const filePondLabelIdle = computed<string>(() => {
+const filePondLabelIdle = computed<string | undefined>(() => {
+  if (strings.value === undefined) {
+    return undefined;
+  }
   // If files are nothing
   if (files.value.length === 0) {
     // Hint with file icon
@@ -467,6 +466,10 @@ function applyLatestServerUrlAndSecretPath() {
 }
 
 async function send() {
+  if (strings.value === undefined) {
+    alert("error: language is not loaded");
+    return;
+  }
   applyLatestServerUrlAndSecretPath();
 
   if (!isTextMode.value && files.value.length === 0) {
@@ -536,6 +539,10 @@ function addSecretPath(): void {
 
 // NOTE: Some file types are displayed inline
 async function get() {
+  if (strings.value === undefined) {
+    alert("error: language is not loaded");
+    return;
+  }
   applyLatestServerUrlAndSecretPath();
 
   // If secret path is empty
@@ -568,6 +575,10 @@ async function get() {
 }
 
 async function view() {
+  if (strings.value === undefined) {
+    alert("error: language is not loaded");
+    return;
+  }
   applyLatestServerUrlAndSecretPath();
 
   // If secret path is empty
