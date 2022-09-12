@@ -6,11 +6,11 @@
         <div style="text-align: center">
           <v-btn-toggle v-model="sendOrGet" mandatory>
             <v-btn text value="send">
-              {{ strings['send'] }}
+              {{ strings?.['send'] }}
               <v-icon right dark>{{ icons.mdiUpload }}</v-icon>
             </v-btn>
             <v-btn text value="get">
-              {{ strings['get'] }}
+              {{ strings?.['get'] }}
               <v-icon right dark>{{ icons.mdiDownload }}</v-icon>
             </v-btn>
           </v-btn-toggle>
@@ -23,18 +23,16 @@
                     v-model="isTextMode">
               <template v-slot:label>
                 <v-icon class="icon-and-text-margin">{{ icons.mdiText }}</v-icon>
-                {{ strings['text_mode'] }}
+                {{ strings?.['text_mode'] }}
               </template>
             </v-switch>
           </div>
-          <file-pond v-if="!isTextMode"
-                     v-model="files"
-                     :label-idle="filePondLabelIdle"
-                     :allow-multiple="true"
-                     :allow-paste="true"
+          <file-pond-wrapper v-if="!isTextMode"
+                             v-model="files"
+                             :label-idle="filePondLabelIdle"
           />
           <v-textarea v-if="isTextMode"
-                      :label="strings['text_placeholder']"
+                      :label="strings?.['text_placeholder']"
                       v-model="inputText"
                       clearable
                       :clear-icon="icons.mdiClose"
@@ -42,7 +40,7 @@
           ></v-textarea>
         </div>
 
-        <v-combobox :label="strings['server_url']"
+        <v-combobox :label="strings?.['server_url']"
                     v-model="serverUrl"
                     :items="serverUrlHistory"
                     @change="onUpdateServerUrl()"
@@ -65,10 +63,10 @@
             </v-list-item-action>
           </template>
         </v-combobox>
-        <v-combobox :label="strings['secret_path']"
+        <v-combobox :label="strings?.['secret_path']"
                     v-model="secretPath"
                     :items="secretPathHistory"
-                    :placeholder="strings['secret_path_placeholder']"
+                    :placeholder="strings?.['secret_path_placeholder']"
                     ref="secret_path_ref"
                     class="ma-0 pa-0 readable-font"
                     clearable
@@ -110,7 +108,7 @@
                       class="ma-0 pa-0">
               <template v-slot:label>
                 <v-icon class="icon-and-text-margin" :color="protectionType === 'passwordless' ? 'blue' : ''">{{ icons.mdiShieldHalfFull }}</v-icon>
-                {{ strings['passwordless_protection'] }}
+                {{ strings?.['passwordless_protection'] }}
               </template>
             </v-switch>
           </v-row>
@@ -123,14 +121,14 @@
                       class="ma-0 pa-0" >
               <template v-slot:label>
                 <v-icon class="icon-and-text-margin" :color="protectionType === 'password' ? 'blue' : ''">{{ icons.mdiKey }}</v-icon>
-                {{ protectionType === 'password' ? '' : strings['protect_with_password'] }}
+                {{ protectionType === 'password' ? '' : strings?.['protect_with_password'] }}
               </template>
             </v-switch>
 
             <v-text-field v-if="protectionType === 'password'"
                           v-model="password"
                           :type="showsPassword ? 'text' : 'password'"
-                          :label="strings['password']"
+                          :label="strings?.['password']"
                           :append-icon="showsPassword ? icons.mdiEye : icons.mdiEyeOff"
                           @click:append="showsPassword = !showsPassword"
                           single-line
@@ -144,7 +142,7 @@
                  color="primary"
                  v-on:click="send()"
                  block>
-            {{ strings['send'] }}
+            {{ strings?.['send'] }}
             <v-icon right dark>{{ icons.mdiUpload }}</v-icon>
           </v-btn>
           <v-layout v-if="sendOrGet === 'get'">
@@ -153,7 +151,7 @@
                      dark
                      @click="view()"
                      block>
-                {{ strings['view'] }}
+                {{ strings?.['view'] }}
                 <v-icon right dark>{{ icons.mdiFileFind }}</v-icon>
               </v-btn>
             </v-flex>
@@ -162,7 +160,7 @@
                      @click="get()"
                      dark
                      block>
-                {{ strings['download'] }}
+                {{ strings?.['download'] }}
                 <v-icon right dark>{{ icons.mdiDownload }}</v-icon>
               </v-btn>
             </v-flex>
@@ -175,13 +173,13 @@
         <v-expansion-panels v-model="expandedPanelIds" multiple>
           <template v-for="expandedPanel in expandedPanels">
             <template v-if="expandedPanel.type === 'data_uploader'">
-              <DataUploader :props="expandedPanel.props" :key="`upload-${expandedPanel.props.uploadNo}`"/>
+              <DataUploader :composedProps="expandedPanel.props" :key="`upload-${expandedPanel.props.uploadNo}`"/>
             </template>
             <template v-if="expandedPanel.type === 'data_viewer'">
-              <DataViewer :props="expandedPanel.props" :key="`view-${expandedPanel.props.viewNo}`"/>
+              <DataViewer :composedProps="expandedPanel.props" :key="`view-${expandedPanel.props.viewNo}`"/>
             </template>
             <template v-if="expandedPanel.type === 'data_downloader'">
-              <DataDownloader :props="expandedPanel.props" :key="`download-${expandedPanel.props.downloadNo}`"/>
+              <DataDownloader :composedProps="expandedPanel.props" :key="`download-${expandedPanel.props.downloadNo}`"/>
             </template>
           </template>
         </v-expansion-panels>
@@ -199,31 +197,27 @@
   </v-layout>
 </template>
 
-<script lang="ts">
-import { Component, Vue, Watch } from 'vue-property-decorator';
+<script setup lang="ts">
+import Vue, { ref, watch, computed, onMounted } from 'vue';
 const urlJoinAsync = () => import('url-join').then(p => p.default);
-import {DataUploaderProps} from '@/components/DataUploader.vue';
+import {type DataUploaderProps} from '@/components/DataUploader.vue';
 const DataUploader = () => import('@/components/DataUploader.vue');
-import {DataViewerProps} from "@/components/DataViewer.vue";
+import {type DataViewerProps} from "@/components/DataViewer.vue";
 const DataViewer = () => import("@/components/DataViewer.vue");
 const DataDownloader = () => import('@/components/DataDownloader.vue');
-import {DataDownloaderProps} from "@/components/DataDownloader.vue";
+import {type DataDownloaderProps} from "@/components/DataDownloader.vue";
+// NOTE: Use `const FilePond = () => import('vue-filepond').then(vueFilePond => vueFilePond.default())` and <file-pond> in template causes "[Vue warn]: Failed to mount component: template or render function not defined."
+const FilePondWrapper = () => import("@/components/FilePondWrapper.vue");
 import * as t from 'io-ts';
 import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiClose, mdiEye, mdiEyeOff, mdiKey, mdiShieldHalfFull, mdiText} from "@mdi/js";
 
 import {keys} from "@/local-storage-keys";
 import {globalStore} from "@/vue-global";
-import {stringsByLang} from "@/strings/strings-by-lang";
-import * as filePond from "filepond";
+import {strings} from "@/strings/strings";
+import {type FilePondFile, type ActualFileObject} from "filepond";
 import {baseAndExt} from "@/utils";
-import type {Protection} from "@/datatypes";
+import {type Protection} from "@/datatypes";
 import buildConstants from "@/build-constants";
-import {language} from "@/language";
-
-(async () => require('filepond/dist/filepond.min.css'))();
-
-// Create component
-const FilePond = () => import('vue-filepond').then(vueFilePond => vueFilePond.default());
 
 const defaultServerUrls: ReadonlyArray<string> = buildConstants.pipingServerUrls;
 
@@ -257,405 +251,386 @@ function getShareTargetText(): string | null {
   return new URL(window.location.toString()).searchParams.get("text");
 }
 
-@Component({
-  components: {
-    DataUploader,
-    DataViewer,
-    DataDownloader,
-    FilePond,
-  },
-})
-export default class PipingUI extends Vue {
-  $refs!: {
-    server_url_ref: Vue,
-    secret_path_ref: Vue
-  }
+const server_url_ref = ref<Vue>();
+const secret_path_ref = ref<Vue>();
 
-  private sendOrGet: 'send' | 'get' = 'send';
+const sendOrGet = ref<'send' | 'get'>('send');
 
-  private serverUrl: string = defaultServerUrls[0];
-  private secretPath: string = "";
-  private isTextMode: boolean = getShareTargetText() !== null;
-  private inputText: string = (() => {
-    const shareTargetText = getShareTargetText();
-    return shareTargetText === null ? '' :  shareTargetText;
-  })();
-  private files: filePond.FilePondFile[] = [];
-  private serverUrlHistory: string[] = [];
-  private secretPathHistory: string[] = [];
-  private protectionType: Protection["type"] = 'raw';
-  private password: string = '';
-  private showsPassword: boolean = false;
+const serverUrl = ref<string>(defaultServerUrls[0]);
+const secretPath = ref<string>("");
+const isTextMode = ref<boolean>(getShareTargetText() !== null);
+const inputText = ref<string>((() => {
+  const shareTargetText = getShareTargetText();
+  return shareTargetText === null ? '' :  shareTargetText;
+})());
+const files = ref<FilePondFile[]>([]);
+const serverUrlHistory = ref<string[]>([]);
+const secretPathHistory = ref<string[]>([]);
+const protectionType = ref<Protection["type"]>('raw');
+const password = ref<string>('');
+const showsPassword = ref<boolean>(false);
 
-  // Random strings for suggested secret paths
-  private randomStrs: string[] = [
-    // mini
-    '',
-  ];
+// Random strings for suggested secret paths
+const randomStrs = ref<string[]>([
+  // mini
+  '',
+]);
 
-  // Progress bar setting
-  private progressSetting: {show: boolean, loadedBytes: number, totalBytes?: number} = {
-    show: false,
-    loadedBytes: 0,
-    totalBytes: undefined,
-  };
-
-  private uploadCount = 0;
-  private viewCount = 0;
-  private downloadCount = 0;
-  private expandedPanels: (
+const uploadCount = ref<number>(0);
+const viewCount = ref<number>(0);
+const downloadCount = ref<number>(0);
+const expandedPanels = ref<
+  (
     {type: 'data_uploader', props: DataUploaderProps} |
     {type: 'data_viewer', props: DataViewerProps} |
     {type: 'data_downloader', props: DataDownloaderProps}
-  )[] = [];
-  // Indexes of expanded expansion-panel
-  private expandedPanelIds: number[] = [];
+  )[]
+>([]);
+// Indexes of expanded expansion-panel
+const expandedPanelIds = ref<number[]>([]);
 
-  // Show snackbar
-  private showsSnackbar: boolean = false;
-  // Message of snackbar
-  private snackbarMessage: string = '';
+// Show snackbar
+const showsSnackbar = ref<boolean>(false);
+// Message of snackbar
+const snackbarMessage = ref<string>('');
 
-  private icons = {
-    mdiUpload,
-    mdiDownload,
-    mdiDelete,
-    mdiFileFind,
-    mdiClose,
-    mdiEye,
-    mdiEyeOff,
-    mdiKey,
-    mdiShieldHalfFull,
-    mdiText,
-  };
+const icons = {
+  mdiUpload,
+  mdiDownload,
+  mdiDelete,
+  mdiFileFind,
+  mdiClose,
+  mdiEye,
+  mdiEyeOff,
+  mdiKey,
+  mdiShieldHalfFull,
+  mdiText,
+};
 
-  // for language support
-  private get strings() {
-    return stringsByLang(language.value);
+// FIXME: Should be removed
+// This for lazy v-model of Combobox
+const shouldBeRemoved = ref({
+  latestServerUrl: serverUrl.value,
+  latestSecretPath: secretPath.value,
+});
+
+// FIXME: Should be removed
+// NOTE: This is for update by clicking listed auto-complete
+watch(serverUrl, () => {
+  shouldBeRemoved.value.latestServerUrl = serverUrl.value;
+});
+
+watch(secretPath, () => {
+  // NOTE: <v-combobox> "clearable" makes it null or undefined (maybe)
+  if (secretPath.value === null || secretPath.value === undefined) {
+    secretPath.value = '';
   }
-
-  // FIXME: Should be removed
-  // This for lazy v-model of Combobox
-  private shouldBeRemoved = {
-    latestServerUrl: this.serverUrl,
-    latestSecretPath: this.secretPath,
-  };
-
 
   // FIXME: Should be removed
   // NOTE: This is for update by clicking listed auto-complete
-  @Watch('serverUrl')
-  private onServerUrl() {
-    this.shouldBeRemoved.latestServerUrl = this.serverUrl;
+  shouldBeRemoved.value.latestSecretPath = secretPath.value;
+});
+
+function onUpdateServerUrl() {
+  window.localStorage.setItem(keys.selectedServerUrl, serverUrl.value);
+}
+
+const filePondLabelIdle = computed<string | undefined>(() => {
+  if (strings.value === undefined) {
+    return undefined;
   }
-
-  @Watch('secretPath')
-  private onSecretPath() {
-    // NOTE: <v-combobox> "clearable" makes it null or undefined (maybe)
-    if ( this.secretPath === null || this.secretPath === undefined) {
-      this.secretPath = '';
-    }
-
-    // FIXME: Should be removed
-    // NOTE: This is for update by clicking listed auto-complete
-    this.shouldBeRemoved.latestSecretPath = this.secretPath;
+  // If files are nothing
+  if (files.value.length === 0) {
+    // Hint with file icon
+    return `<img src='img/file-icon.svg' style='width: 2em'><br>${strings.value['drop_a_file_here_or_browse']}`;
+  } else {
+    return strings.value['drop_a_file_here_or_browse'];
   }
+});
 
-  private onUpdateServerUrl() {
-    window.localStorage.setItem(keys.selectedServerUrl, this.serverUrl);
+const enablePasswordProtection = computed<boolean>(() => protectionType.value === 'password');
+
+// eslint-disable-next-line vue/return-in-computed-property
+const protection = computed<Protection>(() => {
+  switch (protectionType.value) {
+    case 'raw':
+    case 'passwordless':
+      return {type: protectionType.value};
+    case 'password':
+      return {type: protectionType.value, password: password.value};
   }
+});
 
-  private get filePondLabelIdle(): string {
-    // If files are nothing
-    if (this.files.length === 0) {
-      // Hint with file icon
-      return `<img src='img/file-icon.svg' style='width: 2em'><br>${this.strings['drop_a_file_here_or_browse']}`;
-    } else {
-      return this.strings['drop_a_file_here_or_browse'];
-    }
-  }
+function updateRandomStrs() {
+  randomStrs.value[0] = randomStr(3, chars.nonConfusing);
+}
 
-  private get enablePasswordProtection(): boolean {
-    return this.protectionType === 'password';
-  }
-
-  // eslint-disable-next-line getter-return
-  private get protection(): Protection {
-    switch (this.protectionType) {
-      case 'raw':
-      case 'passwordless':
-        return {type: this.protectionType};
-      case 'password':
-        return {type: this.protectionType, password: this.password};
-    }
-  }
-
-  private updateRandomStrs() {
-    this.randomStrs[0] = randomStr(3, chars.nonConfusing);
-  }
-
-  private get suggestedSecretPaths(): string[] {
-    const candidates: string[] = (() => {
-      if ((!this.isTextMode && this.files.length === 0) || (this.isTextMode && this.inputText === '')) {
-        // NOTE: This is for simplicity of UI
-        //       Not show suggested secret path on initial status
+const suggestedSecretPaths = computed<string[]>(() => {
+  const candidates: string[] = (() => {
+    if ((!isTextMode.value && files.value.length === 0) || (isTextMode.value && inputText.value === '')) {
+      // NOTE: This is for simplicity of UI
+      //       Not show suggested secret path on initial status
+      return [];
+    } else if (isTextMode.value) {
+      return [...randomStrs.value.map(s => `${s}.txt`), ...randomStrs.value];
+    } else if (files.value.length === 1) {
+      const fileName = files.value[0].filename;
+      const {ext} = baseAndExt(fileName);
+      return [
+        fileName,
+        ...randomStrs.value.map(s => `${s}${ext}`),
+        ...randomStrs.value,
+      ];
+    } else if(files.value.length > 1) {
+      if(secretPath.value.endsWith('.zip')) {
         return [];
-      } else if (this.isTextMode) {
-        return [...this.randomStrs.map(s => `${s}.txt`), ...this.randomStrs];
-      } else if (this.files.length === 1) {
-        const fileName = this.files[0].filename;
-        const {ext} = baseAndExt(fileName);
-        return [
-          fileName,
-          ...this.randomStrs.map(s => `${s}${ext}`),
-          ...this.randomStrs,
-        ];
-      } else if(this.files.length > 1) {
-        if(this.secretPath.endsWith('.zip')) {
-          return [];
-        } else {
-          return [
-            ...(this.secretPath === '' ? [] : [`${this.secretPath}.zip`]),
-            ...this.randomStrs.map(s => `${s}.zip`),
-            ...this.randomStrs,
-          ];
-        }
       } else {
-        return this.randomStrs;
+        return [
+          ...(secretPath.value === '' ? [] : [`${secretPath.value}.zip`]),
+          ...randomStrs.value.map(s => `${s}.zip`),
+          ...randomStrs.value,
+        ];
       }
-    })();
-
-    return candidates.filter(c => this.secretPath !== c);
-  }
-
-  private onEnablePasswordProtection(enable: boolean) {
-    this.protectionType = enable ? 'password' : 'raw';
-  }
-
-  private onEnablePasswordlessProtection(enable: boolean) {
-    this.protectionType = enable ? 'passwordless' : 'raw';
-  }
-
-  private mounted() {
-    // Disable "Powered by PQINA" link
-    filePond.setOptions({
-      credits: false,
-    });
-
-    // Update random strings
-    this.updateRandomStrs();
-
-    // Load from Local Storage
-    const serverUrl = window.localStorage.getItem(keys.selectedServerUrl);
-    if (serverUrl !== null) {
-      this.serverUrl = serverUrl;
-    }
-
-    // FIXME: Combobox is lazy to update v-model
-    // This is for updating server URL in real-time
-    this.$refs.server_url_ref.$el.querySelector('input')!.addEventListener('keyup', (ev)=>{
-      // NOTE: [Send] button is hidden by auto-complete list if assigning to this.serverUrl
-      this.shouldBeRemoved.latestServerUrl = (ev.target as any).value;
-    });
-    // FIXME: Combobox is lazy to update v-model
-    // This is for updating secret path in real-time
-    this.$refs.secret_path_ref.$el.querySelector('input')!.addEventListener('keyup', (ev)=>{
-      // NOTE: [Send] button is hidden by auto-complete list if assigning to this.secretPath
-      this.shouldBeRemoved.latestSecretPath = (ev.target as any).value;
-    });
-
-    // Load server URL history from local storage
-    const serverUrlHistory: string[] | undefined = loadLocalStorage(t.array(t.string), keys.serverUrlHistory);
-    // If none
-    if (serverUrlHistory === undefined) {
-      // Set default
-      this.serverUrlHistory = defaultServerUrls.slice();
     } else {
-      // Load from storage
-      this.serverUrlHistory = serverUrlHistory;
+      return randomStrs.value;
     }
+  })();
 
-    // Load server URL history from local storage
-    const secretPathHistory: string[] | undefined = loadLocalStorage(t.array(t.string), keys.secretPathHistory);
-    if (secretPathHistory !== undefined) {
-      this.secretPathHistory = secretPathHistory;
-    }
+  return candidates.filter(c => secretPath.value !== c);
+});
+
+function onEnablePasswordProtection(enable: boolean) {
+  protectionType.value = enable ? 'password' : 'raw';
+}
+
+function onEnablePasswordlessProtection(enable: boolean) {
+  protectionType.value = enable ? 'passwordless' : 'raw';
+}
+
+onMounted(() => {
+  // Update random strings
+  updateRandomStrs();
+
+  // Load from Local Storage
+  const savedServerUrl = window.localStorage.getItem(keys.selectedServerUrl);
+  if (savedServerUrl !== null) {
+    serverUrl.value = savedServerUrl;
   }
 
-  // FIXME: Should be removed
-  private applyLatestServerUrlAndSecretPath() {
-    // FIXME: should be removed after fix
-    // NOTE: This set the latest secret path because v-model of Combobox is lazy
-    this.serverUrl = this.shouldBeRemoved.latestServerUrl;
-    // FIXME: should be removed after fix
-    // NOTE: This set the latest secret path because v-model of Combobox is lazy
-    this.secretPath = this.shouldBeRemoved.latestSecretPath;
+  // FIXME: Combobox is lazy to update v-model
+  // This is for updating server URL in real-time
+  server_url_ref.value!.$el.querySelector('input')!.addEventListener('keyup', (ev)=>{
+    // NOTE: [Send] button is hidden by auto-complete list if assigning to this.serverUrl
+    shouldBeRemoved.value.latestServerUrl = (ev.target as any).value;
+  });
+  // FIXME: Combobox is lazy to update v-model
+  // This is for updating secret path in real-time
+  secret_path_ref.value!.$el.querySelector('input')!.addEventListener('keyup', (ev)=>{
+    // NOTE: [Send] button is hidden by auto-complete list if assigning to this.secretPath
+    shouldBeRemoved.value.latestSecretPath = (ev.target as any).value;
+  });
+
+  // Load server URL history from local storage
+  const savedServerUrlHistory: string[] | undefined = loadLocalStorage(t.array(t.string), keys.serverUrlHistory);
+  // If none
+  if (savedServerUrlHistory === undefined) {
+    // Set default
+    serverUrlHistory.value = defaultServerUrls.slice();
+  } else {
+    // Load from storage
+    serverUrlHistory.value = savedServerUrlHistory;
   }
 
-  private async send() {
-    this.applyLatestServerUrlAndSecretPath();
+  // Load server URL history from local storage
+  const savedSecretPathHistory: string[] | undefined = loadLocalStorage(t.array(t.string), keys.secretPathHistory);
+  if (savedSecretPathHistory !== undefined) {
+    secretPathHistory.value = savedSecretPathHistory;
+  }
+});
 
-    if (!this.isTextMode && this.files.length === 0) {
-      // Show error message
-      this.showSnackbar(this.strings['error_file_not_selected']);
-      return;
-    }
-    // If secret path is empty
-    if (this.secretPath === '') {
-      // Show error message
-      this.showSnackbar(this.strings['error_secret_path_not_specified']);
-      return;
-    }
+// FIXME: Should be removed
+function applyLatestServerUrlAndSecretPath() {
+  // FIXME: should be removed after fix
+  // NOTE: This set the latest secret path because v-model of Combobox is lazy
+  serverUrl.value = shouldBeRemoved.value.latestServerUrl;
+  // FIXME: should be removed after fix
+  // NOTE: This set the latest secret path because v-model of Combobox is lazy
+  secretPath.value = shouldBeRemoved.value.latestSecretPath;
+}
 
-    // If enabling password protection and password is empty
-    if (this.protectionType === 'password' && this.password === '') {
-      // Show error message
-      this.showSnackbar(this.strings['password_is_required']);
-      return;
-    }
+async function send() {
+  if (strings.value === undefined) {
+    alert("error: language is not loaded");
+    return;
+  }
+  applyLatestServerUrlAndSecretPath();
 
-    const body: filePond.ActualFileObject[] | string = this.isTextMode ? this.inputText : this.files.map(f => f.file);
-
-    // Increment upload counter
-    this.uploadCount++;
-    // Delegate data uploading
-    this.expandedPanels.unshift({
-      type: 'data_uploader',
-      props: {
-        uploadNo: this.uploadCount,
-        data: body,
-        serverUrl: this.serverUrl,
-        secretPath: this.secretPath,
-        protection: this.protection,
-      }
-    });
-    // Open by default
-    this.expandedPanelIds.push(this.expandedPanels.length-1);
-
-    // If history is enable and user-input server URL is new
-    if (globalStore.recordsServerUrlHistory && !this.serverUrlHistory.map(normalizeUrl).includes(normalizeUrl(this.serverUrl))) {
-      // Enroll server URLs
-      this.serverUrlHistory.push(this.serverUrl);
-      // Save to local storage
-      window.localStorage.setItem(keys.serverUrlHistory, JSON.stringify(this.serverUrlHistory));
-    }
-
-    // If history is enable and user-input secret path is new
-    if (globalStore.recordsSecretPathHistory) {
-      // Add secret path
-      this.addSecretPath();
-      // Save to local storage
-      window.localStorage.setItem(keys.secretPathHistory, JSON.stringify(this.secretPathHistory));
-    }
+  if (!isTextMode.value && files.value.length === 0) {
+    // Show error message
+    showSnackbar(strings.value['error_file_not_selected']);
+    return;
+  }
+  // If secret path is empty
+  if (secretPath.value === '') {
+    // Show error message
+    showSnackbar(strings.value['error_secret_path_not_specified']);
+    return;
   }
 
-  // Add secret path: latest-used path is the top
-  private addSecretPath(): void {
-    // Remove element
-    const idx = this.secretPathHistory.indexOf((this.secretPath));
-    if (idx !== -1) {
-      this.secretPathHistory.splice(idx, 1);
-    }
-    // Enrol secret path
-    this.secretPathHistory.unshift(this.secretPath);
+  // If enabling password protection and password is empty
+  if (protectionType.value === 'password' && password.value === '') {
+    // Show error message
+    showSnackbar(strings.value['password_is_required']);
+    return;
   }
 
-  // NOTE: Some file types are displayed inline
-  private async get() {
-    this.applyLatestServerUrlAndSecretPath();
+  const body: ActualFileObject[] | string = isTextMode.value ? inputText.value : files.value.map(f => f.file);
 
-    // If secret path is empty
-    if (this.secretPath === '') {
-      // Show error message
-      this.showSnackbar(this.strings['error_secret_path_not_specified']);
-      return;
+  // Increment upload counter
+  uploadCount.value++;
+  // Delegate data uploading
+  expandedPanels.value.unshift({
+    type: 'data_uploader',
+    props: {
+      uploadNo: uploadCount.value,
+      data: body,
+      serverUrl: serverUrl.value,
+      secretPath: secretPath.value,
+      protection: protection.value,
     }
+  });
+  // Open by default
+  expandedPanelIds.value.push(expandedPanels.value.length-1);
 
-    const urlJoin = await urlJoinAsync();
-    // If enabling password protection and password is empty
-    if (this.protectionType === 'password' && this.password === '') {
-      // Show error message
-      this.showSnackbar(this.strings['password_is_required']);
-      return;
-    }
-
-    this.downloadCount++;
-    // Delegate data downloading
-    this.expandedPanels.unshift({
-      type: 'data_downloader',
-      props: {
-        downloadNo: this.downloadCount,
-        serverUrl: this.serverUrl,
-        secretPath: this.secretPath,
-        protection: this.protection,
-      }
-    });
-    this.expandedPanelIds.push(this.expandedPanels.length-1);
-  }
-
-  private async view() {
-    this.applyLatestServerUrlAndSecretPath();
-
-    // If secret path is empty
-    if (this.secretPath === '') {
-      // Show error message
-      this.showSnackbar(this.strings['error_secret_path_not_specified']);
-      return;
-    }
-
-    // If enabling password protection and password is empty
-    if (this.enablePasswordProtection && this.password === '') {
-      // Show error message
-      this.showSnackbar(this.strings['password_is_required']);
-      return;
-    }
-
-    this.viewCount++;
-    this.expandedPanels.unshift({
-      type: 'data_viewer',
-      props: {
-        viewNo: this.viewCount,
-        serverUrl: this.serverUrl,
-        secretPath: this.secretPath,
-        protection: this.protection,
-      }
-    });
-    // Open by default
-    this.expandedPanelIds.push(this.expandedPanels.length-1);
-  }
-
-  // Show error message
-  private showSnackbar(message: string): void {
-    this.showsSnackbar = true;
-    this.snackbarMessage = message;
-  }
-
-  private attachProtocolToUrl(): void {
-    // FIXME: Don't use setTimeout()
-    // @blur is called before the value changed.
-    setTimeout(() => {
-      if (this.serverUrl.match(/^https?:\/\//) === null) {
-        this.serverUrl = `https://${this.serverUrl}`;
-      }
-    }, 100);
-
-  }
-
-  private deleteServerUrl(url: string): void {
-    // Remove path
-    this.serverUrlHistory = this.serverUrlHistory.filter(u => u !== url);
+  // If history is enable and user-input server URL is new
+  if (globalStore.recordsServerUrlHistory && !serverUrlHistory.value.map(normalizeUrl).includes(normalizeUrl(serverUrl.value))) {
+    // Enroll server URLs
+    serverUrlHistory.value.push(serverUrl.value);
     // Save to local storage
-    window.localStorage.setItem(keys.serverUrlHistory, JSON.stringify(this.serverUrlHistory));
+    window.localStorage.setItem(keys.serverUrlHistory, JSON.stringify(serverUrlHistory.value));
   }
 
-  private deleteSecretPath(path: string): void {
-    // Remove path
-    this.secretPathHistory = this.secretPathHistory.filter(p => p !== path);
+  // If history is enable and user-input secret path is new
+  if (globalStore.recordsSecretPathHistory) {
+    // Add secret path
+    addSecretPath();
     // Save to local storage
-    window.localStorage.setItem(keys.secretPathHistory, JSON.stringify(this.secretPathHistory));
+    window.localStorage.setItem(keys.secretPathHistory, JSON.stringify(secretPathHistory.value));
   }
 }
 
+// Add secret path: latest-used path is the top
+function addSecretPath(): void {
+  // Remove element
+  const idx = secretPathHistory.value.indexOf(secretPath.value);
+  if (idx !== -1) {
+    secretPathHistory.value.splice(idx, 1);
+  }
+  // Enrol secret path
+  secretPathHistory.value.unshift(secretPath.value);
+}
+
+// NOTE: Some file types are displayed inline
+async function get() {
+  if (strings.value === undefined) {
+    alert("error: language is not loaded");
+    return;
+  }
+  applyLatestServerUrlAndSecretPath();
+
+  // If secret path is empty
+  if (secretPath.value === '') {
+    // Show error message
+    showSnackbar(strings.value['error_secret_path_not_specified']);
+    return;
+  }
+
+  const urlJoin = await urlJoinAsync();
+  // If enabling password protection and password is empty
+  if (protectionType.value === 'password' && password.value === '') {
+    // Show error message
+    showSnackbar(strings.value['password_is_required']);
+    return;
+  }
+
+  downloadCount.value++;
+  // Delegate data downloading
+  expandedPanels.value.unshift({
+    type: 'data_downloader',
+    props: {
+      downloadNo: downloadCount.value,
+      serverUrl: serverUrl.value,
+      secretPath: secretPath.value,
+      protection: protection.value,
+    }
+  });
+  expandedPanelIds.value.push(expandedPanels.value.length-1);
+}
+
+async function view() {
+  if (strings.value === undefined) {
+    alert("error: language is not loaded");
+    return;
+  }
+  applyLatestServerUrlAndSecretPath();
+
+  // If secret path is empty
+  if (secretPath.value === '') {
+    // Show error message
+    showSnackbar(strings.value['error_secret_path_not_specified']);
+    return;
+  }
+
+  // If enabling password protection and password is empty
+  if (enablePasswordProtection.value && password.value === '') {
+    // Show error message
+    showSnackbar(strings.value['password_is_required']);
+    return;
+  }
+
+  viewCount.value++;
+  expandedPanels.value.unshift({
+    type: 'data_viewer',
+    props: {
+      viewNo: viewCount.value,
+      serverUrl: serverUrl.value,
+      secretPath: secretPath.value,
+      protection: protection.value,
+    }
+  });
+  // Open by default
+  expandedPanelIds.value.push(expandedPanels.value.length-1);
+}
+
+// Show error message
+function showSnackbar(message: string): void {
+  showsSnackbar.value = true;
+  snackbarMessage.value = message;
+}
+
+function attachProtocolToUrl(): void {
+  // FIXME: Don't use setTimeout()
+  // @blur is called before the value changed.
+  setTimeout(() => {
+    if (serverUrl.value.match(/^https?:\/\//) === null) {
+      serverUrl.value = `https://${serverUrl.value}`;
+    }
+  }, 100);
+}
+
+function deleteServerUrl(url: string): void {
+  // Remove path
+  serverUrlHistory.value = serverUrlHistory.value.filter(u => u !== url);
+  // Save to local storage
+  window.localStorage.setItem(keys.serverUrlHistory, JSON.stringify(serverUrlHistory.value));
+}
+
+function deleteSecretPath(path: string): void {
+  // Remove path
+  secretPathHistory.value = secretPathHistory.value.filter(p => p !== path);
+  // Save to local storage
+  window.localStorage.setItem(keys.secretPathHistory, JSON.stringify(secretPathHistory.value));
+}
 </script>
 
 <style scoped>
