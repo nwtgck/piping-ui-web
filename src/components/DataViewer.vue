@@ -187,6 +187,7 @@ import {language} from "@/language";
 import {uint8ArrayIsText} from "@/utils/uint8ArrayIsText";
 import {readableBytesString} from "@/utils/readableBytesString";
 import {readBlobAsText} from "@/utils/readBlobAsText";
+import {sanitizeHtmlAllowingATag} from "@/utils/sanitizeHtmlAllowingATag";
 
 // eslint-disable-next-line no-undef
 const props = defineProps<{ composedProps: DataViewerProps }>();
@@ -276,7 +277,7 @@ const downloadPath = computed<string>(() => {
 
 const linkifiedText = ref<string>();
 watch(text, async () => {
-  linkifiedText.value = await utils.sanitizeHtmlAllowingATag(linkifyHtml(text.value, {
+  linkifiedText.value = await sanitizeHtmlAllowingATag(linkifyHtml(text.value, {
     defaultProtocol: 'https'
   }));
 });

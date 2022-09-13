@@ -1,19 +1,4 @@
-/* eslint-disable no-console */
-
-const sanitizeHtmlAsync  = () => import("sanitize-html").then(p => p.default);
 const openpgpAsync = () => import("@/openpgp-import");
-
-// Sanitize html, allowing <a> tag
-export async function sanitizeHtmlAllowingATag(dirtyHtml: string): Promise<string> {
-  const sanitizeHtml = await sanitizeHtmlAsync();
-  return sanitizeHtml(dirtyHtml, {
-    allowedTags: ['a'],
-    allowedAttributes: {
-      'a': ['href', 'target']
-    },
-    disallowedTagsMode: 'escape',
-  });
-}
 
 export async function encrypt<T extends Uint8Array | ReadableStream<Uint8Array>>(stream: T, password: string | Uint8Array): Promise<T> {
   const {openpgpWithWorker} = await openpgpAsync();
