@@ -62,7 +62,7 @@ import {canTransferReadableStream} from "@/utils/canTransferReadableStream";
 const FileSaverAsync = () => import('file-saver');
 const binconvAsync = () => import('binconv');
 const swDownloadAsync = () => import("@/sw-download");
-const utilsAsync = () => import("@/utils/utils");
+const openPgpUtilsAsync = () => import("@/utils/openpgp-utils");
 
 // eslint-disable-next-line no-undef
 const props = defineProps<{ composedProps: DataDownloaderProps }>();
@@ -147,7 +147,7 @@ onMounted(async () => {
     // Decrypt the response body
     let plain: Uint8Array;
     try {
-      plain = await (await utilsAsync()).decrypt(resBody, key);
+      plain = await (await openPgpUtilsAsync()).decrypt(resBody, key);
     } catch (e) {
       console.log("failed to decrypt", e);
       errorMessage.value = () => strings.value['password_might_be_wrong'];
@@ -159,13 +159,13 @@ onMounted(async () => {
     return;
   }
   console.log("downloading streaming with the Service Worker and decrypting if need...");
-  const utils = await utilsAsync();
+  const openPgpUtils = await openPgpUtilsAsync();
   const res = await fetch(downloadPath.value);
   const contentLengthStr: string | undefined = key === undefined ? res.headers.get("Content-Length") ?? undefined : undefined;
   let readableStream: ReadableStream<Uint8Array> = res.body!
   if (key !== undefined) {
     try {
-      readableStream = await utils.decryptStream(res.body!, key);
+      readableStream = await openPgpUtils.decryptStream(res.body!, key);
     } catch (e) {
       console.log("failed to decrypt", e);
       errorMessage.value = () => strings.value['password_might_be_wrong'];
@@ -202,7 +202,7 @@ onMounted(async () => {
 // (base: https://googlechrome.github.io/samples/service-worker/post-message/)
 // FIXME: Use `[string, string][]` instead. But lint causes an error "0:0  error  Parsing error: Cannot read properties of undefined (reading 'map')"
 async function enrollDownload(headers: string[][], readableStream: ReadableStream<Uint8Array>): Promise<{ swDownloadId: string }> {
-  const utils = await utilsAsync();
+  const openPgpUtils = await openPgpUtilsAsync();
   // eslint-disable-next-line no-async-promise-executor
   return new Promise(async (resolve, reject) => {
     if (!("serviceWorker" in navigator)) {

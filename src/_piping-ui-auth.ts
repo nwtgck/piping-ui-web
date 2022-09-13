@@ -13,7 +13,7 @@ import {
 import type {Validation} from "io-ts";
 import {sha256} from "@/utils/sha256";
 
-const utilsAsync = () => import("@/utils/utils");
+const openPgpUtilsAsync = () => import("@/utils/openpgp-utils");
 
 const jwkThumbprintAsync  = () => import("jwk-thumbprint");
 const uint8ArrayToStringAsync = () => import('binconv/dist/src/uint8ArrayToString').then(p => p.uint8ArrayToString);
@@ -29,13 +29,13 @@ async function verifiedPath(secretPath: string): Promise<string> {
 }
 
 export async function verify(serverUrl: string, secretPath: string, key: Uint8Array, verified: boolean) {
-  const utils = await utilsAsync();
+  const openPgpUtils = await openPgpUtilsAsync();
   const urlJoin = await urlJoinAsync();
   const stringToUint8Array = await stringToUint8ArrayAsync();
   const verifiedParcel: VerifiedParcel = {
     verified,
   };
-  const encryptedVerifiedParcel = await utils.encrypt(
+  const encryptedVerifiedParcel = await openPgpUtils.encrypt(
     stringToUint8Array(JSON.stringify(verifiedParcel)),
     key,
   );
@@ -159,7 +159,7 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
       const path = urlJoin(serverUrl, await verifiedPath(secretPath));
       // Get verified or not
       const res = await fetch(path);
-      const utils = await utilsAsync();
+      const utils = await openPgpUtilsAsync();
       // Decrypt body
       const decryptedBody: Uint8Array = await utils.decrypt(new Uint8Array(await res.arrayBuffer()), key);
       // Parse

@@ -177,7 +177,7 @@ import {blobToReadableStream} from 'binconv/dist/src/blobToReadableStream';
 import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle, mdiEye, mdiEyeOff, mdiKey, mdiFeatureSearchOutline} from "@mdi/js";
 
 import {stringsByLang} from "@/strings/strings-by-lang";
-import * as utils from '@/utils/utils';
+import * as openPgpUtils from '@/utils/openpgp-utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
 import {type VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
@@ -403,7 +403,7 @@ async function decryptIfNeedAndViewBlob(password: string | Uint8Array | undefine
       try {
         isDecrypting.value = true;
         // Decrypt the response body
-        const plain = await utils.decrypt(resBody, password);
+        const plain = await openPgpUtils.decrypt(resBody, password);
         enablePasswordReinput.value = false;
         errorMessage.value = () => '';
         return uint8ArrayToBlob(plain);

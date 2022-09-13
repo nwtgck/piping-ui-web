@@ -118,7 +118,7 @@ import urlJoin from 'url-join';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
 import {blobToReadableStream} from 'binconv/dist/src/blobToReadableStream';
 
-import * as utils from '@/utils/utils';
+import * as openPgpUtils from '@/utils/openpgp-utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
 import {stringsByLang} from "@/strings/strings-by-lang";
 import {mdiAlert, mdiCancel, mdiCheck, mdiChevronDown, mdiCloseCircle} from "@mdi/js";
@@ -307,7 +307,7 @@ async function send(password: string | Uint8Array | undefined) {
     // Convert plain body blob to Uint8Array
     const plainBodyArray: Uint8Array = await blobToUint8Array(plainBody);
     // Get encrypted
-    const encrypted: Uint8Array = await utils.encrypt(plainBodyArray, password);
+    const encrypted: Uint8Array = await openPgpUtils.encrypt(plainBodyArray, password);
     isNonStreamingEncrypting.value = false;
     uploadByXhr(encrypted, encrypted.byteLength);
     return;
@@ -318,7 +318,7 @@ async function send(password: string | Uint8Array | undefined) {
   // Attach progress
   const plainStreamWithProgress = getReadableStreamWithProgress(plainStream, plainBody.size);
   // Encrypt
-  const encryptedStream = await utils.encrypt(plainStreamWithProgress, password);
+  const encryptedStream = await openPgpUtils.encrypt(plainStreamWithProgress, password);
   try {
     // Upload encrypted stream
     await fetch(uploadPath.value, {
