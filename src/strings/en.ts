@@ -1,7 +1,8 @@
 import {VERSION} from "@/version";
 import {type KeyExchangeErrorCode} from "@/_piping-ui-auth";
+
 const urlJoinAsync = () => import('url-join').then(p => p.default);
-const utilsAsync = () => import('@/utils');
+const sanitizeHtmlAllowingATagAsync = () => import('@/utils/sanitizeHtmlAllowingATag').then(p => p.sanitizeHtmlAllowingATag);
 
 export const en = {
   language: 'Language',
@@ -46,10 +47,10 @@ export const en = {
   compressing: 'Compressing...',
   encrypting: 'Encrypting...',
   data_uploader_xhr_onerror: async (p: {serverUrl: string}) => {
-    const utils = await utilsAsync();
+    const sanitizeHtmlAllowingATag = await sanitizeHtmlAllowingATagAsync();
     const urlJoin = await urlJoinAsync();
     const versionUrl = urlJoin(p.serverUrl, "/version");
-    return utils.sanitizeHtmlAllowingATag(`An error occurred. The server might be < 0.9.4. Please check <a href="${versionUrl}" target="_blank">${versionUrl}</a>`);
+    return sanitizeHtmlAllowingATag(`An error occurred. The server might be < 0.9.4. Please check <a href="${versionUrl}" target="_blank">${versionUrl}</a>`);
   },
   data_uploader_xhr_upload_error: 'An error occurred while uploading',
   cancel: 'Cancel',

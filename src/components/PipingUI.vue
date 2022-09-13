@@ -215,9 +215,9 @@ import {keys} from "@/local-storage-keys";
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings/strings";
 import {type FilePondFile, type ActualFileObject} from "filepond";
-import {baseAndExt} from "@/utils";
 import {type Protection} from "@/datatypes";
 import buildConstants from "@/build-constants";
+import {baseAndExt} from "@/utils/baseAndExt";
 
 const defaultServerUrls: ReadonlyArray<string> = buildConstants.pipingServerUrls;
 

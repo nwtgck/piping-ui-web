@@ -1,8 +1,9 @@
 import {VERSION} from "@/version";
 import {type KeyExchangeErrorCode} from "@/_piping-ui-auth";
 import {type Strings} from "@/strings/en";
+
 const urlJoinAsync = () => import('url-join').then(p => p.default);
-const utilsAsync = () => import('@/utils');
+const sanitizeHtmlAllowingATagAsync = () => import('@/utils/sanitizeHtmlAllowingATag').then(p => p.sanitizeHtmlAllowingATag);
 
 export const ja: Strings = {
   language: '言語 (Language)',
@@ -47,10 +48,10 @@ export const ja: Strings = {
   compressing: '圧縮中...',
   encrypting: '暗号化中...',
   data_uploader_xhr_onerror: async (p: {serverUrl: string}) => {
-    const utils = await utilsAsync();
+    const sanitizeHtmlAllowingATag = await sanitizeHtmlAllowingATagAsync();
     const urlJoin = await urlJoinAsync();
     const versionUrl = urlJoin(p.serverUrl, "/version");
-    return utils.sanitizeHtmlAllowingATag(`エラーが発生しました。サーバーが0.9.4より低い可能性があります。 <a href="${versionUrl}" target="_blank">${versionUrl}</a> でバージョンの確認できます。`);
+    return sanitizeHtmlAllowingATag(`エラーが発生しました。サーバーが0.9.4より低い可能性があります。 <a href="${versionUrl}" target="_blank">${versionUrl}</a> でバージョンの確認できます。`);
   },
   data_uploader_xhr_upload_error: 'アップロード中にエラーが発生しました',
   cancel: 'キャンセル',

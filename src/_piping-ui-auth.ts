@@ -5,12 +5,15 @@ import {
   keyExchangeParcelType,
   KeyExchangeV1Parcel,
   keyExchangeV1ParcelType,
-  Protection, VerificationStep,
+  Protection,
+  VerificationStep,
   VerifiedParcel,
   verifiedParcelType
 } from "@/datatypes";
 import type {Validation} from "io-ts";
-const utilsAsync = () => import("@/utils");
+import {sha256} from "@/utils/sha256";
+
+const openPgpUtilsAsync = () => import("@/utils/openpgp-utils");
 
 const jwkThumbprintAsync  = () => import("jwk-thumbprint");
 const uint8ArrayToStringAsync = () => import('binconv/dist/src/uint8ArrayToString').then(p => p.uint8ArrayToString);
@@ -18,23 +21,21 @@ const stringToUint8ArrayAsync = () => import('binconv/dist/src/stringToUint8Arra
 const urlJoinAsync = () => import('url-join').then(p => p.default);
 
 async function keyExchangePath(type: 'sender' | 'receiver', secretPath: string): Promise<string> {
-  const utils = await utilsAsync();
-  return utils.sha256(`${secretPath}/key_exchange/${type}`);
+  return await sha256(`${secretPath}/key_exchange/${type}`);
 }
 
 async function verifiedPath(secretPath: string): Promise<string> {
-  const utils = await utilsAsync();
-  return utils.sha256(`${secretPath}/verified`);
+  return await sha256(`${secretPath}/verified`);
 }
 
 export async function verify(serverUrl: string, secretPath: string, key: Uint8Array, verified: boolean) {
-  const utils = await utilsAsync();
+  const openPgpUtils = await openPgpUtilsAsync();
   const urlJoin = await urlJoinAsync();
   const stringToUint8Array = await stringToUint8ArrayAsync();
   const verifiedParcel: VerifiedParcel = {
     verified,
   };
-  const encryptedVerifiedParcel = await utils.encrypt(
+  const encryptedVerifiedParcel = await openPgpUtils.encrypt(
     stringToUint8Array(JSON.stringify(verifiedParcel)),
     key,
   );
@@ -118,8 +119,7 @@ async function generateVerificationCode(publicJwk1: JsonWebKey, publicJwk2: Json
     jwkThumbprintByEncoding(publicJwk1, 'SHA-256', 'hex'),
     jwkThumbprintByEncoding(publicJwk2, 'SHA-256', 'hex'),
   ];
-  const utils = await utilsAsync();
-  return (await utils.sha256(hashes.sort().join('-'))).substring(0, 32);
+  return (await sha256(hashes.sort().join('-'))).substring(0, 32);
 }
 
 type KeyExchangeAndReceiveVerifiedError =
@@ -159,7 +159,7 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
       const path = urlJoin(serverUrl, await verifiedPath(secretPath));
       // Get verified or not
       const res = await fetch(path);
-      const utils = await utilsAsync();
+      const utils = await openPgpUtilsAsync();
       // Decrypt body
       const decryptedBody: Uint8Array = await utils.decrypt(new Uint8Array(await res.arrayBuffer()), key);
       // Parse
