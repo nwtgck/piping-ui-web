@@ -47,7 +47,7 @@ export async function verify(serverUrl: string, secretPath: string, key: Uint8Ar
   });
 }
 
-export type KeyExchangeErrorCode = 'invalid_parcel_format' | 'invalid_v1_parcel_format' | 'different_key_exchange_version';
+export type KeyExchangeErrorCode = 'send_failed' | 'receive_failed' | 'invalid_parcel_format' | 'invalid_v1_parcel_format' | 'different_key_exchange_version';
 type KeyExchangeResult =
   {type: "key", key: Uint8Array, verificationCode: string} |
   {type: "error", errorCode: KeyExchangeErrorCode};
@@ -76,10 +76,16 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
   const myPath = await keyExchangePath(type, secretPath);
   const peerPath = await keyExchangePath(type === 'sender' ? 'receiver' : 'sender', secretPath);
   // Exchange
-  const [, peerRes] = await Promise.all([
-    fetch(urlJoin(serverUrl, myPath), {method: 'POST', body: JSON.stringify(keyExchangeParcel)}),
-    fetch(urlJoin(serverUrl, peerPath)),
-  ]);
+  const postResPromise = fetch(urlJoin(serverUrl, myPath), {method: 'POST', body: JSON.stringify(keyExchangeParcel)});
+  const peerResPromise = fetch(urlJoin(serverUrl, peerPath));
+  const postRes = await postResPromise;
+  if (postRes.status !== 200) {
+    return {type: "error", errorCode: 'send_failed'};
+  }
+  const peerRes = await peerResPromise;
+  if (peerRes.status !== 200) {
+    return {type: "error", errorCode: 'receive_failed'};
+  }
   const peerPublicKeyExchangeEither: Validation<KeyExchangeParcel> = keyExchangeParcelType.decode(JSON.parse(await peerRes.text()));
   if (peerPublicKeyExchangeEither._tag === 'Left') {
     return {type: "error", errorCode: 'invalid_parcel_format'};

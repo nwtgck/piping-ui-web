@@ -35,6 +35,10 @@ export const ja: Strings = {
   verify_and_send: '確認完了',
   key_exchange_error: (errorCode: KeyExchangeErrorCode): string => {
     switch (errorCode) {
+      case "send_failed":
+        return '送信に失敗しました。転送パスを変更すると送信できる可能性があります。';
+      case "receive_failed":
+        return '受信に失敗しました。転送パスを変更すると受信できる可能性があります。';
       case "invalid_parcel_format":
         return 'パーセルのフォーマットが不正です。';
       case "different_key_exchange_version":

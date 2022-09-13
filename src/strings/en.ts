@@ -34,6 +34,10 @@ export const en = {
   verify_and_send: 'Verify & Send',
   key_exchange_error: (errorCode: KeyExchangeErrorCode): string => {
     switch (errorCode) {
+      case "send_failed":
+        return 'Failed to send. Changing the secret path may avoid the problem.';
+      case "receive_failed":
+        return 'Failed to receive. Changing the secret path may avoid the problem.';
       case "invalid_parcel_format":
         return 'Parcel format is invalid.';
       case "different_key_exchange_version":
