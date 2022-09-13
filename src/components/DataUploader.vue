@@ -116,14 +116,13 @@ export type DataUploaderProps = {
 import Vue, {computed, onMounted, ref, watch} from "vue";
 import urlJoin from 'url-join';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
-import {stringToUint8Array} from 'binconv/dist/src/stringToUint8Array';
 import {blobToReadableStream} from 'binconv/dist/src/blobToReadableStream';
 
 import * as utils from '@/utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
 import {stringsByLang} from "@/strings/strings-by-lang";
 import {mdiAlert, mdiCancel, mdiCheck, mdiChevronDown, mdiCloseCircle} from "@mdi/js";
-import type {VerificationStep, VerifiedParcel} from "@/datatypes";
+import type {VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import {pipingUiAuthAsync} from "@/pipingUiAuthWithWebpackChunkName"
 import {language} from "@/language";
@@ -261,19 +260,7 @@ async function verify(verified: boolean) {
   const {key} = verificationStep.value;
   verificationStep.value = {type: 'verified', verified};
 
-  const verifiedParcel: VerifiedParcel = {
-    verified,
-  };
-  const encryptedVerifiedParcel = await utils.encrypt(
-    stringToUint8Array(JSON.stringify(verifiedParcel)),
-    key,
-  );
-  const path = urlJoin(props.composedProps.serverUrl, await (await pipingUiAuthAsync).verifiedPath(props.composedProps.secretPath));
-  // Send verified or not
-  await fetch(path, {
-    method: 'POST',
-    body: encryptedVerifiedParcel,
-  });
+  await (await pipingUiAuthAsync).verify(props.composedProps.serverUrl, props.composedProps.secretPath, key, verified);
 
   // If verified, send
   if (verified) {

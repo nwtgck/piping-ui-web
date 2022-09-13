@@ -14,6 +14,7 @@ const utilsAsync = () => import("@/utils");
 
 const jwkThumbprintAsync  = () => import("jwk-thumbprint");
 const uint8ArrayToStringAsync = () => import('binconv/dist/src/uint8ArrayToString').then(p => p.uint8ArrayToString);
+const stringToUint8ArrayAsync = () => import('binconv/dist/src/stringToUint8Array').then(p => p.stringToUint8Array);
 const urlJoinAsync = () => import('url-join').then(p => p.default);
 
 async function keyExchangePath(type: 'sender' | 'receiver', secretPath: string): Promise<string> {
@@ -21,9 +22,28 @@ async function keyExchangePath(type: 'sender' | 'receiver', secretPath: string):
   return utils.sha256(`${secretPath}/key_exchange/${type}`);
 }
 
-export async function verifiedPath(secretPath: string): Promise<string> {
+async function verifiedPath(secretPath: string): Promise<string> {
   const utils = await utilsAsync();
   return utils.sha256(`${secretPath}/verified`);
+}
+
+export async function verify(serverUrl: string, secretPath: string, key: Uint8Array, verified: boolean) {
+  const utils = await utilsAsync();
+  const urlJoin = await urlJoinAsync();
+  const stringToUint8Array = await stringToUint8ArrayAsync();
+  const verifiedParcel: VerifiedParcel = {
+    verified,
+  };
+  const encryptedVerifiedParcel = await utils.encrypt(
+    stringToUint8Array(JSON.stringify(verifiedParcel)),
+    key,
+  );
+  const path = urlJoin(serverUrl, await verifiedPath(secretPath));
+  // Send verified or not
+  await fetch(path, {
+    method: 'POST',
+    body: encryptedVerifiedParcel,
+  });
 }
 
 export type KeyExchangeErrorCode = 'invalid_parcel_format' | 'invalid_v1_parcel_format' | 'different_key_exchange_version';
