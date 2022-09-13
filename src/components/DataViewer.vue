@@ -184,6 +184,9 @@ import VerificationCode from "@/components/VerificationCode.vue";
 import {BlobUrlManager} from "@/blob-url-manager";
 import {pipingUiAuthAsync} from "@/pipingUiAuthWithWebpackChunkName"
 import {language} from "@/language";
+import {uint8ArrayIsText} from "@/utils/uint8ArrayIsText";
+import {readableBytesString} from "@/utils/readableBytesString";
+import {readBlobAsText} from "@/utils/readBlobAsText";
 
 // eslint-disable-next-line no-undef
 const props = defineProps<{ composedProps: DataViewerProps }>();
@@ -193,7 +196,6 @@ const progressSetting = ref<{loadedBytes: number, totalBytes?: number}>({
   loadedBytes: 0,
   totalBytes: undefined,
 });
-const readableBytesString = utils.readableBytesString;
 const errorMessage = ref<() => string>(() => "");
 const xhr: XMLHttpRequest = new XMLHttpRequest();
 const isDoneDownload = ref(false);
@@ -343,7 +345,7 @@ onMounted(async () => {
       // Decrypt and view blob if possible
       decryptIfNeedAndViewBlob(key);
     } else {
-      const responseText = await utils.readBlobAsText(xhr.response);
+      const responseText = await readBlobAsText(xhr.response);
       errorMessage.value = () => strings.value['xhr_status_error']({
         status: xhr.status,
         response: responseText,
@@ -367,13 +369,13 @@ async function viewBlob() {
     const nBytes = 4100;
     // Get first bytes from blob
     const firstChunk: Uint8Array = await blobToUint8Array(blob.slice(0, nBytes));
-    return utils.isText(firstChunk);
+    return uint8ArrayIsText(firstChunk);
   })();
 
   // If body is text
   if (isText) {
     // Set text
-    text.value = await utils.readBlobAsText(blob);
+    text.value = await readBlobAsText(blob);
   } else {
     // Detect type of blob
     const fileTypeResult = await fileType.fromStream(blobToReadableStream(blob));
@@ -384,7 +386,7 @@ async function viewBlob() {
         videoSrc.value.set(blob);
       } else if (fileTypeResult.mime.startsWith("text/")) {
         // Set text
-        text.value = await utils.readBlobAsText(blob);
+        text.value = await readBlobAsText(blob);
       }
     }
   }

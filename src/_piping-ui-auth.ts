@@ -5,11 +5,14 @@ import {
   keyExchangeParcelType,
   KeyExchangeV1Parcel,
   keyExchangeV1ParcelType,
-  Protection, VerificationStep,
+  Protection,
+  VerificationStep,
   VerifiedParcel,
   verifiedParcelType
 } from "@/datatypes";
 import type {Validation} from "io-ts";
+import {sha256} from "@/utils/sha256";
+
 const utilsAsync = () => import("@/utils/utils");
 
 const jwkThumbprintAsync  = () => import("jwk-thumbprint");
@@ -18,13 +21,11 @@ const stringToUint8ArrayAsync = () => import('binconv/dist/src/stringToUint8Arra
 const urlJoinAsync = () => import('url-join').then(p => p.default);
 
 async function keyExchangePath(type: 'sender' | 'receiver', secretPath: string): Promise<string> {
-  const utils = await utilsAsync();
-  return utils.sha256(`${secretPath}/key_exchange/${type}`);
+  return await sha256(`${secretPath}/key_exchange/${type}`);
 }
 
 async function verifiedPath(secretPath: string): Promise<string> {
-  const utils = await utilsAsync();
-  return utils.sha256(`${secretPath}/verified`);
+  return await sha256(`${secretPath}/verified`);
 }
 
 export async function verify(serverUrl: string, secretPath: string, key: Uint8Array, verified: boolean) {
@@ -118,8 +119,7 @@ async function generateVerificationCode(publicJwk1: JsonWebKey, publicJwk2: Json
     jwkThumbprintByEncoding(publicJwk1, 'SHA-256', 'hex'),
     jwkThumbprintByEncoding(publicJwk2, 'SHA-256', 'hex'),
   ];
-  const utils = await utilsAsync();
-  return (await utils.sha256(hashes.sort().join('-'))).substring(0, 32);
+  return (await sha256(hashes.sort().join('-'))).substring(0, 32);
 }
 
 type KeyExchangeAndReceiveVerifiedError =

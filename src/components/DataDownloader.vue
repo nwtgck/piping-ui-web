@@ -57,6 +57,7 @@ import VerificationCode from "@/components/VerificationCode.vue";
 import {pipingUiAuthAsync} from "@/pipingUiAuthWithWebpackChunkName"
 import {language} from "@/language";
 import * as fileType from 'file-type/browser';
+import {canTransferReadableStream} from "@/utils/canTransferReadableStream";
 
 const FileSaverAsync = () => import('file-saver');
 const binconvAsync = () => import('binconv');
@@ -212,7 +213,7 @@ async function enrollDownload(headers: string[][], readableStream: ReadableStrea
       reject(new Error("navigator.serviceWorker.controller is null"));
       return;
     }
-    if (utils.canTransferReadableStream()) {
+    if (canTransferReadableStream()) {
       const messageChannel = new MessageChannel();
       messageChannel.port1.onmessage = (e: MessageEvent) => resolve({
         swDownloadId: e.data.swDownloadId,

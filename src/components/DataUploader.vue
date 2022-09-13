@@ -127,6 +127,9 @@ import VerificationCode from "@/components/VerificationCode.vue";
 import {pipingUiAuthAsync} from "@/pipingUiAuthWithWebpackChunkName"
 import {language} from "@/language";
 import {globalStore} from "@/vue-global";
+import {readableBytesString} from "@/utils/readableBytesString";
+import {zipFilesAsBlob} from "@/utils/zipFilesAsBlob";
+import {supportsFetchUploadStreaming} from "@/utils/supportsFetchUploadStreaming";
 
 // eslint-disable-next-line no-undef
 const props = defineProps<{ composedProps: DataUploaderProps }>();
@@ -136,8 +139,6 @@ const progressSetting = ref<{loadedBytes: number, totalBytes?: number}>({
   loadedBytes: 0,
   totalBytes: undefined,
 });
-
-const readableBytesString = utils.readableBytesString;
 
 // NOTE: Function makes dynamic language-switch support possible
 //       Delegation is to reassign this value
@@ -283,7 +284,7 @@ async function send(password: string | Uint8Array | undefined) {
       const files: ActualFileObject[] = data;
       isCompressing.value = true;
       // Zip files
-      const zipBlob: Blob = await utils.zipFilesAsBlob(files);
+      const zipBlob: Blob = await zipFilesAsBlob(files);
       isCompressing.value = false;
       return zipBlob;
     }
@@ -296,7 +297,7 @@ async function send(password: string | Uint8Array | undefined) {
   }
 
   // Check whether fetch() upload streaming is supported
-  const supportsUploadStreaming = await utils.supportsFetchUploadStreaming(props.composedProps.serverUrl);
+  const supportsUploadStreaming = await supportsFetchUploadStreaming(props.composedProps.serverUrl);
   console.log("streaming upload support: ", supportsUploadStreaming);
   console.log("force disable streaming upload: ", globalStore.forceDisableStreamingUpload);
 
