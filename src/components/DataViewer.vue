@@ -307,7 +307,14 @@ onMounted(async () => {
 
   // If error
   if (keyExchangeRes.type === "error") {
-    errorMessage.value = () => keyExchangeRes.errorMessage(language.value);
+    switch (keyExchangeRes.error.code) {
+      case "key_exchange_error":
+        errorMessage.value = () => strings.value["key_exchange_error"](keyExchangeRes.error.keyExchangeErrorCode);
+        break;
+      case "sender_not_verified":
+        errorMessage.value = () => strings.value["sender_not_verified"];
+        break;
+    }
     return;
   }
   const {key} = keyExchangeRes;

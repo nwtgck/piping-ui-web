@@ -9,7 +9,6 @@ import {
   VerifiedParcel,
   verifiedParcelType
 } from "@/datatypes";
-import {stringsByLang} from "@/strings/strings-by-lang";
 import type {Validation} from "io-ts";
 const utilsAsync = () => import("@/utils");
 
@@ -103,11 +102,15 @@ async function generateVerificationCode(publicJwk1: JsonWebKey, publicJwk2: Json
   return (await utils.sha256(hashes.sort().join('-'))).substring(0, 32);
 }
 
+type KeyExchangeAndReceiveVerifiedError =
+  { code: 'key_exchange_error', keyExchangeErrorCode: KeyExchangeErrorCode } |
+  { code: 'sender_not_verified' };
+
 export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPath: string, protection: Protection, setVerificationStep: (step: VerificationStep) => void):
   Promise<
     {type: 'key', key: string | Uint8Array | undefined} |
-    {type: 'error', errorMessage: (lang: string) => string}
-    > {
+    {type: 'error', error: KeyExchangeAndReceiveVerifiedError }
+  > {
   switch (protection.type) {
     case 'raw':
       return {
@@ -126,9 +129,7 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
         setVerificationStep({type: 'error'});
         return {
           type: "error",
-          errorMessage(lang) {
-            return stringsByLang(lang)['key_exchange_error'](keyExchangeRes.errorCode);
-          }
+          error: { code: 'key_exchange_error', keyExchangeErrorCode: keyExchangeRes.errorCode },
         };
       }
       const {key, verificationCode} = keyExchangeRes;
@@ -146,9 +147,7 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
       if (verifiedParcelEither._tag === "Left") {
         return {
           type: "error",
-          errorMessage(lang) {
-            return stringsByLang(lang)['key_exchange_error']('invalid_parcel_format');
-          }
+          error: { code: 'key_exchange_error', keyExchangeErrorCode: 'invalid_parcel_format'},
         };
       }
       const {verified} = verifiedParcelEither.right;
@@ -156,9 +155,7 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
       if (!verified) {
         return {
           type: "error",
-          errorMessage(lang) {
-            return stringsByLang(lang)['sender_not_verified'];
-          }
+          error: { code: 'sender_not_verified' },
         };
       }
       return {
