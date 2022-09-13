@@ -215,7 +215,7 @@ import {keys} from "@/local-storage-keys";
 import {globalStore} from "@/vue-global";
 import {strings} from "@/strings/strings";
 import {type FilePondFile, type ActualFileObject} from "filepond";
-import {baseAndExt} from "@/utils";
+import {baseAndExt} from "@/utils/utils";
 import {type Protection} from "@/datatypes";
 import buildConstants from "@/build-constants";
 

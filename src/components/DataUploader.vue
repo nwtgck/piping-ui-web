@@ -118,7 +118,7 @@ import urlJoin from 'url-join';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
 import {blobToReadableStream} from 'binconv/dist/src/blobToReadableStream';
 
-import * as utils from '@/utils';
+import * as utils from '@/utils/utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
 import {stringsByLang} from "@/strings/strings-by-lang";
 import {mdiAlert, mdiCancel, mdiCheck, mdiChevronDown, mdiCloseCircle} from "@mdi/js";

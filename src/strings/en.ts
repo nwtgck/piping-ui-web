@@ -1,7 +1,7 @@
 import {VERSION} from "@/version";
 import {type KeyExchangeErrorCode} from "@/_piping-ui-auth";
 const urlJoinAsync = () => import('url-join').then(p => p.default);
-const utilsAsync = () => import('@/utils');
+const utilsAsync = () => import('@/utils/utils');
 
 export const en = {
   language: 'Language',

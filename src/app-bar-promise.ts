@@ -1,4 +1,4 @@
-import {makePromise} from "@/utils";
+import {makePromise} from "@/utils/utils";
 
 const {promise, resolve} = makePromise<Element>();
 

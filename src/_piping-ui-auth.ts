@@ -10,7 +10,7 @@ import {
   verifiedParcelType
 } from "@/datatypes";
 import type {Validation} from "io-ts";
-const utilsAsync = () => import("@/utils");
+const utilsAsync = () => import("@/utils/utils");
 
 const jwkThumbprintAsync  = () => import("jwk-thumbprint");
 const uint8ArrayToStringAsync = () => import('binconv/dist/src/uint8ArrayToString').then(p => p.uint8ArrayToString);

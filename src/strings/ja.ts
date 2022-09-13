@@ -2,7 +2,7 @@ import {VERSION} from "@/version";
 import {type KeyExchangeErrorCode} from "@/_piping-ui-auth";
 import {type Strings} from "@/strings/en";
 const urlJoinAsync = () => import('url-join').then(p => p.default);
-const utilsAsync = () => import('@/utils');
+const utilsAsync = () => import('@/utils/utils');
 
 export const ja: Strings = {
   language: '言語 (Language)',

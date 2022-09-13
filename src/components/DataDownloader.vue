@@ -61,7 +61,7 @@ import * as fileType from 'file-type/browser';
 const FileSaverAsync = () => import('file-saver');
 const binconvAsync = () => import('binconv');
 const swDownloadAsync = () => import("@/sw-download");
-const utilsAsync = () => import("@/utils");
+const utilsAsync = () => import("@/utils/utils");
 
 // eslint-disable-next-line no-undef
 const props = defineProps<{ composedProps: DataDownloaderProps }>();
