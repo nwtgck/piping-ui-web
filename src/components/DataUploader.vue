@@ -12,20 +12,17 @@
     </v-expansion-panel-header>
     <v-expansion-panel-content>
 
-      <v-alert type="warning" v-if="canceled" color="grey">
-        <span style="">{{ strings['canceled'] }}</span>
-      </v-alert>
-
-      <v-alert type="info" v-if="!canceled && composedProps.protection.type === 'passwordless' && verificationStep.type === 'initial'">
-        <span style="">{{ strings['waiting_for_receiver'] }}</span>
+      <v-alert type="info" v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'initial'" :color="canceled ? 'grey' : undefined">
+        <span>{{ strings['waiting_for_receiver'] }}</span>
       </v-alert>
 
       <span v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'verification_code_arrived'">
-        <VerificationCode :value="verificationStep.verificationCode"/>
+        <VerificationCode :value="verificationStep.verificationCode" :color="canceled ? 'grey' : undefined"/>
 
         <v-layout>
           <v-flex xs6>
-            <v-btn color="success"
+            <v-btn :color="canceled ? 'grey' : 'success'"
+                   :disabled="canceled"
                    @click="verify(true)"
                    block>
               <v-icon left dark>{{ icons.mdiCheck }}</v-icon>
@@ -33,7 +30,8 @@
             </v-btn>
           </v-flex>
           <v-flex xs6>
-            <v-btn color="error"
+            <v-btn :color="canceled ? 'grey' : 'error'"
+                   :disabled="canceled"
                    @click="verify(false)"
                    block>
               <v-icon left dark>{{ icons.mdiCancel }}</v-icon>
