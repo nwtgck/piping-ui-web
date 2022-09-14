@@ -188,9 +188,15 @@ import {uint8ArrayIsText} from "@/utils/uint8ArrayIsText";
 import {readableBytesString} from "@/utils/readableBytesString";
 import {readBlobAsText} from "@/utils/readBlobAsText";
 import {sanitizeHtmlAllowingATag} from "@/utils/sanitizeHtmlAllowingATag";
+import {makePromise} from "@/utils/makePromise";
 
 // eslint-disable-next-line no-undef
 const props = defineProps<{ composedProps: DataViewerProps }>();
+
+const {promise: canceledPromise, resolve: cancel} = makePromise<void>();
+canceledPromise.then(() => {
+  canceled.value = true;
+});
 
 // Progress bar setting
 const progressSetting = ref<{loadedBytes: number, totalBytes?: number}>({
@@ -305,8 +311,13 @@ onMounted(async () => {
     props.composedProps.protection,
     (step: VerificationStep) => {
       verificationStep.value = step;
-    }
+    },
+    canceledPromise,
   );
+
+  if (keyExchangeRes.type === "canceled") {
+    return;
+  }
 
   // If error
   if (keyExchangeRes.type === "error") {

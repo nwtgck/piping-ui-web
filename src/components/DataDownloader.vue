@@ -58,6 +58,7 @@ import {pipingUiAuthAsync} from "@/pipingUiAuthWithWebpackChunkName"
 import {language} from "@/language";
 import * as fileType from 'file-type/browser';
 import {canTransferReadableStream} from "@/utils/canTransferReadableStream";
+import {makePromise} from "@/utils/makePromise";
 
 const FileSaverAsync = () => import('file-saver');
 const binconvAsync = () => import('binconv');
@@ -66,6 +67,11 @@ const openPgpUtilsAsync = () => import("@/utils/openpgp-utils");
 
 // eslint-disable-next-line no-undef
 const props = defineProps<{ composedProps: DataDownloaderProps }>();
+
+const {promise: canceledPromise, resolve: cancel} = makePromise<void>();
+canceledPromise.then(() => {
+  // canceled.value = true;
+});
 
 const errorMessage = ref<() => string>(() => "");
 const verificationStep = ref<VerificationStep>({type: 'initial'});
@@ -107,8 +113,13 @@ onMounted(async () => {
       props.composedProps.protection,
       (step: VerificationStep) => {
         verificationStep.value = step;
-      }
+      },
+      canceledPromise,
   );
+
+  if (keyExchangeRes.type === "canceled") {
+    return;
+  }
 
   // If error
   if (keyExchangeRes.type === "error") {

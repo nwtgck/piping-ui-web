@@ -79,7 +79,6 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
   const abortController = new AbortController();
   canceledPromise.then(() => {
     abortController.abort();
-    console.log("aborted!");
   });
   // Exchange
   const postResPromise = fetch(urlJoin(serverUrl, myPath), {
@@ -97,6 +96,7 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
     if (e.name === 'AbortError') {
       return {type: "canceled"};
     }
+    // TODO:
     return null as any;
   }
   if (postRes.status !== 200) {
@@ -112,6 +112,7 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
     if (e.name === 'AbortError') {
       return {type: "canceled"};
     }
+    // TODO:
     return null as any;
   }
   if (peerRes.status !== 200) {
@@ -163,10 +164,11 @@ type KeyExchangeAndReceiveVerifiedError =
   { code: 'key_exchange_error', keyExchangeErrorCode: KeyExchangeErrorCode } |
   { code: 'sender_not_verified' };
 
-export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPath: string, protection: Protection, setVerificationStep: (step: VerificationStep) => void):
+export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPath: string, protection: Protection, setVerificationStep: (step: VerificationStep) => void, canceledPromise: Promise<void>):
   Promise<
     {type: 'key', key: string | Uint8Array | undefined} |
-    {type: 'error', error: KeyExchangeAndReceiveVerifiedError }
+    {type: 'error', error: KeyExchangeAndReceiveVerifiedError } |
+    {type: 'canceled' }
   > {
   switch (protection.type) {
     case 'raw':
@@ -181,7 +183,10 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
       };
     case 'passwordless': {
       // Key exchange
-      const keyExchangeRes = await keyExchange(serverUrl, 'receiver', secretPath);
+      const keyExchangeRes = await keyExchange(serverUrl, 'receiver', secretPath, canceledPromise);
+      if (keyExchangeRes.type === 'canceled') {
+        return { type: "canceled" };
+      }
       if (keyExchangeRes.type === 'error') {
         setVerificationStep({type: 'error'});
         return {
