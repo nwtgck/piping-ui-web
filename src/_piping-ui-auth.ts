@@ -50,9 +50,10 @@ export async function verify(serverUrl: string, secretPath: string, key: Uint8Ar
 export type KeyExchangeErrorCode = 'send_failed' | 'receive_failed' | 'invalid_parcel_format' | 'invalid_v1_parcel_format' | 'different_key_exchange_version';
 type KeyExchangeResult =
   {type: "key", key: Uint8Array, verificationCode: string} |
-  {type: "error", errorCode: KeyExchangeErrorCode};
+  {type: "error", errorCode: KeyExchangeErrorCode} |
+  {type: "canceled"};
 
-export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver', secretPath: string): Promise<KeyExchangeResult> {
+export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver', secretPath: string, canceledPromise: Promise<void>): Promise<KeyExchangeResult> {
   const KEY_EXCHANGE_VERSION = 1;
   // 256 is max value for deriveBits()
   const KEY_BITS = 256;
@@ -75,14 +76,44 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
   const urlJoin = await urlJoinAsync();
   const myPath = await keyExchangePath(type, secretPath);
   const peerPath = await keyExchangePath(type === 'sender' ? 'receiver' : 'sender', secretPath);
+  const abortController = new AbortController();
+  canceledPromise.then(() => {
+    abortController.abort();
+    console.log("aborted!");
+  });
   // Exchange
-  const postResPromise = fetch(urlJoin(serverUrl, myPath), {method: 'POST', body: JSON.stringify(keyExchangeParcel)});
-  const peerResPromise = fetch(urlJoin(serverUrl, peerPath));
-  const postRes = await postResPromise;
+  const postResPromise = fetch(urlJoin(serverUrl, myPath), {
+    method: 'POST',
+    body: JSON.stringify(keyExchangeParcel),
+    signal: abortController.signal,
+  });
+  const peerResPromise = fetch(urlJoin(serverUrl, peerPath), {
+    signal: abortController.signal,
+  });
+  let postRes: Response;
+  try {
+    postRes = await postResPromise;
+  } catch (e: any) {
+    if (e.name === 'AbortError') {
+      return {type: "canceled"};
+    }
+    return null as any;
+  }
   if (postRes.status !== 200) {
     return {type: "error", errorCode: 'send_failed'};
   }
-  const peerRes = await peerResPromise;
+  let peerRes: Response;
+  try {
+    [, peerRes] = await Promise.all([
+      postRes.text(),
+      peerResPromise,
+    ]);
+  } catch (e: any) {
+    if (e.name === 'AbortError') {
+      return {type: "canceled"};
+    }
+    return null as any;
+  }
   if (peerRes.status !== 200) {
     return {type: "error", errorCode: 'receive_failed'};
   }

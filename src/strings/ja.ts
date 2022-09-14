@@ -62,6 +62,7 @@ export const ja: Strings = {
   view_in_viewer: '表示',
   decrypting: '復号中...',
   download_url: 'ダウンロードURL',
+  canceled: 'キャンセルしました',
   waiting_for_sender: '送信者を待機中...',
   copied: 'コピーされました',
   password_might_be_wrong: 'パスワードが間違っている可能性があります',

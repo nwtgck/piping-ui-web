@@ -29,6 +29,7 @@ export const en = {
   error_file_not_selected: 'Error: File not selected',
   error_secret_path_not_specified: 'Error: Secret path not specified',
   upload: 'Upload',
+  canceled: 'Canceled',
   waiting_for_receiver: 'Waiting for receiver...',
   verification_code: 'Verification code',
   verify_and_send: 'Verify & Send',

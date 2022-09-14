@@ -12,7 +12,11 @@
     </v-expansion-panel-header>
     <v-expansion-panel-content>
 
-      <v-alert type="info" v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'initial'">
+      <v-alert type="warning" v-if="canceled" color="grey">
+        <span style="">{{ strings['canceled'] }}</span>
+      </v-alert>
+
+      <v-alert type="info" v-if="!canceled && composedProps.protection.type === 'passwordless' && verificationStep.type === 'initial'">
         <span style="">{{ strings['waiting_for_receiver'] }}</span>
       </v-alert>
 
@@ -83,7 +87,7 @@
         <v-btn color="warning"
                outlined
                class="ma-2 justify-end"
-               @click="cancelUpload()">
+               @click="cancel()">
           <v-icon >{{ icons.mdiCloseCircle }}</v-icon>
           {{ strings['cancel'] }}
         </v-btn>
@@ -130,9 +134,15 @@ import {globalStore} from "@/vue-global";
 import {readableBytesString} from "@/utils/readableBytesString";
 import {zipFilesAsBlob} from "@/utils/zipFilesAsBlob";
 import {supportsFetchUploadStreaming} from "@/utils/supportsFetchUploadStreaming";
+import {makePromise} from "@/utils/makePromise";
 
 // eslint-disable-next-line no-undef
 const props = defineProps<{ composedProps: DataUploaderProps }>();
+
+const {promise: canceledPromise, resolve: cancel} = makePromise<void>();
+canceledPromise.then(() => {
+  canceled.value = true;
+});
 
 // Progress bar setting
 const progressSetting = ref<{loadedBytes: number, totalBytes?: number}>({
@@ -198,7 +208,7 @@ const headerIconColor = computed<string | undefined>(() => {
   if (hasError.value) {
     return "error";
   } else if (canceled.value) {
-    return "warning";
+    return "grey";
   } else if (isDoneUpload.value) {
     return "teal";
   } else {
@@ -241,7 +251,10 @@ onMounted(async () => {
       break;
     case 'passwordless': {
       // Key exchange
-      const keyExchangeRes = await (await pipingUiAuthAsync).keyExchange(props.composedProps.serverUrl, 'sender', props.composedProps.secretPath);
+      const keyExchangeRes = await (await pipingUiAuthAsync).keyExchange(props.composedProps.serverUrl, 'sender', props.composedProps.secretPath, canceledPromise);
+      if (keyExchangeRes.type === 'canceled') {
+        return;
+      }
       if (keyExchangeRes.type === 'error') {
         verificationStep.value = {type: 'error'};
         errorMessageDelegate.value = () => strings.value['key_exchange_error'](keyExchangeRes.errorCode);
@@ -332,6 +345,9 @@ async function send(password: string | Uint8Array | undefined) {
 }
 
 function uploadByXhr(body: Blob | Uint8Array, bodyLength: number) {
+  canceledPromise.then(() => {
+    xhr.abort();
+  });
   // Send
   xhr.open('POST', uploadPath.value, true);
   xhr.responseType = 'text';
@@ -384,11 +400,6 @@ function getReadableStreamWithProgress(baseStream: ReadableStream<Uint8Array>, b
       ctrl.enqueue(res.value);
     }
   });
-}
-
-function cancelUpload(): void {
-  xhr.abort();
-  canceled.value = true;
 }
 </script>
 
