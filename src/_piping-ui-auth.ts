@@ -96,8 +96,7 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
     if (e.name === 'AbortError') {
       return {type: "canceled"};
     }
-    // TODO:
-    return null as any;
+    return {type: "error", errorCode: 'send_failed'};
   }
   if (postRes.status !== 200) {
     return {type: "error", errorCode: 'send_failed'};
@@ -112,8 +111,7 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
     if (e.name === 'AbortError') {
       return {type: "canceled"};
     }
-    // TODO:
-    return null as any;
+    return {type: "error", errorCode: 'receive_failed'};
   }
   if (peerRes.status !== 200) {
     return {type: "error", errorCode: 'receive_failed'};
