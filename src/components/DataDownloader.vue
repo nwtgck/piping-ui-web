@@ -68,6 +68,7 @@ const openPgpUtilsAsync = () => import("@/utils/openpgp-utils");
 // eslint-disable-next-line no-undef
 const props = defineProps<{ composedProps: DataDownloaderProps }>();
 
+// TODO: support cancel
 const {promise: canceledPromise, resolve: cancel} = makePromise<void>();
 canceledPromise.then(() => {
   // canceled.value = true;

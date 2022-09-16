@@ -50,6 +50,7 @@ export async function verify(serverUrl: string, secretPath: string, key: Uint8Ar
     body: encryptedVerifiedParcel,
     signal: abortController.signal,
   });
+  // TODO: check res status
   await res.text();
 }
 
@@ -203,8 +204,24 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
       const uint8ArrayToString = await uint8ArrayToStringAsync();
       const urlJoin = await urlJoinAsync();
       const path = urlJoin(serverUrl, await verifiedPath(secretPath));
+      const abortController = new AbortController();
+      canceledPromise.then(() => {
+        abortController.abort();
+      });
       // Get verified or not
-      const res = await fetch(path);
+      let res: Response;
+      try {
+        res = await fetch(path, {
+          signal: abortController.signal,
+        });
+      } catch (e: any) {
+        if (e.name === 'AbortError') {
+          return {type: "canceled"};
+        }
+        // TODO: return { type: "error" }
+        throw e;
+      }
+      // TODO: check res status
       const utils = await openPgpUtilsAsync();
       // Decrypt body
       const decryptedBody: Uint8Array = await utils.decrypt(new Uint8Array(await res.arrayBuffer()), key);

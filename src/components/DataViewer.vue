@@ -17,7 +17,7 @@
       </v-alert>
 
       <span v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'verification_code_arrived'">
-        <VerificationCode :value="verificationStep.verificationCode"/>
+        <VerificationCode :value="verificationStep.verificationCode" :color="canceled ? 'grey' : undefined"/>
       </span>
 
       <!-- NOTE: Don't use v-if because the "sibling" element uses "ref" and the ref is loaded in mounted(), but don't know why "sibling" affects. -->
@@ -34,7 +34,8 @@
 
           <!-- Progress bar -->
         <v-progress-linear :value="progressPercentage"
-                           :indeterminate="progressPercentage === null && !canceled && errorMessage() === ''" />
+                           :indeterminate="progressPercentage === null && !canceled && errorMessage() === ''"
+                           :color="canceled ? 'grey' : undefined" />
       </span>
 
       <div v-show="isDecrypting">
@@ -125,7 +126,7 @@
         <v-btn color="warning"
                outlined
                class="ma-2 justify-end"
-               @click="cancelDownload()">
+               @click="cancel()">
           <v-icon >{{ icons.mdiCloseCircle }}</v-icon>
           {{ strings['cancel'] }}
         </v-btn>
@@ -261,7 +262,7 @@ const headerIconColor = computed<string | undefined>(() => {
   if (hasError.value) {
     return "error";
   } else if (canceled.value) {
-    return "warning";
+    return "grey";
   } else if (isDoneDownload.value) {
     return "teal";
   } else {
@@ -270,7 +271,7 @@ const headerIconColor = computed<string | undefined>(() => {
 });
 
 const isCancelable = computed<boolean>(() => {
-  return isReadyToDownload.value && !isDoneDownload && !hasError.value && !canceled.value;
+  return !isDoneDownload.value && !hasError.value && !canceled.value;
 });
 
 const isReadyToDownload = computed<boolean>(() => {
@@ -333,6 +334,9 @@ onMounted(async () => {
   }
   const {key} = keyExchangeRes;
 
+  canceledPromise.then(() => {
+    xhr.abort();
+  });
   xhr.open('GET', downloadPath.value);
   xhr.responseType = 'blob';
   xhr.onprogress = (ev) => {
@@ -439,11 +443,6 @@ function viewRaw() {
   errorMessage.value = () => '';
   // View blob if possible
   viewBlob();
-}
-
-function cancelDownload(): void {
-  xhr.abort();
-  canceled.value = true;
 }
 
 async function save(): Promise<void> {
