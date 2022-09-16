@@ -68,7 +68,7 @@
           <span>{{ progressSetting.loadedBytes }} of {{ progressSetting.totalBytes }}</span>
         </v-tooltip>
         <!-- Upload progress bar -->
-        <v-progress-linear :value="progressPercentage"/>
+        <v-progress-linear :value="progressPercentage" :color="canceled ? 'grey' : undefined"/>
       </div>
 
       <v-simple-table class="text-left">
@@ -330,14 +330,24 @@ async function send(password: string | Uint8Array | undefined) {
   const plainStreamWithProgress = getReadableStreamWithProgress(plainStream, plainBody.size);
   // Encrypt
   const encryptedStream = await openPgpUtils.encrypt(plainStreamWithProgress, password);
+  const abortController = new AbortController();
+  canceledPromise.then(() => {
+    abortController.abort();
+  });
   try {
     // Upload encrypted stream
-    await fetch(uploadPath.value, {
+    const res = await fetch(uploadPath.value, {
       method: 'POST',
       body: encryptedStream,
       duplex: 'half',
+      signal: abortController.signal,
     } as RequestInit);
-  } catch {
+    // TODO: check res status
+    await res.text();
+  } catch (e: any) {
+    if (e.name === 'AbortError') {
+      return;
+    }
     errorMessageDelegate.value = () => strings.value['data_uploader_xhr_upload_error'];
   }
 }
