@@ -224,7 +224,7 @@ const isReadyToUpload = computed<boolean>(() => {
 });
 
 const isCancelable = computed<boolean>(() =>
-  isReadyToUpload && !isDoneUpload.value && !hasError.value && !canceled.value
+  isReadyToUpload && !isDoneUpload.value && !hasError.value && !canceled.value && verificationStep.value.type !== "verification_code_arrived"
 );
 
 // for language support
