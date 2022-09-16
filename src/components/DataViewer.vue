@@ -12,7 +12,7 @@
     </v-expansion-panel-header>
     <v-expansion-panel-content>
 
-      <v-alert type="info" v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'initial'">
+      <v-alert type="info" v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'initial'" :color="canceled ? 'grey' : undefined">
         <span style="">{{ strings['waiting_for_sender'] }}</span>
       </v-alert>
 
