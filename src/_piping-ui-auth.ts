@@ -28,7 +28,7 @@ async function verifiedPath(secretPath: string): Promise<string> {
   return await sha256(`${secretPath}/verified`);
 }
 
-export async function verify(serverUrl: string, secretPath: string, key: Uint8Array, verified: boolean) {
+export async function verify(serverUrl: string, secretPath: string, key: Uint8Array, verified: boolean, canceledPromise: Promise<void>) {
   const openPgpUtils = await openPgpUtilsAsync();
   const urlJoin = await urlJoinAsync();
   const stringToUint8Array = await stringToUint8ArrayAsync();
@@ -40,11 +40,17 @@ export async function verify(serverUrl: string, secretPath: string, key: Uint8Ar
     key,
   );
   const path = urlJoin(serverUrl, await verifiedPath(secretPath));
+  const abortController = new AbortController();
+  canceledPromise.then(() => {
+    abortController.abort();
+  });
   // Send verified or not
-  await fetch(path, {
+  const res = await fetch(path, {
     method: 'POST',
     body: encryptedVerifiedParcel,
+    signal: abortController.signal,
   });
+  await res.text();
 }
 
 export type KeyExchangeErrorCode = 'send_failed' | 'receive_failed' | 'invalid_parcel_format' | 'invalid_v1_parcel_format' | 'different_key_exchange_version';

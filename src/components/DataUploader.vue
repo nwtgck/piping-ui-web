@@ -272,7 +272,7 @@ async function verify(verified: boolean) {
   const {key} = verificationStep.value;
   verificationStep.value = {type: 'verified', verified};
 
-  await (await pipingUiAuthAsync).verify(props.composedProps.serverUrl, props.composedProps.secretPath, key, verified);
+  await (await pipingUiAuthAsync).verify(props.composedProps.serverUrl, props.composedProps.secretPath, key, verified, canceledPromise);
 
   // If verified, send
   if (verified) {
