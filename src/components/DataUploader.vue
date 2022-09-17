@@ -12,16 +12,17 @@
     </v-expansion-panel-header>
     <v-expansion-panel-content>
 
-      <v-alert type="info" v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'initial'">
-        <span style="">{{ strings['waiting_for_receiver'] }}</span>
+      <v-alert type="info" v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'initial'" :color="canceled ? 'grey' : undefined">
+        <span>{{ strings['waiting_for_receiver'] }}</span>
       </v-alert>
 
       <span v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'verification_code_arrived'">
-        <VerificationCode :value="verificationStep.verificationCode"/>
+        <VerificationCode :value="verificationStep.verificationCode" :color="canceled ? 'grey' : undefined"/>
 
         <v-layout>
           <v-flex xs6>
-            <v-btn color="success"
+            <v-btn :color="canceled ? 'grey' : 'success'"
+                   :disabled="canceled"
                    @click="verify(true)"
                    block>
               <v-icon left dark>{{ icons.mdiCheck }}</v-icon>
@@ -29,7 +30,8 @@
             </v-btn>
           </v-flex>
           <v-flex xs6>
-            <v-btn color="error"
+            <v-btn :color="canceled ? 'grey' : 'error'"
+                   :disabled="canceled"
                    @click="verify(false)"
                    block>
               <v-icon left dark>{{ icons.mdiCancel }}</v-icon>
@@ -66,7 +68,7 @@
           <span>{{ progressSetting.loadedBytes }} of {{ progressSetting.totalBytes }}</span>
         </v-tooltip>
         <!-- Upload progress bar -->
-        <v-progress-linear :value="progressPercentage"/>
+        <v-progress-linear :value="progressPercentage" :color="canceled ? 'grey' : undefined"/>
       </div>
 
       <v-simple-table class="text-left">
@@ -83,7 +85,7 @@
         <v-btn color="warning"
                outlined
                class="ma-2 justify-end"
-               @click="cancelUpload()">
+               @click="cancel()">
           <v-icon >{{ icons.mdiCloseCircle }}</v-icon>
           {{ strings['cancel'] }}
         </v-btn>
@@ -130,9 +132,15 @@ import {globalStore} from "@/vue-global";
 import {readableBytesString} from "@/utils/readableBytesString";
 import {zipFilesAsBlob} from "@/utils/zipFilesAsBlob";
 import {supportsFetchUploadStreaming} from "@/utils/supportsFetchUploadStreaming";
+import {makePromise} from "@/utils/makePromise";
 
 // eslint-disable-next-line no-undef
 const props = defineProps<{ composedProps: DataUploaderProps }>();
+
+const {promise: canceledPromise, resolve: cancel} = makePromise<void>();
+canceledPromise.then(() => {
+  canceled.value = true;
+});
 
 // Progress bar setting
 const progressSetting = ref<{loadedBytes: number, totalBytes?: number}>({
@@ -198,7 +206,7 @@ const headerIconColor = computed<string | undefined>(() => {
   if (hasError.value) {
     return "error";
   } else if (canceled.value) {
-    return "warning";
+    return "grey";
   } else if (isDoneUpload.value) {
     return "teal";
   } else {
@@ -216,7 +224,7 @@ const isReadyToUpload = computed<boolean>(() => {
 });
 
 const isCancelable = computed<boolean>(() =>
-  isReadyToUpload && !isDoneUpload.value && !hasError.value && !canceled.value
+  isReadyToUpload && !isDoneUpload.value && !hasError.value && !canceled.value && verificationStep.value.type !== "verification_code_arrived"
 );
 
 // for language support
@@ -241,7 +249,10 @@ onMounted(async () => {
       break;
     case 'passwordless': {
       // Key exchange
-      const keyExchangeRes = await (await pipingUiAuthAsync).keyExchange(props.composedProps.serverUrl, 'sender', props.composedProps.secretPath);
+      const keyExchangeRes = await (await pipingUiAuthAsync).keyExchange(props.composedProps.serverUrl, 'sender', props.composedProps.secretPath, canceledPromise);
+      if (keyExchangeRes.type === 'canceled') {
+        return;
+      }
       if (keyExchangeRes.type === 'error') {
         verificationStep.value = {type: 'error'};
         errorMessageDelegate.value = () => strings.value['key_exchange_error'](keyExchangeRes.errorCode);
@@ -261,7 +272,7 @@ async function verify(verified: boolean) {
   const {key} = verificationStep.value;
   verificationStep.value = {type: 'verified', verified};
 
-  await (await pipingUiAuthAsync).verify(props.composedProps.serverUrl, props.composedProps.secretPath, key, verified);
+  await (await pipingUiAuthAsync).verify(props.composedProps.serverUrl, props.composedProps.secretPath, key, verified, canceledPromise);
 
   // If verified, send
   if (verified) {
@@ -319,19 +330,32 @@ async function send(password: string | Uint8Array | undefined) {
   const plainStreamWithProgress = getReadableStreamWithProgress(plainStream, plainBody.size);
   // Encrypt
   const encryptedStream = await openPgpUtils.encrypt(plainStreamWithProgress, password);
+  const abortController = new AbortController();
+  canceledPromise.then(() => {
+    abortController.abort();
+  });
   try {
     // Upload encrypted stream
-    await fetch(uploadPath.value, {
+    const res = await fetch(uploadPath.value, {
       method: 'POST',
       body: encryptedStream,
       duplex: 'half',
+      signal: abortController.signal,
     } as RequestInit);
-  } catch {
+    // TODO: check res status
+    await res.text();
+  } catch (e: any) {
+    if (e.name === 'AbortError') {
+      return;
+    }
     errorMessageDelegate.value = () => strings.value['data_uploader_xhr_upload_error'];
   }
 }
 
 function uploadByXhr(body: Blob | Uint8Array, bodyLength: number) {
+  canceledPromise.then(() => {
+    xhr.abort();
+  });
   // Send
   xhr.open('POST', uploadPath.value, true);
   xhr.responseType = 'text';
@@ -384,11 +408,6 @@ function getReadableStreamWithProgress(baseStream: ReadableStream<Uint8Array>, b
       ctrl.enqueue(res.value);
     }
   });
-}
-
-function cancelUpload(): void {
-  xhr.abort();
-  canceled.value = true;
 }
 </script>
 

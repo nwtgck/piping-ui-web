@@ -28,7 +28,7 @@ async function verifiedPath(secretPath: string): Promise<string> {
   return await sha256(`${secretPath}/verified`);
 }
 
-export async function verify(serverUrl: string, secretPath: string, key: Uint8Array, verified: boolean) {
+export async function verify(serverUrl: string, secretPath: string, key: Uint8Array, verified: boolean, canceledPromise: Promise<void>) {
   const openPgpUtils = await openPgpUtilsAsync();
   const urlJoin = await urlJoinAsync();
   const stringToUint8Array = await stringToUint8ArrayAsync();
@@ -40,19 +40,27 @@ export async function verify(serverUrl: string, secretPath: string, key: Uint8Ar
     key,
   );
   const path = urlJoin(serverUrl, await verifiedPath(secretPath));
+  const abortController = new AbortController();
+  canceledPromise.then(() => {
+    abortController.abort();
+  });
   // Send verified or not
-  await fetch(path, {
+  const res = await fetch(path, {
     method: 'POST',
     body: encryptedVerifiedParcel,
+    signal: abortController.signal,
   });
+  // TODO: check res status
+  await res.text();
 }
 
 export type KeyExchangeErrorCode = 'send_failed' | 'receive_failed' | 'invalid_parcel_format' | 'invalid_v1_parcel_format' | 'different_key_exchange_version';
 type KeyExchangeResult =
   {type: "key", key: Uint8Array, verificationCode: string} |
-  {type: "error", errorCode: KeyExchangeErrorCode};
+  {type: "error", errorCode: KeyExchangeErrorCode} |
+  {type: "canceled"};
 
-export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver', secretPath: string): Promise<KeyExchangeResult> {
+export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver', secretPath: string, canceledPromise: Promise<void>): Promise<KeyExchangeResult> {
   const KEY_EXCHANGE_VERSION = 1;
   // 256 is max value for deriveBits()
   const KEY_BITS = 256;
@@ -75,14 +83,43 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
   const urlJoin = await urlJoinAsync();
   const myPath = await keyExchangePath(type, secretPath);
   const peerPath = await keyExchangePath(type === 'sender' ? 'receiver' : 'sender', secretPath);
+  const abortController = new AbortController();
+  canceledPromise.then(() => {
+    abortController.abort();
+  });
   // Exchange
-  const postResPromise = fetch(urlJoin(serverUrl, myPath), {method: 'POST', body: JSON.stringify(keyExchangeParcel)});
-  const peerResPromise = fetch(urlJoin(serverUrl, peerPath));
-  const postRes = await postResPromise;
+  const postResPromise = fetch(urlJoin(serverUrl, myPath), {
+    method: 'POST',
+    body: JSON.stringify(keyExchangeParcel),
+    signal: abortController.signal,
+  });
+  const peerResPromise = fetch(urlJoin(serverUrl, peerPath), {
+    signal: abortController.signal,
+  });
+  let postRes: Response;
+  try {
+    postRes = await postResPromise;
+  } catch (e: any) {
+    if (e.name === 'AbortError') {
+      return {type: "canceled"};
+    }
+    return {type: "error", errorCode: 'send_failed'};
+  }
   if (postRes.status !== 200) {
     return {type: "error", errorCode: 'send_failed'};
   }
-  const peerRes = await peerResPromise;
+  let peerRes: Response;
+  try {
+    [, peerRes] = await Promise.all([
+      postRes.text(),
+      peerResPromise,
+    ]);
+  } catch (e: any) {
+    if (e.name === 'AbortError') {
+      return {type: "canceled"};
+    }
+    return {type: "error", errorCode: 'receive_failed'};
+  }
   if (peerRes.status !== 200) {
     return {type: "error", errorCode: 'receive_failed'};
   }
@@ -132,10 +169,11 @@ type KeyExchangeAndReceiveVerifiedError =
   { code: 'key_exchange_error', keyExchangeErrorCode: KeyExchangeErrorCode } |
   { code: 'sender_not_verified' };
 
-export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPath: string, protection: Protection, setVerificationStep: (step: VerificationStep) => void):
+export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPath: string, protection: Protection, setVerificationStep: (step: VerificationStep) => void, canceledPromise: Promise<void>):
   Promise<
     {type: 'key', key: string | Uint8Array | undefined} |
-    {type: 'error', error: KeyExchangeAndReceiveVerifiedError }
+    {type: 'error', error: KeyExchangeAndReceiveVerifiedError } |
+    {type: 'canceled' }
   > {
   switch (protection.type) {
     case 'raw':
@@ -150,7 +188,10 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
       };
     case 'passwordless': {
       // Key exchange
-      const keyExchangeRes = await keyExchange(serverUrl, 'receiver', secretPath);
+      const keyExchangeRes = await keyExchange(serverUrl, 'receiver', secretPath, canceledPromise);
+      if (keyExchangeRes.type === 'canceled') {
+        return { type: "canceled" };
+      }
       if (keyExchangeRes.type === 'error') {
         setVerificationStep({type: 'error'});
         return {
@@ -163,8 +204,24 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
       const uint8ArrayToString = await uint8ArrayToStringAsync();
       const urlJoin = await urlJoinAsync();
       const path = urlJoin(serverUrl, await verifiedPath(secretPath));
+      const abortController = new AbortController();
+      canceledPromise.then(() => {
+        abortController.abort();
+      });
       // Get verified or not
-      const res = await fetch(path);
+      let res: Response;
+      try {
+        res = await fetch(path, {
+          signal: abortController.signal,
+        });
+      } catch (e: any) {
+        if (e.name === 'AbortError') {
+          return {type: "canceled"};
+        }
+        // TODO: return { type: "error" }
+        throw e;
+      }
+      // TODO: check res status
       const utils = await openPgpUtilsAsync();
       // Decrypt body
       const decryptedBody: Uint8Array = await utils.decrypt(new Uint8Array(await res.arrayBuffer()), key);
