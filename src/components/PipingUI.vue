@@ -446,7 +446,20 @@ onMounted(() => {
   if (savedSecretPathHistory !== undefined) {
     secretPathHistory.value = savedSecretPathHistory;
   }
+
+  preloadForUserExperience();
 });
+
+function preloadForUserExperience() {
+  DataUploader();
+  DataViewer();
+  DataDownloader();
+  import("@/openpgp-import");
+  import("file-type/browser");
+  import("linkifyjs/html");
+  import("sanitize-html");
+  import("jszip");
+}
 
 // FIXME: Should be removed
 function applyLatestServerUrlAndSecretPath() {
