@@ -128,11 +128,11 @@ import type {VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import {pipingUiAuthAsync} from "@/pipingUiAuthWithWebpackChunkName"
 import {language} from "@/language";
-import {globalStore} from "@/vue-global";
 import {readableBytesString} from "@/utils/readableBytesString";
 import {zipFilesAsBlob} from "@/utils/zipFilesAsBlob";
 import {supportsFetchUploadStreaming} from "@/utils/supportsFetchUploadStreaming";
 import {makePromise} from "@/utils/makePromise";
+import {forceDisableStreamingUpload} from "@/settings/forceDisableStreamingUpload";
 
 const props = defineProps<{ composedProps: DataUploaderProps }>();
 
@@ -309,10 +309,10 @@ async function send(password: string | Uint8Array | undefined) {
   // Check whether fetch() upload streaming is supported
   const supportsUploadStreaming = await supportsFetchUploadStreaming(props.composedProps.serverUrl);
   console.log("streaming upload support: ", supportsUploadStreaming);
-  console.log("force disable streaming upload: ", globalStore.forceDisableStreamingUpload);
+  console.log("force disable streaming upload: ", forceDisableStreamingUpload.value);
 
   // fetch() upload streaming is not supported
-  if (globalStore.forceDisableStreamingUpload || !supportsUploadStreaming) {
+  if (forceDisableStreamingUpload.value || !supportsUploadStreaming) {
     isNonStreamingEncrypting.value = true;
     // Convert plain body blob to Uint8Array
     const plainBodyArray: Uint8Array = await blobToUint8Array(plainBody);

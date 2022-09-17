@@ -212,12 +212,13 @@ import * as t from 'io-ts';
 import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiClose, mdiEye, mdiEyeOff, mdiKey, mdiShieldHalfFull, mdiText} from "@mdi/js";
 
 import {keys} from "@/local-storage-keys";
-import {globalStore} from "@/vue-global";
 import {strings} from "@/strings/strings";
 import {type FilePondFile, type ActualFileObject} from "filepond";
 import {type Protection} from "@/datatypes";
 import buildConstants from "@/build-constants";
 import {baseAndExt} from "@/utils/baseAndExt";
+import {recordsServerUrlHistory} from "@/settings/recordsServerUrlHistory";
+import {recordsSecretPathHistory} from "@/settings/recordsSecretPathHistory";
 
 const defaultServerUrls: ReadonlyArray<string> = buildConstants.pipingServerUrls;
 
@@ -516,7 +517,7 @@ async function send() {
   expandedPanelIds.value.push(expandedPanels.value.length-1);
 
   // If history is enable and user-input server URL is new
-  if (globalStore.recordsServerUrlHistory && !serverUrlHistory.value.map(normalizeUrl).includes(normalizeUrl(serverUrl.value))) {
+  if (recordsServerUrlHistory.value && !serverUrlHistory.value.map(normalizeUrl).includes(normalizeUrl(serverUrl.value))) {
     // Enroll server URLs
     serverUrlHistory.value.push(serverUrl.value);
     // Save to local storage
@@ -524,7 +525,7 @@ async function send() {
   }
 
   // If history is enable and user-input secret path is new
-  if (globalStore.recordsSecretPathHistory) {
+  if (recordsSecretPathHistory.value) {
     // Add secret path
     addSecretPath();
     // Save to local storage
