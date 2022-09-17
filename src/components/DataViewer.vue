@@ -165,7 +165,6 @@ export type DataViewerProps = {
 </script>
 
 <script setup lang="ts">
-/* eslint-disable no-console */
 import Vue, {ref, computed, watch, onMounted} from "vue";
 import urlJoin from 'url-join';
 import linkifyHtml from 'linkifyjs/html';

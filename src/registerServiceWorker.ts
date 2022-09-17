@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-
 import { register } from 'register-service-worker';
 const swDownloadAsync = () => import("@/sw-download");
 

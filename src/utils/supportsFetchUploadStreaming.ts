@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-
 import urlJoin from "url-join";
 
 // Check fetch() upload streaming support with Piping Server

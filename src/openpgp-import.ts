@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-
 // Backup the native ReadableStream because OpenPGP.js modifies it on Firefox ESR 91.
 // In the latest Firefox, it is not modified.
 const NativeReadableStream = ReadableStream;
