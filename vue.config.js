@@ -9,6 +9,10 @@ module.exports = {
   },
   configureWebpack: {
     plugins: [
+      new webpack.ProvidePlugin({
+        process: 'process',
+        Buffer: ['buffer', 'Buffer'],
+      }),
       // (base: https://medium.com/curofy-engineering/a-guide-to-inject-variable-into-your-code-using-webpack-36c49fcc1dcd)
       new webpack.DefinePlugin({
         PIPING_SERVER_URLS: process.env.PIPING_SERVER_URLS || JSON.stringify([
