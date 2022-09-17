@@ -15,8 +15,7 @@
     "generate-robots-txt": "ts-node --project scripts/tsconfig.json scripts/generate-robots-txt.tsx > public/robots.txt",
     "generate-sitemap": "ts-node --project scripts/tsconfig.json scripts/generate-sitemap.tsx > public/sitemap.xml",
     "generate-version": "cross-var echo \"export const VERSION = \\\"$npm_package_version\\\";\" > src/version.ts",
-    "postinstall": "license-checker --production --json > src/licenses.json",
-    "real-serve": "watch-build-serve -i=dist -i=.idea -i=./node_modules -i=.git -i=src/version.ts -i src/service-worker/dist -i public/openpgp -i src/licenses.json -i public/sitemap.xml -i public/robots.txt"
+    "postinstall": "license-checker --production --json > src/licenses.json"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.30",
@@ -79,10 +78,10 @@
     "react-dom": "^18.2.0",
     "sass": "~1.32.0",
     "sass-loader": "^10.3.1",
+    "ts-node": "^10.9.1",
     "typescript": "^4.8.3",
     "vue-cli-plugin-vuetify": "^2.5.8",
     "vuetify-loader": "^1.9.2",
-    "watch-build-serve": "git+https://github.com/nwtgck/watch-build-serve-node.git#afc757410b3339e1603916ab98b8e5760569dbaa",
     "webpack-cli": "^3.3.12"
   },
   "license": "MIT",
