@@ -2,7 +2,6 @@ import Vue from 'vue'
 import App from '@/App.vue'
 import '@/registerServiceWorker'
 import vuetify from '@/plugins/vuetify';
-import AsyncComputedPlugin from 'vue-async-computed';
 import metaDescription from "@/meta-description.json";
 import constants from '@/constants';
 
@@ -40,7 +39,6 @@ import('smoothscroll-polyfill').then(smoothscroll => smoothscroll.polyfill());
 library.add(faGithub);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
 Vue.config.productionTip = false;
-Vue.use(AsyncComputedPlugin);
 
 new Vue({
   vuetify,
