@@ -24,6 +24,12 @@ module.exports = {
         ]),
       })
     ],
+    resolve: {
+      fallback: {
+        process: require.resolve("process/browser"),
+        buffer: require.resolve("buffer/"),
+      },
+    },
   },
   // (from: https://github.com/vuetifyjs/vuetify/issues/8279#issuecomment-517900297)
   transpileDependencies: ['vuetify'],
