@@ -1,10 +1,5 @@
-/// <reference lib="webworker" />
-// (from: https://medium.com/@dougallrich/give-users-control-over-app-updates-in-vue-cli-3-pwas-20453aedc1f2)
-
-// export empty type because of tsc --isolatedModules flag
-// (from: https://www.devextent.com/create-service-worker-typescript/)
-export type {};
-declare const self: ServiceWorkerGlobalScope;
+// (from: https://dev.to/wtho/custom-service-worker-logic-in-typescript-on-vite-4f27)
+const sw = self as unknown as ServiceWorkerGlobalScope & typeof globalThis;
 
 // Generate random string with specific length
 function generateRandomString(len: number): string {
@@ -35,22 +30,22 @@ function isHeaders(arg: unknown): arg is [string, string][] {
   return Array.isArray(arg) && arg.every(e => Array.isArray(e) && e.length === 2 && typeof e[0] === "string" && typeof e[1] === "string");
 }
 
-self.addEventListener('activate', (e: ExtendableEvent) => {
+sw.addEventListener('activate', (e: ExtendableEvent) => {
   // Activate Service Worker's "fetch" without user reload at the first time
   // (from: https://stackoverflow.com/a/41224941)
-  e.waitUntil(self.clients.claim());
+  e.waitUntil(sw.clients.claim());
 });
 
 // This is the code piece that GenerateSW mode can't provide for us.
 // This code listens for the user's confirmation to update the app.
-self.addEventListener('message', (e: ExtendableMessageEvent) => {
+sw.addEventListener('message', (e: ExtendableMessageEvent) => {
   if (!e.data) {
     return;
   }
 
   switch(e.data.type) {
     case 'skip-waiting':
-      self.skipWaiting();
+      sw.skipWaiting();
       break;
     case 'enroll-download': {
       const {headers, readableStream} = e.data;
@@ -111,7 +106,7 @@ self.addEventListener('message', (e: ExtendableMessageEvent) => {
 });
 
 // Support for stream download
-self.addEventListener('fetch', (event: FetchEvent) => {
+sw.addEventListener('fetch', (event: FetchEvent) => {
   const url = new URL(event.request.url);
   if (url.pathname === '/sw-download-support/v2') {
     // Return "OK"
