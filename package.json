@@ -82,7 +82,7 @@
     "typescript": "^4.8.3",
     "vue-cli-plugin-vuetify": "^2.5.8",
     "vuetify-loader": "^1.9.2",
-    "webpack-cli": "^3.3.12"
+    "webpack-cli": "^4.10.0"
   },
   "license": "MIT",
   "repository": {
