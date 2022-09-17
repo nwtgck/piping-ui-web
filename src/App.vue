@@ -47,6 +47,7 @@
 </template>
 
 <script setup lang="ts">
+/* eslint-disable */
 import {ref, computed, onMounted, reactive} from "vue";
 import { type Vue } from 'vue-property-decorator';
 const PipingUI = () => import('@/components/PipingUI.vue');
