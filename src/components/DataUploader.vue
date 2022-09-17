@@ -114,7 +114,7 @@ export type DataUploaderProps = {
 </script>
 
 <script setup lang="ts">
-/* eslint-disable no-console */
+/* eslint-disable */
 import Vue, {computed, onMounted, ref, watch} from "vue";
 import urlJoin from 'url-join';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
@@ -134,7 +134,6 @@ import {zipFilesAsBlob} from "@/utils/zipFilesAsBlob";
 import {supportsFetchUploadStreaming} from "@/utils/supportsFetchUploadStreaming";
 import {makePromise} from "@/utils/makePromise";
 
-// eslint-disable-next-line no-undef
 const props = defineProps<{ composedProps: DataUploaderProps }>();
 
 const {promise: canceledPromise, resolve: cancel} = makePromise<void>();

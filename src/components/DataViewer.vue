@@ -169,7 +169,7 @@ export type DataViewerProps = {
 import Vue, {ref, computed, watch, onMounted} from "vue";
 import urlJoin from 'url-join';
 import linkifyHtml from 'linkifyjs/html';
-const FileSaverAsync = () => import('file-saver');
+const FileSaverAsync = () => import('file-saver').then(p => p.default);
 const clipboardCopyAsync = () => import("clipboard-copy").then(p => p.default);
 import * as fileType from 'file-type/browser';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';

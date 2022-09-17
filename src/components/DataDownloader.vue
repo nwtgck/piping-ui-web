@@ -45,7 +45,7 @@ export type DataDownloaderProps = {
 </script>
 
 <script setup lang="ts">
-/* eslint-disable no-console */
+/* eslint-disable */
 
 import Vue, {ref, computed, onMounted} from "vue";
 import urlJoin from 'url-join';
@@ -60,12 +60,11 @@ import * as fileType from 'file-type/browser';
 import {canTransferReadableStream} from "@/utils/canTransferReadableStream";
 import {makePromise} from "@/utils/makePromise";
 
-const FileSaverAsync = () => import('file-saver');
+const FileSaverAsync = () => import('file-saver').then(p => p.default);
 const binconvAsync = () => import('binconv');
 const swDownloadAsync = () => import("@/sw-download");
 const openPgpUtilsAsync = () => import("@/utils/openpgp-utils");
 
-// eslint-disable-next-line no-undef
 const props = defineProps<{ composedProps: DataDownloaderProps }>();
 
 // TODO: support cancel

@@ -5,7 +5,8 @@
 </template>
 
 <script setup lang="ts">
-import {defineProps} from "vue";
+/* eslint-disable */
+
 import {strings} from "@/strings/strings";
 
 const props = defineProps<{

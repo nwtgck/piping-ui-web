@@ -7,6 +7,7 @@ node_modules
 /public/sitemap.xml
 /public/robots.txt
 /public/service-worker.js
+/public/service-worker.js.map
 /src/service-worker/dist
 
 # local env files

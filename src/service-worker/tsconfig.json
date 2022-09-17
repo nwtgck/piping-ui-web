@@ -6,16 +6,10 @@
     "removeComments": true,
     "preserveConstEnums": true,
     "sourceMap": true,
-    "declaration": true,
     "target": "es2015",
-    "lib": ["es2017", "dom", "webworker"],
-    "outDir": "dist",
-    "rootDir": "./",
-    "baseUrl": ".",
+    "lib": ["es2017", "webworker"],
+    "outDir": "../../public",
     "types": [],
-    "paths": {
-      "*": ["types/*"]
-    }
   },
   "include": [
     "src/**/*"
