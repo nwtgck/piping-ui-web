@@ -461,6 +461,11 @@ function preloadForUserExperience() {
   import("linkifyjs/html");
   import("sanitize-html");
   import("jszip");
+
+  const logoImage = new Image();
+  logoImage.src = require('@/assets/logo.svg');
+  logoImage.style.display = 'none';
+  document.body.appendChild(logoImage);
 }
 
 // FIXME: Should be removed
