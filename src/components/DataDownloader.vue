@@ -213,7 +213,6 @@ onMounted(async () => {
 // (base: https://googlechrome.github.io/samples/service-worker/post-message/)
 // FIXME: Use `[string, string][]` instead. But lint causes an error "0:0  error  Parsing error: Cannot read properties of undefined (reading 'map')"
 async function enrollDownload(headers: string[][], readableStream: ReadableStream<Uint8Array>): Promise<{ swDownloadId: string }> {
-  const openPgpUtils = await openPgpUtilsAsync();
   // eslint-disable-next-line no-async-promise-executor
   return new Promise(async (resolve, reject) => {
     if (!("serviceWorker" in navigator)) {
@@ -254,7 +253,8 @@ async function enrollDownload(headers: string[][], readableStream: ReadableStrea
         messageChannel.port1.postMessage({ done: true });
         break;
       }
-      messageChannel.port1.postMessage(result, [result.value.buffer]);
+      // .slice() is needed otherwise OpenPGP.js causes "TypeError: attempting to access detached ArrayBuffer"
+      messageChannel.port1.postMessage(result, [result.value.buffer.slice(0)]);
     }
   });
 }
