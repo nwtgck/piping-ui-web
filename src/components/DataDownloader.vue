@@ -192,9 +192,8 @@ onMounted(async () => {
   // (from: https://github.com/jimmywarting/StreamSaver.js/blob/314e64b8984484a3e8d39822c9b86a345eb36454/sw.js#L120-L122)
   // Make filename RFC5987 compatible
   const escapedFileName = encodeURIComponent(fileName).replace(/['()]/g, escape).replace(/\*/g, '%2A');
-  // FIXME: Use `[string, string][]` instead. But lint causes an error "0:0  error  Parsing error: Cannot read properties of undefined (reading 'map')"
-  const headers: string[][] = [
-    ... ( contentLengthStr === undefined ? [] : [ [ "Content-Length", contentLengthStr ] ] ),
+  const headers: [string, string][] = [
+    ...( contentLengthStr === undefined ? [] : [ [ "Content-Length", contentLengthStr ] ] ),
     // Without "Content-Type", Safari in iOS 15 adds ".html" to the downloading file
     ...( fileTypeResult === undefined ? [] : [ [ "Content-Type", fileTypeResult.mime ] ] ),
     ['Content-Disposition', "attachment; filename*=UTF-8''" + escapedFileName],
@@ -211,8 +210,7 @@ onMounted(async () => {
 });
 
 // (base: https://googlechrome.github.io/samples/service-worker/post-message/)
-// FIXME: Use `[string, string][]` instead. But lint causes an error "0:0  error  Parsing error: Cannot read properties of undefined (reading 'map')"
-async function enrollDownload(headers: string[][], readableStream: ReadableStream<Uint8Array>): Promise<{ swDownloadId: string }> {
+async function enrollDownload(headers: readonly [string, string][], readableStream: ReadableStream<Uint8Array>): Promise<{ swDownloadId: string }> {
   // eslint-disable-next-line no-async-promise-executor
   return new Promise(async (resolve, reject) => {
     if (!("serviceWorker" in navigator)) {
