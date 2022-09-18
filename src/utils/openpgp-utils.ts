@@ -30,6 +30,9 @@ export async function decryptStream(encrypted: ReadableStream<Uint8Array>, passw
     // FIXME: convert Uint8Array password to string in better way
     passwords: [password.toString()],
     format: 'binary',
+    // Allow unauthenticated stream
+    // (see: https://github.com/openpgpjs/openpgpjs/releases/tag/v4.0.0)
+    config: { allowUnauthenticatedStream: true },
   })).data;
   return toNativeReadableIfNeed(plain as ReadableStream<Uint8Array>) as ReadableStream<Uint8Array>;
 }

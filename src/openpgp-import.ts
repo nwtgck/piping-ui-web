@@ -10,10 +10,6 @@ if (NativeReadableStream !== ReadableStream) {
   console.log("ReadableStream is modified by OpenPGP.js");
 }
 
-// Allow unauthenticated stream
-// (see: https://github.com/openpgpjs/openpgpjs/releases/tag/v4.0.0)
-openpgp.config.allowUnauthenticatedStream = true;
-
 import {createReadableStreamWrapper} from '@mattiasbuelens/web-streams-adapter';
 
 // Create convert functions
