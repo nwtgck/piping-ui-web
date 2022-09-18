@@ -455,6 +455,7 @@ function preloadForUserExperience() {
   DataUploader();
   DataViewer();
   DataDownloader();
+  import("jwk-thumbprint");
   import("@/openpgp-import");
   import("file-type/browser");
   import("linkifyjs/html");
