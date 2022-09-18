@@ -1,10 +1,20 @@
-const openpgpAsync = () => import("@/openpgp-import");
+// No need to back up native ReadableStream
+// > The web-streams-polyfill and web-streams-adapter libraries are only loaded when streaming is used, and only if TransformStreams aren't natively supported
+// ref: https://github.com/openpgpjs/openpgpjs/releases/tag/v5.0.0
+
+// OLD: Back up the native ReadableStream because OpenPGP.js modifies it on Firefox ESR 91 in OpenPGP.js 4.10.10. In the latest Firefox, it is not modified.
+
+import {
+  encrypt as openpgpEncrypt,
+  decrypt as openpgpDecrypt,
+  createMessage as openpgpCreateMessage,
+  readMessage as  openpgpReadMessage,
+} from "openpgp/lightweight";
 
 export async function encrypt<T extends Uint8Array | ReadableStream<Uint8Array>>(stream: T, password: string | Uint8Array): Promise<T> {
-  const {openpgp} = await openpgpAsync();
   // Encrypt with PGP
-  const encrypted = await openpgp.encrypt({
-    message: await openpgp.createMessage({ binary: stream }),
+  const encrypted = await openpgpEncrypt({
+    message: await openpgpCreateMessage({ binary: stream }),
     // FIXME: convert Uint8Array password to string in better way
     passwords: [password.toString()],
     format: 'binary',
@@ -13,9 +23,8 @@ export async function encrypt<T extends Uint8Array | ReadableStream<Uint8Array>>
 }
 
 export async function decrypt(encrypted: Uint8Array, password: string | Uint8Array): Promise<Uint8Array> {
-  const {openpgp} = await openpgpAsync();
-  const plain = (await openpgp.decrypt({
-    message: await openpgp.readMessage({ binaryMessage: encrypted }),
+  const plain = (await openpgpDecrypt({
+    message: await openpgpReadMessage({ binaryMessage: encrypted }),
     // FIXME: convert Uint8Array password to string in better way
     passwords: [password.toString()],
     format: 'binary'
@@ -24,9 +33,8 @@ export async function decrypt(encrypted: Uint8Array, password: string | Uint8Arr
 }
 
 export async function decryptStream(encrypted: ReadableStream<Uint8Array>, password: string | Uint8Array): Promise<ReadableStream<Uint8Array>> {
-  const {openpgp, toPolyfillReadableIfNeed, toNativeReadableIfNeed} = await openpgpAsync();
-  const plain = (await openpgp.decrypt({
-    message: await openpgp.readMessage({ binaryMessage: toPolyfillReadableIfNeed(encrypted) }),
+  const plain = (await openpgpDecrypt({
+    message: await openpgpReadMessage({ binaryMessage: encrypted }),
     // FIXME: convert Uint8Array password to string in better way
     passwords: [password.toString()],
     format: 'binary',
@@ -34,5 +42,5 @@ export async function decryptStream(encrypted: ReadableStream<Uint8Array>, passw
     // (see: https://github.com/openpgpjs/openpgpjs/releases/tag/v4.0.0)
     config: { allowUnauthenticatedStream: true },
   })).data;
-  return toNativeReadableIfNeed(plain as ReadableStream<Uint8Array>) as ReadableStream<Uint8Array>;
+  return plain as ReadableStream<Uint8Array>;
 }
