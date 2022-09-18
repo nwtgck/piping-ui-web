@@ -48,8 +48,8 @@
 
 <script setup lang="ts">
 /* eslint-disable */
-import {ref, computed, onMounted, reactive} from "vue";
-import { type Vue } from 'vue-property-decorator';
+import type Vue from "vue";
+import {ref, onMounted, reactive} from "vue";
 const PipingUI = () => import('@/components/PipingUI.vue');
 const MenuContent = () => import('@/components/MenuContent.vue');
 const Licenses = () => import("@/components/Licenses.vue");

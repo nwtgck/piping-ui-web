@@ -8,29 +8,31 @@
 </template>
 
 <script lang="ts">
-import {Vue, Component, Emit, Prop,} from "vue-property-decorator";
+import Vue, {PropType} from "vue";
 import {type FilePondFile} from "filepond";
 import * as filePond from "filepond";
 const FilePond = () => import('vue-filepond').then(vueFilePond => vueFilePond.default());
 
 (async () => require('filepond/dist/filepond.min.css'))();
 
-@Component({
+export default Vue.extend({
   components: {
     FilePond,
-  }
-})
-export default class FilePondWrapper extends Vue {
-  @Prop() public value!: FilePondFile[];
-  @Emit() public input(value: FilePondFile[]) {}
-
-  @Prop() public labelIdle!: string;
-
+  },
+  props: {
+    value: Array as PropType<FilePondFile[]>,
+    labelIdle: String,
+  },
+  methods: {
+    input(value: FilePondFile[]) {
+      this.$emit("input", value);
+    },
+  },
   created() {
     // Disable "Powered by PQINA" link
     filePond.setOptions({
       credits: false,
     });
   }
-}
+});
 </script>
