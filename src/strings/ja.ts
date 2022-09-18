@@ -1,5 +1,5 @@
 import {VERSION} from "@/version";
-import {type KeyExchangeErrorCode} from "@/_piping-ui-auth";
+import {type KeyExchangeErrorCode} from "@/piping-ui-auth";
 import {type Strings} from "@/strings/en";
 
 const urlJoinAsync = () => import('url-join').then(p => p.default);

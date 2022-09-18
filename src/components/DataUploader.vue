@@ -126,7 +126,7 @@ import {stringsByLang} from "@/strings/strings-by-lang";
 import {mdiAlert, mdiCancel, mdiCheck, mdiChevronDown, mdiCloseCircle} from "@mdi/js";
 import type {VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
-import {pipingUiAuthAsync} from "@/pipingUiAuthWithWebpackChunkName"
+import * as pipingUiAuth from "@/piping-ui-auth";
 import {language} from "@/language";
 import {readableBytesString} from "@/utils/readableBytesString";
 import {zipFilesAsBlob} from "@/utils/zipFilesAsBlob";
@@ -248,7 +248,7 @@ onMounted(async () => {
       break;
     case 'passwordless': {
       // Key exchange
-      const keyExchangeRes = await (await pipingUiAuthAsync).keyExchange(props.composedProps.serverUrl, 'sender', props.composedProps.secretPath, canceledPromise);
+      const keyExchangeRes = await pipingUiAuth.keyExchange(props.composedProps.serverUrl, 'sender', props.composedProps.secretPath, canceledPromise);
       if (keyExchangeRes.type === 'canceled') {
         return;
       }
@@ -271,7 +271,7 @@ async function verify(verified: boolean) {
   const {key} = verificationStep.value;
   verificationStep.value = {type: 'verified', verified};
 
-  await (await pipingUiAuthAsync).verify(props.composedProps.serverUrl, props.composedProps.secretPath, key, verified, canceledPromise);
+  await pipingUiAuth.verify(props.composedProps.serverUrl, props.composedProps.secretPath, key, verified, canceledPromise);
 
   // If verified, send
   if (verified) {

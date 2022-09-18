@@ -54,7 +54,7 @@ import {stringsByLang} from "@/strings/strings-by-lang";
 import * as pipingUiUtils from "@/piping-ui-utils";
 import {type VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
-import {pipingUiAuthAsync} from "@/pipingUiAuthWithWebpackChunkName"
+import * as pipingUiAuth from "@/piping-ui-auth";
 import {language} from "@/language";
 import * as fileType from 'file-type/browser';
 import {canTransferReadableStream} from "@/utils/canTransferReadableStream";
@@ -107,7 +107,7 @@ onMounted(async () => {
   pipingUiUtils.scrollTo(rootElement.value!.$el);
 
   // Key exchange
-  const keyExchangeRes = await (await pipingUiAuthAsync).keyExchangeAndReceiveVerified(
+  const keyExchangeRes = await pipingUiAuth.keyExchangeAndReceiveVerified(
       props.composedProps.serverUrl,
       props.composedProps.secretPath,
       props.composedProps.protection,

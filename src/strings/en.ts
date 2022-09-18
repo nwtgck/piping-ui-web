@@ -1,5 +1,5 @@
 import {VERSION} from "@/version";
-import {type KeyExchangeErrorCode} from "@/_piping-ui-auth";
+import {type KeyExchangeErrorCode} from "@/piping-ui-auth";
 
 const urlJoinAsync = () => import('url-join').then(p => p.default);
 const sanitizeHtmlAllowingATagAsync = () => import('@/utils/sanitizeHtmlAllowingATag').then(p => p.sanitizeHtmlAllowingATag);

@@ -182,7 +182,7 @@ import * as pipingUiUtils from "@/piping-ui-utils";
 import {type VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import {BlobUrlManager} from "@/blob-url-manager";
-import {pipingUiAuthAsync} from "@/pipingUiAuthWithWebpackChunkName"
+import * as pipingUiAuth from "@/piping-ui-auth";
 import {language} from "@/language";
 import {uint8ArrayIsText} from "@/utils/uint8ArrayIsText";
 import {readableBytesString} from "@/utils/readableBytesString";
@@ -305,7 +305,7 @@ onMounted(async () => {
   pipingUiUtils.scrollTo(rootElement.value!.$el);
 
   // Key exchange
-  const keyExchangeRes = await (await pipingUiAuthAsync).keyExchangeAndReceiveVerified(
+  const keyExchangeRes = await pipingUiAuth.keyExchangeAndReceiveVerified(
     props.composedProps.serverUrl,
     props.composedProps.secretPath,
     props.composedProps.protection,
