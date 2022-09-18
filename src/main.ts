@@ -1,14 +1,10 @@
-import Vue from 'vue'
+import Vue, {defineAsyncComponent} from 'vue'
 import App from '@/App.vue'
 import '@/registerServiceWorker'
 import vuetify from '@/plugins/vuetify';
 import metaDescription from "@/meta-description.json";
 import constants from '@/constants';
 
-// (from: https://github.com/FortAwesome/vue-fontawesome/tree/700a86cb1a3726364de7137d0cbee2e00fcfd30d#usage)
-import { library } from '@fortawesome/fontawesome-svg-core'
-import { faGithub } from '@fortawesome/free-brands-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
 (() => {
   const lang = new URLSearchParams(window.location.search).get(constants.langQueryParameterName);
@@ -36,8 +32,16 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 // NOTE: Import asynchronously because user's action should be lazy, even if not lazy, the problem is only in animation, not logic.
 import('smoothscroll-polyfill').then(smoothscroll => smoothscroll.polyfill());
 
-library.add(faGithub);
-Vue.component('font-awesome-icon', FontAwesomeIcon);
+Vue.component('font-awesome-icon', defineAsyncComponent(async () => {
+  // (base: https://github.com/FortAwesome/vue-fontawesome/tree/700a86cb1a3726364de7137d0cbee2e00fcfd30d#usage)
+  const [{ library }, { faGithub }, {FontAwesomeIcon}] = await Promise.all([
+    import('@fortawesome/fontawesome-svg-core'),
+    import('@fortawesome/free-brands-svg-icons'),
+    import('@fortawesome/vue-fontawesome'),
+  ]);
+  library.add(faGithub);
+  return FontAwesomeIcon;
+}));
 Vue.config.productionTip = false;
 
 new Vue({
