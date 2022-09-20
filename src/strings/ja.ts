@@ -1,8 +1,9 @@
 import {VERSION} from "@/version";
-import {type KeyExchangeErrorCode} from "@/_piping-ui-auth";
+import {type KeyExchangeErrorCode} from "@/piping-ui-auth";
 import {type Strings} from "@/strings/en";
+
 const urlJoinAsync = () => import('url-join').then(p => p.default);
-const utilsAsync = () => import('@/utils');
+const sanitizeHtmlAllowingATagAsync = () => import('@/utils/sanitizeHtmlAllowingATag').then(p => p.sanitizeHtmlAllowingATag);
 
 export const ja: Strings = {
   language: '言語 (Language)',
@@ -34,6 +35,10 @@ export const ja: Strings = {
   verify_and_send: '確認完了',
   key_exchange_error: (errorCode: KeyExchangeErrorCode): string => {
     switch (errorCode) {
+      case "send_failed":
+        return '送信に失敗しました。転送パスを変更すると送信できる可能性があります。';
+      case "receive_failed":
+        return '受信に失敗しました。転送パスを変更すると受信できる可能性があります。';
       case "invalid_parcel_format":
         return 'パーセルのフォーマットが不正です。';
       case "different_key_exchange_version":
@@ -47,10 +52,10 @@ export const ja: Strings = {
   compressing: '圧縮中...',
   encrypting: '暗号化中...',
   data_uploader_xhr_onerror: async (p: {serverUrl: string}) => {
-    const utils = await utilsAsync();
+    const sanitizeHtmlAllowingATag = await sanitizeHtmlAllowingATagAsync();
     const urlJoin = await urlJoinAsync();
     const versionUrl = urlJoin(p.serverUrl, "/version");
-    return utils.sanitizeHtmlAllowingATag(`エラーが発生しました。サーバーが0.9.4より低い可能性があります。 <a href="${versionUrl}" target="_blank">${versionUrl}</a> でバージョンの確認できます。`);
+    return sanitizeHtmlAllowingATag(`エラーが発生しました。サーバーが0.9.4より低い可能性があります。 <a href="${versionUrl}" target="_blank">${versionUrl}</a> でバージョンの確認できます。`);
   },
   data_uploader_xhr_upload_error: 'アップロード中にエラーが発生しました',
   cancel: 'キャンセル',

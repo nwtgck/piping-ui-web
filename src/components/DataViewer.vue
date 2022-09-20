@@ -12,12 +12,12 @@
     </v-expansion-panel-header>
     <v-expansion-panel-content>
 
-      <v-alert type="info" v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'initial'">
+      <v-alert type="info" v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'initial'" :color="canceled ? 'grey' : undefined">
         <span style="">{{ strings['waiting_for_sender'] }}</span>
       </v-alert>
 
       <span v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'verification_code_arrived'">
-        <VerificationCode :value="verificationStep.verificationCode"/>
+        <VerificationCode :value="verificationStep.verificationCode" :color="canceled ? 'grey' : undefined"/>
       </span>
 
       <!-- NOTE: Don't use v-if because the "sibling" element uses "ref" and the ref is loaded in mounted(), but don't know why "sibling" affects. -->
@@ -34,7 +34,8 @@
 
           <!-- Progress bar -->
         <v-progress-linear :value="progressPercentage"
-                           :indeterminate="progressPercentage === null && !canceled && errorMessage() === ''" />
+                           :indeterminate="progressPercentage === null && !canceled && errorMessage() === ''"
+                           :color="canceled ? 'grey' : undefined" />
       </span>
 
       <div v-show="isDecrypting">
@@ -125,7 +126,7 @@
         <v-btn color="warning"
                outlined
                class="ma-2 justify-end"
-               @click="cancelDownload()">
+               @click="cancel()">
           <v-icon >{{ icons.mdiCloseCircle }}</v-icon>
           {{ strings['cancel'] }}
         </v-btn>
@@ -164,11 +165,10 @@ export type DataViewerProps = {
 </script>
 
 <script setup lang="ts">
-/* eslint-disable no-console */
 import Vue, {ref, computed, watch, onMounted} from "vue";
 import urlJoin from 'url-join';
 import linkifyHtml from 'linkifyjs/html';
-const FileSaverAsync = () => import('file-saver');
+const FileSaverAsync = () => import('file-saver').then(p => p.default);
 const clipboardCopyAsync = () => import("clipboard-copy").then(p => p.default);
 import * as fileType from 'file-type/browser';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
@@ -177,23 +177,32 @@ import {blobToReadableStream} from 'binconv/dist/src/blobToReadableStream';
 import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle, mdiEye, mdiEyeOff, mdiKey, mdiFeatureSearchOutline} from "@mdi/js";
 
 import {stringsByLang} from "@/strings/strings-by-lang";
-import * as utils from '@/utils';
+import * as openPgpUtils from '@/utils/openpgp-utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
 import {type VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import {BlobUrlManager} from "@/blob-url-manager";
-import {pipingUiAuthAsync} from "@/pipingUiAuthWithWebpackChunkName"
+import * as pipingUiAuth from "@/piping-ui-auth";
 import {language} from "@/language";
+import {uint8ArrayIsText} from "@/utils/uint8ArrayIsText";
+import {readableBytesString} from "@/utils/readableBytesString";
+import {readBlobAsText} from "@/utils/readBlobAsText";
+import {sanitizeHtmlAllowingATag} from "@/utils/sanitizeHtmlAllowingATag";
+import {makePromise} from "@/utils/makePromise";
 
 // eslint-disable-next-line no-undef
 const props = defineProps<{ composedProps: DataViewerProps }>();
+
+const {promise: canceledPromise, resolve: cancel} = makePromise<void>();
+canceledPromise.then(() => {
+  canceled.value = true;
+});
 
 // Progress bar setting
 const progressSetting = ref<{loadedBytes: number, totalBytes?: number}>({
   loadedBytes: 0,
   totalBytes: undefined,
 });
-const readableBytesString = utils.readableBytesString;
 const errorMessage = ref<() => string>(() => "");
 const xhr: XMLHttpRequest = new XMLHttpRequest();
 const isDoneDownload = ref(false);
@@ -252,7 +261,7 @@ const headerIconColor = computed<string | undefined>(() => {
   if (hasError.value) {
     return "error";
   } else if (canceled.value) {
-    return "warning";
+    return "grey";
   } else if (isDoneDownload.value) {
     return "teal";
   } else {
@@ -261,7 +270,7 @@ const headerIconColor = computed<string | undefined>(() => {
 });
 
 const isCancelable = computed<boolean>(() => {
-  return isReadyToDownload.value && !isDoneDownload && !hasError.value && !canceled.value;
+  return !isDoneDownload.value && !hasError.value && !canceled.value;
 });
 
 const isReadyToDownload = computed<boolean>(() => {
@@ -274,7 +283,7 @@ const downloadPath = computed<string>(() => {
 
 const linkifiedText = ref<string>();
 watch(text, async () => {
-  linkifiedText.value = await utils.sanitizeHtmlAllowingATag(linkifyHtml(text.value, {
+  linkifiedText.value = await sanitizeHtmlAllowingATag(linkifyHtml(text.value, {
     defaultProtocol: 'https'
   }));
 });
@@ -296,22 +305,37 @@ onMounted(async () => {
   pipingUiUtils.scrollTo(rootElement.value!.$el);
 
   // Key exchange
-  const keyExchangeRes = await (await pipingUiAuthAsync).keyExchangeAndReceiveVerified(
+  const keyExchangeRes = await pipingUiAuth.keyExchangeAndReceiveVerified(
     props.composedProps.serverUrl,
     props.composedProps.secretPath,
     props.composedProps.protection,
     (step: VerificationStep) => {
       verificationStep.value = step;
-    }
+    },
+    canceledPromise,
   );
+
+  if (keyExchangeRes.type === "canceled") {
+    return;
+  }
 
   // If error
   if (keyExchangeRes.type === "error") {
-    errorMessage.value = () => keyExchangeRes.errorMessage(language.value);
+    switch (keyExchangeRes.error.code) {
+      case "key_exchange_error":
+        errorMessage.value = () => strings.value["key_exchange_error"](keyExchangeRes.error.keyExchangeErrorCode);
+        break;
+      case "sender_not_verified":
+        errorMessage.value = () => strings.value["sender_not_verified"];
+        break;
+    }
     return;
   }
   const {key} = keyExchangeRes;
 
+  canceledPromise.then(() => {
+    xhr.abort();
+  });
   xhr.open('GET', downloadPath.value);
   xhr.responseType = 'blob';
   xhr.onprogress = (ev) => {
@@ -336,7 +360,7 @@ onMounted(async () => {
       // Decrypt and view blob if possible
       decryptIfNeedAndViewBlob(key);
     } else {
-      const responseText = await utils.readBlobAsText(xhr.response);
+      const responseText = await readBlobAsText(xhr.response);
       errorMessage.value = () => strings.value['xhr_status_error']({
         status: xhr.status,
         response: responseText,
@@ -360,13 +384,13 @@ async function viewBlob() {
     const nBytes = 4100;
     // Get first bytes from blob
     const firstChunk: Uint8Array = await blobToUint8Array(blob.slice(0, nBytes));
-    return utils.isText(firstChunk);
+    return uint8ArrayIsText(firstChunk);
   })();
 
   // If body is text
   if (isText) {
     // Set text
-    text.value = await utils.readBlobAsText(blob);
+    text.value = await readBlobAsText(blob);
   } else {
     // Detect type of blob
     const fileTypeResult = await fileType.fromStream(blobToReadableStream(blob));
@@ -377,7 +401,7 @@ async function viewBlob() {
         videoSrc.value.set(blob);
       } else if (fileTypeResult.mime.startsWith("text/")) {
         // Set text
-        text.value = await utils.readBlobAsText(blob);
+        text.value = await readBlobAsText(blob);
       }
     }
   }
@@ -393,7 +417,7 @@ async function decryptIfNeedAndViewBlob(password: string | Uint8Array | undefine
       try {
         isDecrypting.value = true;
         // Decrypt the response body
-        const plain = await utils.decrypt(resBody, password);
+        const plain = await openPgpUtils.decrypt(resBody, password);
         enablePasswordReinput.value = false;
         errorMessage.value = () => '';
         return uint8ArrayToBlob(plain);
@@ -418,11 +442,6 @@ function viewRaw() {
   errorMessage.value = () => '';
   // View blob if possible
   viewBlob();
-}
-
-function cancelDownload(): void {
-  xhr.abort();
-  canceled.value = true;
 }
 
 async function save(): Promise<void> {

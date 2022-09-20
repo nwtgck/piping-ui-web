@@ -45,7 +45,7 @@ export type DataDownloaderProps = {
 </script>
 
 <script setup lang="ts">
-/* eslint-disable no-console */
+/* eslint-disable */
 
 import Vue, {ref, computed, onMounted} from "vue";
 import urlJoin from 'url-join';
@@ -54,17 +54,24 @@ import {stringsByLang} from "@/strings/strings-by-lang";
 import * as pipingUiUtils from "@/piping-ui-utils";
 import {type VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
-import {pipingUiAuthAsync} from "@/pipingUiAuthWithWebpackChunkName"
+import * as pipingUiAuth from "@/piping-ui-auth";
 import {language} from "@/language";
 import * as fileType from 'file-type/browser';
+import {canTransferReadableStream} from "@/utils/canTransferReadableStream";
+import {makePromise} from "@/utils/makePromise";
 
-const FileSaverAsync = () => import('file-saver');
+const FileSaverAsync = () => import('file-saver').then(p => p.default);
 const binconvAsync = () => import('binconv');
 const swDownloadAsync = () => import("@/sw-download");
-const utilsAsync = () => import("@/utils");
+const openPgpUtilsAsync = () => import("@/utils/openpgp-utils");
 
-// eslint-disable-next-line no-undef
 const props = defineProps<{ composedProps: DataDownloaderProps }>();
+
+// TODO: support cancel
+const {promise: canceledPromise, resolve: cancel} = makePromise<void>();
+canceledPromise.then(() => {
+  // canceled.value = true;
+});
 
 const errorMessage = ref<() => string>(() => "");
 const verificationStep = ref<VerificationStep>({type: 'initial'});
@@ -100,18 +107,30 @@ onMounted(async () => {
   pipingUiUtils.scrollTo(rootElement.value!.$el);
 
   // Key exchange
-  const keyExchangeRes = await (await pipingUiAuthAsync).keyExchangeAndReceiveVerified(
+  const keyExchangeRes = await pipingUiAuth.keyExchangeAndReceiveVerified(
       props.composedProps.serverUrl,
       props.composedProps.secretPath,
       props.composedProps.protection,
       (step: VerificationStep) => {
         verificationStep.value = step;
-      }
+      },
+      canceledPromise,
   );
+
+  if (keyExchangeRes.type === "canceled") {
+    return;
+  }
 
   // If error
   if (keyExchangeRes.type === "error") {
-    errorMessage.value = () => keyExchangeRes.errorMessage(language.value);
+    switch (keyExchangeRes.error.code) {
+      case "key_exchange_error":
+        errorMessage.value = () => strings.value["key_exchange_error"](keyExchangeRes.error.keyExchangeErrorCode);
+        break;
+      case "sender_not_verified":
+        errorMessage.value = () => strings.value["sender_not_verified"];
+        break;
+    }
     return;
   }
   const {key} = keyExchangeRes;
@@ -139,7 +158,7 @@ onMounted(async () => {
     // Decrypt the response body
     let plain: Uint8Array;
     try {
-      plain = await (await utilsAsync()).decrypt(resBody, key);
+      plain = await (await openPgpUtilsAsync()).decrypt(resBody, key);
     } catch (e) {
       console.log("failed to decrypt", e);
       errorMessage.value = () => strings.value['password_might_be_wrong'];
@@ -151,13 +170,13 @@ onMounted(async () => {
     return;
   }
   console.log("downloading streaming with the Service Worker and decrypting if need...");
-  const utils = await utilsAsync();
+  const openPgpUtils = await openPgpUtilsAsync();
   const res = await fetch(downloadPath.value);
   const contentLengthStr: string | undefined = key === undefined ? res.headers.get("Content-Length") ?? undefined : undefined;
   let readableStream: ReadableStream<Uint8Array> = res.body!
   if (key !== undefined) {
     try {
-      readableStream = await utils.decryptStream(res.body!, key);
+      readableStream = await openPgpUtils.decryptStream(res.body!, key);
     } catch (e) {
       console.log("failed to decrypt", e);
       errorMessage.value = () => strings.value['password_might_be_wrong'];
@@ -173,9 +192,8 @@ onMounted(async () => {
   // (from: https://github.com/jimmywarting/StreamSaver.js/blob/314e64b8984484a3e8d39822c9b86a345eb36454/sw.js#L120-L122)
   // Make filename RFC5987 compatible
   const escapedFileName = encodeURIComponent(fileName).replace(/['()]/g, escape).replace(/\*/g, '%2A');
-  // FIXME: Use `[string, string][]` instead. But lint causes an error "0:0  error  Parsing error: Cannot read properties of undefined (reading 'map')"
-  const headers: string[][] = [
-    ... ( contentLengthStr === undefined ? [] : [ [ "Content-Length", contentLengthStr ] ] ),
+  const headers: [string, string][] = [
+    ...( contentLengthStr === undefined ? [] : [ [ "Content-Length", contentLengthStr ] ] ),
     // Without "Content-Type", Safari in iOS 15 adds ".html" to the downloading file
     ...( fileTypeResult === undefined ? [] : [ [ "Content-Type", fileTypeResult.mime ] ] ),
     ['Content-Disposition', "attachment; filename*=UTF-8''" + escapedFileName],
@@ -192,9 +210,7 @@ onMounted(async () => {
 });
 
 // (base: https://googlechrome.github.io/samples/service-worker/post-message/)
-// FIXME: Use `[string, string][]` instead. But lint causes an error "0:0  error  Parsing error: Cannot read properties of undefined (reading 'map')"
-async function enrollDownload(headers: string[][], readableStream: ReadableStream<Uint8Array>): Promise<{ swDownloadId: string }> {
-  const utils = await utilsAsync();
+async function enrollDownload(headers: readonly [string, string][], readableStream: ReadableStream<Uint8Array>): Promise<{ swDownloadId: string }> {
   // eslint-disable-next-line no-async-promise-executor
   return new Promise(async (resolve, reject) => {
     if (!("serviceWorker" in navigator)) {
@@ -205,7 +221,7 @@ async function enrollDownload(headers: string[][], readableStream: ReadableStrea
       reject(new Error("navigator.serviceWorker.controller is null"));
       return;
     }
-    if (utils.canTransferReadableStream()) {
+    if (canTransferReadableStream()) {
       const messageChannel = new MessageChannel();
       messageChannel.port1.onmessage = (e: MessageEvent) => resolve({
         swDownloadId: e.data.swDownloadId,
@@ -235,7 +251,8 @@ async function enrollDownload(headers: string[][], readableStream: ReadableStrea
         messageChannel.port1.postMessage({ done: true });
         break;
       }
-      messageChannel.port1.postMessage(result, [result.value.buffer]);
+      // .slice() is needed otherwise OpenPGP.js causes "TypeError: attempting to access detached ArrayBuffer"
+      messageChannel.port1.postMessage(result, [result.value.buffer.slice(0)]);
     }
   });
 }

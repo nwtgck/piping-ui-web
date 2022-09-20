@@ -3,10 +3,10 @@ node_modules
 /dist
 /src/version.ts
 /src/licenses.json
-/public/openpgp
 /public/sitemap.xml
 /public/robots.txt
 /public/service-worker.js
+/public/service-worker.js.map
 /src/service-worker/dist
 
 # local env files

@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-
 let _supportsSwDownload: boolean = false;
 export function supportsSwDownload(): boolean {
   return _supportsSwDownload;

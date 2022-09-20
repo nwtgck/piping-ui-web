@@ -55,7 +55,7 @@
       <v-list-item>
         <v-list-item-title>Force disable streaming upload</v-list-item-title>
         <v-list-item-action>
-          <v-switch v-model="globalStore.forceDisableStreamingUpload"></v-switch>
+          <v-switch v-model="forceDisableStreamingUpload"></v-switch>
         </v-list-item-action>
       </v-list-item>
 
@@ -67,12 +67,13 @@
 </template>
 
 <script lang="ts">
-import {defineComponent, computed, onMounted} from "vue";
-import {globalStore} from "@/vue-global";
-import {keys} from "@/local-storage-keys";
+import {defineComponent} from "vue";
 import {strings} from "@/strings/strings";
 import {language} from "@/language";
 import DarkThemeSwitch from "@/components/DarkThemeSwitch.vue";
+import {recordsServerUrlHistory} from "@/settings/recordsServerUrlHistory";
+import {recordsSecretPathHistory} from "@/settings/recordsSecretPathHistory";
+import {forceDisableStreamingUpload} from "@/settings/forceDisableStreamingUpload";
 
 
 // Available languages
@@ -94,46 +95,14 @@ export default defineComponent({
       {lang: 'en', str: 'English'},
       {lang: 'ja', str: '日本語'},
     ];
-    const recordsServerUrlHistory = computed<boolean>({
-      get() {
-        return globalStore.recordsServerUrlHistory;
-      },
-      set(b: boolean) {
-        globalStore.recordsServerUrlHistory = b;
-        window.localStorage.setItem(keys.recordsServerUrlHistory, b+"");
-      },
-    });
-    const recordsSecretPathHistory = computed<boolean>({
-      get() {
-        return globalStore.recordsSecretPathHistory;
-      },
-      set(b: boolean) {
-        globalStore.recordsSecretPathHistory = b;
-        window.localStorage.setItem(keys.recordsSecretPathHistory, b+"");
-      },
-    });
-
-    onMounted(() => {
-      // Load server url recording setting
-      const recordsServerUrlHistory = window.localStorage.getItem((keys.recordsServerUrlHistory));
-      if (recordsServerUrlHistory !== null) {
-        globalStore.recordsServerUrlHistory = recordsServerUrlHistory === "true";
-      }
-
-      // Load secret path recording setting
-      const recordsSecretPathHistory = window.localStorage.getItem((keys.recordsSecretPathHistory));
-      if (recordsSecretPathHistory !== null) {
-        globalStore.recordsSecretPathHistory = recordsSecretPathHistory === "true";
-      }
-    });
 
     return {
-      globalStore,
       availableLanguages,
       strings,
       language,
       recordsServerUrlHistory,
       recordsSecretPathHistory,
+      forceDisableStreamingUpload,
     };
   },
 });

@@ -12,16 +12,17 @@
     </v-expansion-panel-header>
     <v-expansion-panel-content>
 
-      <v-alert type="info" v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'initial'">
-        <span style="">{{ strings['waiting_for_receiver'] }}</span>
+      <v-alert type="info" v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'initial'" :color="canceled ? 'grey' : undefined">
+        <span>{{ strings['waiting_for_receiver'] }}</span>
       </v-alert>
 
       <span v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'verification_code_arrived'">
-        <VerificationCode :value="verificationStep.verificationCode"/>
+        <VerificationCode :value="verificationStep.verificationCode" :color="canceled ? 'grey' : undefined"/>
 
         <v-layout>
           <v-flex xs6>
-            <v-btn color="success"
+            <v-btn :color="canceled ? 'grey' : 'success'"
+                   :disabled="canceled"
                    @click="verify(true)"
                    block>
               <v-icon left dark>{{ icons.mdiCheck }}</v-icon>
@@ -29,7 +30,8 @@
             </v-btn>
           </v-flex>
           <v-flex xs6>
-            <v-btn color="error"
+            <v-btn :color="canceled ? 'grey' : 'error'"
+                   :disabled="canceled"
                    @click="verify(false)"
                    block>
               <v-icon left dark>{{ icons.mdiCancel }}</v-icon>
@@ -66,7 +68,7 @@
           <span>{{ progressSetting.loadedBytes }} of {{ progressSetting.totalBytes }}</span>
         </v-tooltip>
         <!-- Upload progress bar -->
-        <v-progress-linear :value="progressPercentage"/>
+        <v-progress-linear :value="progressPercentage" :color="canceled ? 'grey' : undefined"/>
       </div>
 
       <v-simple-table class="text-left">
@@ -83,7 +85,7 @@
         <v-btn color="warning"
                outlined
                class="ma-2 justify-end"
-               @click="cancelUpload()">
+               @click="cancel()">
           <v-icon >{{ icons.mdiCloseCircle }}</v-icon>
           {{ strings['cancel'] }}
         </v-btn>
@@ -112,33 +114,38 @@ export type DataUploaderProps = {
 </script>
 
 <script setup lang="ts">
-/* eslint-disable no-console */
+/* eslint-disable */
 import Vue, {computed, onMounted, ref, watch} from "vue";
 import urlJoin from 'url-join';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
-import {stringToUint8Array} from 'binconv/dist/src/stringToUint8Array';
 import {blobToReadableStream} from 'binconv/dist/src/blobToReadableStream';
 
-import * as utils from '@/utils';
+import * as openPgpUtils from '@/utils/openpgp-utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
 import {stringsByLang} from "@/strings/strings-by-lang";
 import {mdiAlert, mdiCancel, mdiCheck, mdiChevronDown, mdiCloseCircle} from "@mdi/js";
-import type {VerificationStep, VerifiedParcel} from "@/datatypes";
+import type {VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
-import {pipingUiAuthAsync} from "@/pipingUiAuthWithWebpackChunkName"
+import * as pipingUiAuth from "@/piping-ui-auth";
 import {language} from "@/language";
-import {globalStore} from "@/vue-global";
+import {readableBytesString} from "@/utils/readableBytesString";
+import {zipFilesAsBlob} from "@/utils/zipFilesAsBlob";
+import {supportsFetchUploadStreaming} from "@/utils/supportsFetchUploadStreaming";
+import {makePromise} from "@/utils/makePromise";
+import {forceDisableStreamingUpload} from "@/settings/forceDisableStreamingUpload";
 
-// eslint-disable-next-line no-undef
 const props = defineProps<{ composedProps: DataUploaderProps }>();
+
+const {promise: canceledPromise, resolve: cancel} = makePromise<void>();
+canceledPromise.then(() => {
+  canceled.value = true;
+});
 
 // Progress bar setting
 const progressSetting = ref<{loadedBytes: number, totalBytes?: number}>({
   loadedBytes: 0,
   totalBytes: undefined,
 });
-
-const readableBytesString = utils.readableBytesString;
 
 // NOTE: Function makes dynamic language-switch support possible
 //       Delegation is to reassign this value
@@ -198,7 +205,7 @@ const headerIconColor = computed<string | undefined>(() => {
   if (hasError.value) {
     return "error";
   } else if (canceled.value) {
-    return "warning";
+    return "grey";
   } else if (isDoneUpload.value) {
     return "teal";
   } else {
@@ -216,7 +223,7 @@ const isReadyToUpload = computed<boolean>(() => {
 });
 
 const isCancelable = computed<boolean>(() =>
-  isReadyToUpload && !isDoneUpload.value && !hasError.value && !canceled.value
+  isReadyToUpload && !isDoneUpload.value && !hasError.value && !canceled.value && verificationStep.value.type !== "verification_code_arrived"
 );
 
 // for language support
@@ -241,7 +248,10 @@ onMounted(async () => {
       break;
     case 'passwordless': {
       // Key exchange
-      const keyExchangeRes = await (await pipingUiAuthAsync).keyExchange(props.composedProps.serverUrl, 'sender', props.composedProps.secretPath);
+      const keyExchangeRes = await pipingUiAuth.keyExchange(props.composedProps.serverUrl, 'sender', props.composedProps.secretPath, canceledPromise);
+      if (keyExchangeRes.type === 'canceled') {
+        return;
+      }
       if (keyExchangeRes.type === 'error') {
         verificationStep.value = {type: 'error'};
         errorMessageDelegate.value = () => strings.value['key_exchange_error'](keyExchangeRes.errorCode);
@@ -261,19 +271,7 @@ async function verify(verified: boolean) {
   const {key} = verificationStep.value;
   verificationStep.value = {type: 'verified', verified};
 
-  const verifiedParcel: VerifiedParcel = {
-    verified,
-  };
-  const encryptedVerifiedParcel = await utils.encrypt(
-    stringToUint8Array(JSON.stringify(verifiedParcel)),
-    key,
-  );
-  const path = urlJoin(props.composedProps.serverUrl, await (await pipingUiAuthAsync).verifiedPath(props.composedProps.secretPath));
-  // Send verified or not
-  await fetch(path, {
-    method: 'POST',
-    body: encryptedVerifiedParcel,
-  });
+  await pipingUiAuth.verify(props.composedProps.serverUrl, props.composedProps.secretPath, key, verified, canceledPromise);
 
   // If verified, send
   if (verified) {
@@ -296,7 +294,7 @@ async function send(password: string | Uint8Array | undefined) {
       const files: ActualFileObject[] = data;
       isCompressing.value = true;
       // Zip files
-      const zipBlob: Blob = await utils.zipFilesAsBlob(files);
+      const zipBlob: Blob = await zipFilesAsBlob(files);
       isCompressing.value = false;
       return zipBlob;
     }
@@ -309,17 +307,17 @@ async function send(password: string | Uint8Array | undefined) {
   }
 
   // Check whether fetch() upload streaming is supported
-  const supportsUploadStreaming = await utils.supportsFetchUploadStreaming(props.composedProps.serverUrl);
+  const supportsUploadStreaming = await supportsFetchUploadStreaming(props.composedProps.serverUrl);
   console.log("streaming upload support: ", supportsUploadStreaming);
-  console.log("force disable streaming upload: ", globalStore.forceDisableStreamingUpload);
+  console.log("force disable streaming upload: ", forceDisableStreamingUpload.value);
 
   // fetch() upload streaming is not supported
-  if (globalStore.forceDisableStreamingUpload || !supportsUploadStreaming) {
+  if (forceDisableStreamingUpload.value || !supportsUploadStreaming) {
     isNonStreamingEncrypting.value = true;
     // Convert plain body blob to Uint8Array
     const plainBodyArray: Uint8Array = await blobToUint8Array(plainBody);
     // Get encrypted
-    const encrypted: Uint8Array = await utils.encrypt(plainBodyArray, password);
+    const encrypted: Uint8Array = await openPgpUtils.encrypt(plainBodyArray, password);
     isNonStreamingEncrypting.value = false;
     uploadByXhr(encrypted, encrypted.byteLength);
     return;
@@ -330,20 +328,33 @@ async function send(password: string | Uint8Array | undefined) {
   // Attach progress
   const plainStreamWithProgress = getReadableStreamWithProgress(plainStream, plainBody.size);
   // Encrypt
-  const encryptedStream = await utils.encrypt(plainStreamWithProgress, password);
+  const encryptedStream = await openPgpUtils.encrypt(plainStreamWithProgress, password);
+  const abortController = new AbortController();
+  canceledPromise.then(() => {
+    abortController.abort();
+  });
   try {
     // Upload encrypted stream
-    await fetch(uploadPath.value, {
+    const res = await fetch(uploadPath.value, {
       method: 'POST',
       body: encryptedStream,
       duplex: 'half',
+      signal: abortController.signal,
     } as RequestInit);
-  } catch {
+    // TODO: check res status
+    await res.text();
+  } catch (e: any) {
+    if (e.name === 'AbortError') {
+      return;
+    }
     errorMessageDelegate.value = () => strings.value['data_uploader_xhr_upload_error'];
   }
 }
 
 function uploadByXhr(body: Blob | Uint8Array, bodyLength: number) {
+  canceledPromise.then(() => {
+    xhr.abort();
+  });
   // Send
   xhr.open('POST', uploadPath.value, true);
   xhr.responseType = 'text';
@@ -396,11 +407,6 @@ function getReadableStreamWithProgress(baseStream: ReadableStream<Uint8Array>, b
       ctrl.enqueue(res.value);
     }
   });
-}
-
-function cancelUpload(): void {
-  xhr.abort();
-  canceled.value = true;
 }
 </script>
 
