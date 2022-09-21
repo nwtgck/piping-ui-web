@@ -34,7 +34,7 @@
 
           <!-- Progress bar -->
         <v-progress-linear :value="progressPercentage"
-                           :indeterminate="progressPercentage === null && !canceled && errorMessage() === ''"
+                           :indeterminate="progressPercentage === null && !canceled && !hasError"
                            :color="canceled ? 'grey' : undefined" />
       </span>
 
@@ -145,7 +145,7 @@
       <v-alert type="error"
                outlined
                :value="hasError">
-        {{ errorMessage() }}
+        {{ errorMessage }}
       </v-alert>
 
     </v-expansion-panel-content>
@@ -189,6 +189,7 @@ import {readableBytesString} from "@/utils/readableBytesString";
 import {readBlobAsText} from "@/utils/readBlobAsText";
 import {sanitizeHtmlAllowingATag} from "@/utils/sanitizeHtmlAllowingATag";
 import {makePromise} from "@/utils/makePromise";
+import {useErrorMessage} from "@/useErrorMessage";
 
 // eslint-disable-next-line no-undef
 const props = defineProps<{ composedProps: DataViewerProps }>();
@@ -203,7 +204,7 @@ const progressSetting = ref<{loadedBytes: number, totalBytes?: number}>({
   loadedBytes: 0,
   totalBytes: undefined,
 });
-const errorMessage = ref<() => string>(() => "");
+const {errorMessage, updateErrorMessage} = useErrorMessage();
 const xhr: XMLHttpRequest = new XMLHttpRequest();
 const isDoneDownload = ref(false);
 const canceled = ref(false);
@@ -243,7 +244,7 @@ const progressPercentage = computed<number | null>(() => {
   }
 });
 
-const hasError = computed<boolean>(() => errorMessage.value() !== "");
+const hasError = computed<boolean>(() => errorMessage.value !== undefined);
 
 const headerIcon = computed<string>(() => {
   if (hasError.value) {
@@ -323,10 +324,10 @@ onMounted(async () => {
   if (keyExchangeRes.type === "error") {
     switch (keyExchangeRes.error.code) {
       case "key_exchange_error":
-        errorMessage.value = () => strings.value["key_exchange_error"](keyExchangeRes.error.keyExchangeErrorCode);
+        updateErrorMessage(() => strings.value["key_exchange_error"](keyExchangeRes.error.keyExchangeErrorCode));
         break;
       case "sender_not_verified":
-        errorMessage.value = () => strings.value["sender_not_verified"];
+        updateErrorMessage(() => strings.value["sender_not_verified"]);
         break;
     }
     return;
@@ -361,14 +362,14 @@ onMounted(async () => {
       decryptIfNeedAndViewBlob(key);
     } else {
       const responseText = await readBlobAsText(xhr.response);
-      errorMessage.value = () => strings.value['xhr_status_error']({
+      updateErrorMessage(() => strings.value['xhr_status_error']({
         status: xhr.status,
         response: responseText,
-      });
+      }));
     }
   };
   xhr.onerror = () => {
-    errorMessage.value = () => strings.value['data_viewer_xhr_onerror'];
+    updateErrorMessage(() => strings.value['data_viewer_xhr_onerror']);
   };
   xhr.send();
 });
@@ -419,11 +420,11 @@ async function decryptIfNeedAndViewBlob(password: string | Uint8Array | undefine
         // Decrypt the response body
         const plain = await openPgpUtils.decrypt(resBody, password);
         enablePasswordReinput.value = false;
-        errorMessage.value = () => '';
+        updateErrorMessage(undefined);
         return uint8ArrayToBlob(plain);
       } catch (err) {
         enablePasswordReinput.value = true;
-        errorMessage.value = () => strings.value['password_might_be_wrong'];
+        updateErrorMessage(() => strings.value['password_might_be_wrong']);
         console.log('Decrypt error:', err);
         return new Blob();
       } finally {
@@ -439,7 +440,7 @@ async function decryptIfNeedAndViewBlob(password: string | Uint8Array | undefine
 function viewRaw() {
   blob = rawBlob;
   enablePasswordReinput.value = false;
-  errorMessage.value = () => '';
+  updateErrorMessage(undefined);
   // View blob if possible
   viewBlob();
 }
