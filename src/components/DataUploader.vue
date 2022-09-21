@@ -133,6 +133,7 @@ import {zipFilesAsBlob} from "@/utils/zipFilesAsBlob";
 import {supportsFetchUploadStreaming} from "@/utils/supportsFetchUploadStreaming";
 import {makePromise} from "@/utils/makePromise";
 import {forceDisableStreamingUpload} from "@/settings/forceDisableStreamingUpload";
+import {useErrorMessage} from "@/useErrorMessage";
 
 const props = defineProps<{ composedProps: DataUploaderProps }>();
 
@@ -147,14 +148,7 @@ const progressSetting = ref<{loadedBytes: number, totalBytes?: number}>({
   totalBytes: undefined,
 });
 
-// NOTE: Function makes dynamic language-switch support possible
-//       Delegation is to reassign this value
-const errorMessageDelegate = ref<() => string | Promise<string>>(() => "");
-
-const errorMessage = ref<string>("");
-watch([errorMessageDelegate, language], async () => {
-  errorMessage.value = await errorMessageDelegate.value();
-});
+const {errorMessage, updateErrorMessage} = useErrorMessage();
 
 const xhr: XMLHttpRequest = new XMLHttpRequest();
 const canceled = ref(false);
@@ -184,10 +178,7 @@ const isDoneUpload = computed<boolean>(() => {
 
 const uploadPath = computed<string>(() => urlJoin(props.composedProps.serverUrl, props.composedProps.secretPath));
 
-const hasError = ref<boolean>(false);
-watch(errorMessageDelegate, async () => {
-  hasError.value = await errorMessageDelegate.value() !== "";
-});
+const hasError = computed<boolean>(() => errorMessage.value !== undefined);
 
 const headerIcon = computed<string>(() => {
   if (hasError.value) {
@@ -254,7 +245,7 @@ onMounted(async () => {
       }
       if (keyExchangeRes.type === 'error') {
         verificationStep.value = {type: 'error'};
-        errorMessageDelegate.value = () => strings.value['key_exchange_error'](keyExchangeRes.errorCode);
+        updateErrorMessage(() => strings.value['key_exchange_error'](keyExchangeRes.errorCode));
         return;
       }
       const {key, verificationCode} = keyExchangeRes;
@@ -347,7 +338,7 @@ async function send(password: string | Uint8Array | undefined) {
     if (e.name === 'AbortError') {
       return;
     }
-    errorMessageDelegate.value = () => strings.value['data_uploader_xhr_upload_error'];
+    updateErrorMessage(() => strings.value['data_uploader_xhr_upload_error']);
   }
 }
 
@@ -373,17 +364,17 @@ function uploadByXhr(body: Blob | Uint8Array, bodyLength: number) {
   };
   xhr.onload = () => {
     if (xhr.status !== 200) {
-      errorMessageDelegate.value = () => strings.value['xhr_status_error']({
+      updateErrorMessage(() => strings.value['xhr_status_error']({
         status: xhr.status,
         response: xhr.responseText
-      });
+      }));
     }
   };
   xhr.onerror = (ev) => {
-    errorMessageDelegate.value = () => strings.value['data_uploader_xhr_onerror']({serverUrl: props.composedProps.serverUrl});
+    updateErrorMessage(() => strings.value['data_uploader_xhr_onerror']({serverUrl: props.composedProps.serverUrl}));
   };
   xhr.upload.onerror = () => {
-    errorMessageDelegate.value = () => strings.value['data_uploader_xhr_upload_error'];
+    updateErrorMessage(() => strings.value['data_uploader_xhr_upload_error']);
   };
   xhr.send(body);
   // Initialize progress bar
