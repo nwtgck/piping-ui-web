@@ -25,7 +25,7 @@
       <v-alert type="error"
                outlined
                :value="hasError">
-        {{ errorMessage() }}
+        {{ errorMessage }}
       </v-alert>
 
     </v-expansion-panel-content>
@@ -59,6 +59,7 @@ import {language} from "@/language";
 import * as fileType from 'file-type/browser';
 import {canTransferReadableStream} from "@/utils/canTransferReadableStream";
 import {makePromise} from "@/utils/makePromise";
+import {useErrorMessage} from "@/useErrorMessage";
 
 const FileSaverAsync = () => import('file-saver').then(p => p.default);
 const binconvAsync = () => import('binconv');
@@ -73,11 +74,11 @@ canceledPromise.then(() => {
   // canceled.value = true;
 });
 
-const errorMessage = ref<() => string>(() => "");
+const {errorMessage, updateErrorMessage} = useErrorMessage();
 const verificationStep = ref<VerificationStep>({type: 'initial'});
 // for language support
 const strings = computed(() => stringsByLang(language.value));
-const hasError = computed<boolean>(() => errorMessage.value() !== "");
+const hasError = computed<boolean>(() => errorMessage.value !== undefined);
 const headerIcon = computed<string>(() => {
   if (hasError.value) {
     return mdiAlert;
@@ -125,10 +126,10 @@ onMounted(async () => {
   if (keyExchangeRes.type === "error") {
     switch (keyExchangeRes.error.code) {
       case "key_exchange_error":
-        errorMessage.value = () => strings.value["key_exchange_error"](keyExchangeRes.error.keyExchangeErrorCode);
+        updateErrorMessage(() => strings.value["key_exchange_error"](keyExchangeRes.error.keyExchangeErrorCode));
         break;
       case "sender_not_verified":
-        errorMessage.value = () => strings.value["sender_not_verified"];
+        updateErrorMessage(() => strings.value["sender_not_verified"]);
         break;
     }
     return;
@@ -161,7 +162,7 @@ onMounted(async () => {
       plain = await (await openPgpUtilsAsync()).decrypt(resBody, key);
     } catch (e) {
       console.log("failed to decrypt", e);
-      errorMessage.value = () => strings.value['password_might_be_wrong'];
+      updateErrorMessage(() => strings.value['password_might_be_wrong']);
       return;
     }
     // Save
@@ -179,7 +180,7 @@ onMounted(async () => {
       readableStream = await openPgpUtils.decryptStream(res.body!, key);
     } catch (e) {
       console.log("failed to decrypt", e);
-      errorMessage.value = () => strings.value['password_might_be_wrong'];
+      updateErrorMessage(() => strings.value['password_might_be_wrong']);
       return;
     }
   }
