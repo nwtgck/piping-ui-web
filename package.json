@@ -31,7 +31,7 @@
     "io-ts": "^2.2.18",
     "jszip": "^3.10.1",
     "jwk-thumbprint": "^0.1.4",
-    "linkifyjs": "^3.0.5",
+    "linkifyjs": "^4.0.1",
     "openpgp": "^5.5.0",
     "register-service-worker": "^1.7.2",
     "sanitize-html": "^2.7.2",
