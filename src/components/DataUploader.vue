@@ -122,6 +122,7 @@ import {blobToReadableStream} from 'binconv/dist/src/blobToReadableStream';
 
 import * as openPgpUtils from '@/utils/openpgp-utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
+import * as pipingUiRobust from "@/piping-ui-robust";
 import {stringsByLang} from "@/strings/strings-by-lang";
 import {mdiAlert, mdiCancel, mdiCheck, mdiChevronDown, mdiCloseCircle} from "@mdi/js";
 import type {VerificationStep} from "@/datatypes";
@@ -320,26 +321,34 @@ async function send(password: string | Uint8Array | undefined) {
   const plainStreamWithProgress = getReadableStreamWithProgress(plainStream, plainBody.size);
   // Encrypt
   const encryptedStream = await openPgpUtils.encrypt(plainStreamWithProgress, password);
-  const abortController = new AbortController();
-  canceledPromise.then(() => {
-    abortController.abort();
-  });
-  try {
-    // Upload encrypted stream
-    const res = await fetch(uploadPath.value, {
-      method: 'POST',
-      body: encryptedStream,
-      duplex: 'half',
-      signal: abortController.signal,
-    } as RequestInit);
-    // TODO: check res status
-    await res.text();
-  } catch (e: any) {
-    if (e.name === 'AbortError') {
-      return;
-    }
-    updateErrorMessage(() => strings.value['data_uploader_xhr_upload_error']);
-  }
+
+  await pipingUiRobust.sendReadableStream(
+    props.composedProps.serverUrl,
+    props.composedProps.secretPath,
+    encryptedStream,
+  );
+
+  // TODO: use
+  // const abortController = new AbortController();
+  // canceledPromise.then(() => {
+  //   abortController.abort();
+  // });
+  // try {
+  //   // Upload encrypted stream
+  //   const res = await fetch(uploadPath.value, {
+  //     method: 'POST',
+  //     body: encryptedStream,
+  //     duplex: 'half',
+  //     signal: abortController.signal,
+  //   } as RequestInit);
+  //   // TODO: check res status
+  //   await res.text();
+  // } catch (e: any) {
+  //   if (e.name === 'AbortError') {
+  //     return;
+  //   }
+  //   updateErrorMessage(() => strings.value['data_uploader_xhr_upload_error']);
+  // }
 }
 
 function uploadByXhr(body: Blob | Uint8Array, bodyLength: number) {

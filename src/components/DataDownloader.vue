@@ -52,6 +52,7 @@ import urlJoin from 'url-join';
 import {mdiAlert, mdiChevronDown} from "@mdi/js";
 import {stringsByLang} from "@/strings/strings-by-lang";
 import * as pipingUiUtils from "@/piping-ui-utils";
+import * as pipingUiRobust from "@/piping-ui-robust";
 import {type VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import * as pipingUiAuth from "@/piping-ui-auth";
@@ -172,12 +173,21 @@ onMounted(async () => {
   }
   console.log("downloading streaming with the Service Worker and decrypting if need...");
   const openPgpUtils = await openPgpUtilsAsync();
-  const res = await fetch(downloadPath.value);
-  const contentLengthStr: string | undefined = key === undefined ? res.headers.get("Content-Length") ?? undefined : undefined;
-  let readableStream: ReadableStream<Uint8Array> = res.body!
+
+  // TODO: use
+  // const res = await fetch(downloadPath.value);
+  // const contentLengthStr: string | undefined = key === undefined ? res.headers.get("Content-Length") ?? undefined : undefined;
+  // let readableStream: ReadableStream<Uint8Array> = res.body!
+
+  let readableStream = pipingUiRobust.receiveReadableStream(
+    props.composedProps.serverUrl,
+    encodeURI(props.composedProps.secretPath),
+  );
+  const contentLengthStr: string | undefined = undefined;
+
   if (key !== undefined) {
     try {
-      readableStream = await openPgpUtils.decryptStream(res.body!, key);
+      readableStream = await openPgpUtils.decryptStream(readableStream, key);
     } catch (e) {
       console.log("failed to decrypt", e);
       updateErrorMessage(() => strings.value['password_might_be_wrong']);
