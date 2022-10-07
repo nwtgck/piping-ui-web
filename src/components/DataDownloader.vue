@@ -245,7 +245,6 @@ async function enrollDownload(headers: readonly [string, string][], readableStre
     }, [messageChannel.port2]);
 
     const reader = readableStream.getReader();
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       const result = await reader.read();
       if (result.done) {
