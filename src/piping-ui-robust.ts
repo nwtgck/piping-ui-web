@@ -1,44 +1,59 @@
 import urlJoin from "url-join";
+import {AsyncSemaphore} from "@/utils/AsyncSemaphore";
 
 function sleep(millis: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, millis));
 }
 
-export async function send(serverUrl: string, path: string, data: AsyncIterator<string | Uint8Array | Blob, void>): Promise<void> {
+async function send(serverUrl: string, path: string, data: AsyncIterator<Blob, void>): Promise<void> {
   let num = 1;
+  const url = () => urlJoin(serverUrl, path, num+'');
+  const semaphore = new AsyncSemaphore(2);
   while(true) {
-    const body = await data.next();
-    if (body.done) {
+    await semaphore.acquire();
+    const bodyResult = await data.next();
+    if (bodyResult.done) {
       break;
     }
-    while(true) {
-      const url = urlJoin(serverUrl, path, num+'');
-      let timer;
-      try {
-        const controller = new AbortController();
-        timer = setTimeout(() => {
-          console.debug('POST timeout: ', url);
-          controller.abort();
-        }, 60 * 1000);
-        const res = await fetch(url, {
-          method: 'POST',
-          body: body.value,
-          signal: controller.signal
-        });
-        clearTimeout(timer);
-        if (res.status !== 200) {
-          throw new Error(`status ${res.status}`);
-        }
-        await res.text();
-        break;
-      } catch (err) {
-        if (timer !== undefined) {
-          clearTimeout(timer);
-        }
-        await sleep(100);
-      }
+    if (bodyResult.value.size === 0) {
+      continue;
     }
+    // no await
+    ensureSend(url(), bodyResult.value).then(() => {
+      semaphore.release();
+    });
     num++;
+  }
+  // Notify finished
+  await ensureSend(url(), new Uint8Array());
+}
+
+async function ensureSend(url: string, body: BodyInit) {
+  while(true) {
+    let timer;
+    try {
+      const controller = new AbortController();
+      timer = setTimeout(() => {
+        console.debug('POST timeout: ', url);
+        controller.abort();
+      }, 60 * 1000);
+      const res = await fetch(url, {
+        method: 'POST',
+        body: body,
+        signal: controller.signal
+      });
+      clearTimeout(timer);
+      if (res.status !== 200) {
+        throw new Error(`status ${res.status}`);
+      }
+      await res.text();
+      break;
+    } catch (err) {
+      if (timer !== undefined) {
+        clearTimeout(timer);
+      }
+      await sleep(2000);
+    }
   }
 }
 
@@ -63,37 +78,52 @@ export async function sendReadableStream(serverUrl: string, path: string, stream
   await send(serverUrl, path, data);
 }
 
-export async function* receive(serverUrl: string, path: string): AsyncIterableIterator<Uint8Array> {
+async function* receive(serverUrl: string, path: string): AsyncIterableIterator<Uint8Array> {
   let num = 1;
-  while(true) {
-    let chunk: ArrayBuffer;
-    while(true) {
-      const url = urlJoin(serverUrl, path, num+'');
-      let timer;
-      try {
-        const controller = new AbortController();
-        timer = setTimeout(() => {
-          console.debug('GET timeout: ', url);
-          controller.abort();
-        }, 60 * 1000);
-        const res = await fetch(url, {
-          signal: controller.signal,
-        });
-        clearTimeout(timer);
-        if (res.status !== 200) {
-          throw new Error(`status ${res.status}`);
-        }
-        chunk = await res.arrayBuffer();
-        break;
-      } catch (err) {
-        if (timer !== undefined) {
-          clearTimeout(timer);
-        }
-        await sleep(100);
+  let done = false;
+  const semaphore = new AsyncSemaphore(2);
+  while(!done) {
+    await semaphore.acquire();
+    const url = urlJoin(serverUrl, path, num+'');
+    yield ensureReceive(url).then((chunk: ArrayBuffer | 'done') => {
+      semaphore.release();
+      if (chunk === 'done') {
+        done = true;
+        return new Uint8Array();
       }
-    }
-    yield new Uint8Array(chunk);
+      return new Uint8Array(chunk);
+    });
     num++;
+  }
+  // TODO: cancel requests
+}
+
+async function ensureReceive(url: string): Promise<ArrayBuffer | 'done'> {
+  while(true) {
+    let timer;
+    try {
+      const controller = new AbortController();
+      timer = setTimeout(() => {
+        console.debug('GET timeout: ', url);
+        controller.abort();
+      }, 60 * 1000);
+      const res = await fetch(url, {
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      if (res.status !== 200) {
+        throw new Error(`status ${res.status}`);
+      }
+      if (res.headers.get('content-length') === '0') {
+        return 'done';
+      }
+      return await res.arrayBuffer();
+    } catch (err) {
+      if (timer !== undefined) {
+        clearTimeout(timer);
+      }
+      await sleep(1000);
+    }
   }
 }
 
