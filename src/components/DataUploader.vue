@@ -303,17 +303,18 @@ async function send(password: string | Uint8Array | undefined) {
   console.log("streaming upload support: ", supportsUploadStreaming);
   console.log("force disable streaming upload: ", forceDisableStreamingUpload.value);
 
-  // fetch() upload streaming is not supported
-  if (forceDisableStreamingUpload.value || !supportsUploadStreaming) {
-    isNonStreamingEncrypting.value = true;
-    // Convert plain body blob to Uint8Array
-    const plainBodyArray: Uint8Array = await blobToUint8Array(plainBody);
-    // Get encrypted
-    const encrypted: Uint8Array = await openPgpUtils.encrypt(plainBodyArray, password);
-    isNonStreamingEncrypting.value = false;
-    uploadByXhr(encrypted, encrypted.byteLength);
-    return;
-  }
+  // TODO: use
+  // // fetch() upload streaming is not supported
+  // if (forceDisableStreamingUpload.value || !supportsUploadStreaming) {
+  //   isNonStreamingEncrypting.value = true;
+  //   // Convert plain body blob to Uint8Array
+  //   const plainBodyArray: Uint8Array = await blobToUint8Array(plainBody);
+  //   // Get encrypted
+  //   const encrypted: Uint8Array = await openPgpUtils.encrypt(plainBodyArray, password);
+  //   isNonStreamingEncrypting.value = false;
+  //   uploadByXhr(encrypted, encrypted.byteLength);
+  //   return;
+  // }
 
   // Convert plain body to ReadableStream
   const plainStream = blobToReadableStream(plainBody);

@@ -55,7 +55,7 @@ async function ensureSend(url: string, body: BodyInit) {
 
 export async function sendReadableStream(serverUrl: string, path: string, stream: ReadableStream<Uint8Array>): Promise<void> {
   const reader = stream.getReader();
-  const chunkMaxSize = 16;
+  const chunkMaxSize = 32;
   const chunks: Uint8Array[] = [];
   const data = (async function* () {
     while (true) {
