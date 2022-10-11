@@ -1,10 +1,6 @@
 import urlJoin from "url-join";
 import {AsyncSemaphore} from "@/utils/AsyncSemaphore";
 
-function sleep(millis: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, millis));
-}
-
 async function send(serverUrl: string, path: string, data: AsyncIterator<Blob, void>): Promise<void> {
   let num = 1;
   const url = () => urlJoin(serverUrl, path, num+'');
@@ -52,7 +48,7 @@ async function ensureSend(url: string, body: BodyInit) {
       if (timer !== undefined) {
         clearTimeout(timer);
       }
-      await sleep(2000);
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
   }
 }
@@ -122,7 +118,7 @@ async function ensureReceive(url: string): Promise<ArrayBuffer | 'done'> {
       if (timer !== undefined) {
         clearTimeout(timer);
       }
-      await sleep(1000);
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }
 }
