@@ -55,8 +55,9 @@ async function ensureSend(url: string, body: BodyInit) {
 
 export async function sendReadableStream(serverUrl: string, path: string, stream: ReadableStream<Uint8Array>): Promise<void> {
   const reader = stream.getReader();
-  const chunkMaxSize = 32;
+  const chunksByteSizeThreshold = 2 * 1048576; // 2MB
   const chunks: Uint8Array[] = [];
+  let chunksByteSize = 0;
   const data = (async function* () {
     while (true) {
       const result = await reader.read();
@@ -64,12 +65,16 @@ export async function sendReadableStream(serverUrl: string, path: string, stream
         break;
       }
       chunks.push(result.value);
-      if (chunks.length == chunkMaxSize) {
+      chunksByteSize += result.value.byteLength;
+      if (chunksByteSize > chunksByteSizeThreshold) {
         yield new Blob(chunks);
         chunks.length = 0;
+        chunksByteSize = 0;
       }
     }
-    yield new Blob(chunks);
+    if (chunks.length !== 0) {
+      yield new Blob(chunks);
+    }
   })();
   await send(serverUrl, path, data);
 }
