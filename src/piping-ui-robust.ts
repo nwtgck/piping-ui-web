@@ -1,10 +1,13 @@
 import urlJoin from "url-join";
 import {AsyncSemaphore} from "@/utils/AsyncSemaphore";
 
+const N_TRANSFERS = 2;
+const CHUNKS_BYTE_SIZE_THRESHOLD = 1048576; // 1MB
+
 async function send(serverUrl: string, path: string, data: AsyncIterator<Blob, void>): Promise<void> {
   let num = 1;
   const url = () => urlJoin(serverUrl, path, num+'');
-  const semaphore = new AsyncSemaphore(2);
+  const semaphore = new AsyncSemaphore(N_TRANSFERS);
   while(true) {
     await semaphore.acquire();
     const bodyResult = await data.next();
@@ -55,7 +58,6 @@ async function ensureSend(url: string, body: BodyInit) {
 
 export async function sendReadableStream(serverUrl: string, path: string, stream: ReadableStream<Uint8Array>): Promise<void> {
   const reader = stream.getReader();
-  const chunksByteSizeThreshold = 2 * 1048576; // 2MB
   const chunks: Uint8Array[] = [];
   let chunksByteSize = 0;
   const data = (async function* () {
@@ -66,7 +68,7 @@ export async function sendReadableStream(serverUrl: string, path: string, stream
       }
       chunks.push(result.value);
       chunksByteSize += result.value.byteLength;
-      if (chunksByteSize > chunksByteSizeThreshold) {
+      if (chunksByteSize > CHUNKS_BYTE_SIZE_THRESHOLD) {
         yield new Blob(chunks);
         chunks.length = 0;
         chunksByteSize = 0;
@@ -79,24 +81,33 @@ export async function sendReadableStream(serverUrl: string, path: string, stream
   await send(serverUrl, path, data);
 }
 
-async function* receive(serverUrl: string, path: string): AsyncIterableIterator<Uint8Array> {
-  let num = 1;
-  let done = false;
-  const semaphore = new AsyncSemaphore(2);
-  while(!done) {
-    await semaphore.acquire();
-    const url = urlJoin(serverUrl, path, num+'');
-    yield ensureReceive(url).then((chunk: ArrayBuffer | 'done') => {
-      semaphore.release();
-      if (chunk === 'done') {
-        done = true;
-        return new Uint8Array();
+export function receiveReadableStream(serverUrl: string, path: string): ReadableStream<Uint8Array> {
+  return new ReadableStream({
+    async start(ctrl) {
+      let num = 1;
+      let done = false;
+      let lastPromise = Promise.resolve();
+      const semaphore = new AsyncSemaphore(N_TRANSFERS);
+      while(!done) {
+        await semaphore.acquire();
+        const url = urlJoin(serverUrl, path, num+'');
+        const chunkPromise = ensureReceive(url);
+        lastPromise = lastPromise
+          .then(() => chunkPromise)
+          .then((chunk: ArrayBuffer | 'done') => {
+            semaphore.release();
+            if (chunk === 'done') {
+              done = true;
+              ctrl.close();
+              return;
+            }
+            ctrl.enqueue(new Uint8Array(chunk));
+          });
+        num++;
       }
-      return new Uint8Array(chunk);
-    });
-    num++;
-  }
-  // TODO: cancel requests
+      // TODO: cancel requests
+    },
+  });
 }
 
 async function ensureReceive(url: string): Promise<ArrayBuffer | 'done'> {
@@ -126,18 +137,4 @@ async function ensureReceive(url: string): Promise<ArrayBuffer | 'done'> {
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }
-}
-
-export function receiveReadableStream(serverUrl: string, path: string): ReadableStream<Uint8Array> {
-  const iter = receive(serverUrl, path);
-  return new ReadableStream<Uint8Array>({
-    async pull(ctrl) {
-      const result = await iter.next();
-      if (result.done) {
-        ctrl.close();
-        return;
-      }
-      ctrl.enqueue(result.value);
-    },
-  });
 }
