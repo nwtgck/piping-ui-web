@@ -25,7 +25,7 @@ jobs:
       - run: SITE_URL="https://piping-ui.org" npm run build
 
       - name: Deploy to Netlify
-        uses: nwtgck/actions-netlify@v1.2
+        uses: nwtgck/actions-netlify@af8e90039cc437e20c585f6d0a1c3cc93d04ef12
         with:
           publish-dir: './dist'
           production-branch: master
@@ -45,7 +45,7 @@ jobs:
         id: get_netlify_alias
       # For branch deploy
       - name: Deploy to Netlify (branch)
-        uses: nwtgck/actions-netlify@v1.2
+        uses: nwtgck/actions-netlify@af8e90039cc437e20c585f6d0a1c3cc93d04ef12
         with:
           publish-dir: './dist'
           github-token: ${{ secrets.GITHUB_TOKEN }}
