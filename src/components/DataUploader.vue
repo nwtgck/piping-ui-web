@@ -135,6 +135,7 @@ import {supportsFetchUploadStreaming} from "@/utils/supportsFetchUploadStreaming
 import {makePromise} from "@/utils/makePromise";
 import {forceDisableStreamingUpload} from "@/settings/forceDisableStreamingUpload";
 import {useErrorMessage} from "@/useErrorMessage";
+import {experimentalEnablePipingUiRobust} from "@/settings/experimentalEnablePipingUiRobust";
 
 const props = defineProps<{ composedProps: DataUploaderProps }>();
 
@@ -298,23 +299,39 @@ async function send(password: string | Uint8Array | undefined) {
     return
   }
 
+  if (experimentalEnablePipingUiRobust.value && props.composedProps.protection.type === "passwordless") {
+    console.log("using experimental Piping UI Robust");
+    // Convert plain body to ReadableStream
+    const plainStream = blobToReadableStream(plainBody);
+    // Attach progress
+    const plainStreamWithProgress = getReadableStreamWithProgress(plainStream, plainBody.size);
+    // Encrypt
+    const encryptedStream = await openPgpUtils.encrypt(plainStreamWithProgress, password);
+
+    await pipingUiRobust.sendReadableStream(
+      props.composedProps.serverUrl,
+      props.composedProps.secretPath,
+      encryptedStream,
+    );
+    return;
+  }
+
   // Check whether fetch() upload streaming is supported
   const supportsUploadStreaming = await supportsFetchUploadStreaming(props.composedProps.serverUrl);
   console.log("streaming upload support: ", supportsUploadStreaming);
   console.log("force disable streaming upload: ", forceDisableStreamingUpload.value);
 
-  // TODO: use
-  // // fetch() upload streaming is not supported
-  // if (forceDisableStreamingUpload.value || !supportsUploadStreaming) {
-  //   isNonStreamingEncrypting.value = true;
-  //   // Convert plain body blob to Uint8Array
-  //   const plainBodyArray: Uint8Array = await blobToUint8Array(plainBody);
-  //   // Get encrypted
-  //   const encrypted: Uint8Array = await openPgpUtils.encrypt(plainBodyArray, password);
-  //   isNonStreamingEncrypting.value = false;
-  //   uploadByXhr(encrypted, encrypted.byteLength);
-  //   return;
-  // }
+  // fetch() upload streaming is not supported
+  if (forceDisableStreamingUpload.value || !supportsUploadStreaming) {
+    isNonStreamingEncrypting.value = true;
+    // Convert plain body blob to Uint8Array
+    const plainBodyArray: Uint8Array = await blobToUint8Array(plainBody);
+    // Get encrypted
+    const encrypted: Uint8Array = await openPgpUtils.encrypt(plainBodyArray, password);
+    isNonStreamingEncrypting.value = false;
+    uploadByXhr(encrypted, encrypted.byteLength);
+    return;
+  }
 
   // Convert plain body to ReadableStream
   const plainStream = blobToReadableStream(plainBody);
@@ -322,34 +339,26 @@ async function send(password: string | Uint8Array | undefined) {
   const plainStreamWithProgress = getReadableStreamWithProgress(plainStream, plainBody.size);
   // Encrypt
   const encryptedStream = await openPgpUtils.encrypt(plainStreamWithProgress, password);
-
-  await pipingUiRobust.sendReadableStream(
-    props.composedProps.serverUrl,
-    props.composedProps.secretPath,
-    encryptedStream,
-  );
-
-  // TODO: use
-  // const abortController = new AbortController();
-  // canceledPromise.then(() => {
-  //   abortController.abort();
-  // });
-  // try {
-  //   // Upload encrypted stream
-  //   const res = await fetch(uploadPath.value, {
-  //     method: 'POST',
-  //     body: encryptedStream,
-  //     duplex: 'half',
-  //     signal: abortController.signal,
-  //   } as RequestInit);
-  //   // TODO: check res status
-  //   await res.text();
-  // } catch (e: any) {
-  //   if (e.name === 'AbortError') {
-  //     return;
-  //   }
-  //   updateErrorMessage(() => strings.value['data_uploader_xhr_upload_error']);
-  // }
+  const abortController = new AbortController();
+  canceledPromise.then(() => {
+    abortController.abort();
+  });
+  try {
+    // Upload encrypted stream
+    const res = await fetch(uploadPath.value, {
+      method: 'POST',
+      body: encryptedStream,
+      duplex: 'half',
+      signal: abortController.signal,
+    } as RequestInit);
+    // TODO: check res status
+    await res.text();
+  } catch (e: any) {
+    if (e.name === 'AbortError') {
+      return;
+    }
+    updateErrorMessage(() => strings.value['data_uploader_xhr_upload_error']);
+  }
 }
 
 function uploadByXhr(body: Blob | Uint8Array, bodyLength: number) {

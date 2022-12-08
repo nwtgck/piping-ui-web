@@ -61,6 +61,7 @@ import * as fileType from 'file-type/browser';
 import {canTransferReadableStream} from "@/utils/canTransferReadableStream";
 import {makePromise} from "@/utils/makePromise";
 import {useErrorMessage} from "@/useErrorMessage";
+import {experimentalEnablePipingUiRobust} from "@/settings/experimentalEnablePipingUiRobust";
 
 const FileSaverAsync = () => import('file-saver').then(p => p.default);
 const binconvAsync = () => import('binconv');
@@ -174,16 +175,19 @@ onMounted(async () => {
   console.log("downloading streaming with the Service Worker and decrypting if need...");
   const openPgpUtils = await openPgpUtilsAsync();
 
-  // TODO: use
-  // const res = await fetch(downloadPath.value);
-  // const contentLengthStr: string | undefined = key === undefined ? res.headers.get("Content-Length") ?? undefined : undefined;
-  // let readableStream: ReadableStream<Uint8Array> = res.body!
-
-  let readableStream = pipingUiRobust.receiveReadableStream(
-    props.composedProps.serverUrl,
-    encodeURI(props.composedProps.secretPath),
-  );
-  const contentLengthStr: string | undefined = undefined;
+  let readableStream: ReadableStream;
+  let contentLengthStr: string | undefined = undefined;
+  if (experimentalEnablePipingUiRobust.value && props.composedProps.protection.type === "passwordless") {
+    console.log("using experimental Piping UI Robust");
+    readableStream = pipingUiRobust.receiveReadableStream(
+      props.composedProps.serverUrl,
+      encodeURI(props.composedProps.secretPath),
+    );
+  } else {
+    const res = await fetch(downloadPath.value);
+    contentLengthStr = key === undefined ? res.headers.get("Content-Length") ?? undefined : undefined;
+    readableStream = res.body!
+  }
 
   if (key !== undefined) {
     try {
