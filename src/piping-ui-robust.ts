@@ -4,7 +4,7 @@ import {AsyncSemaphore} from "@/utils/AsyncSemaphore";
 const N_TRANSFERS = 2;
 const CHUNKS_BYTE_SIZE_THRESHOLD = 1048576; // 1MB
 
-async function send(serverUrl: string, path: string, data: AsyncIterator<Blob, void>): Promise<void> {
+async function send(serverUrl: string, path: string, data: AsyncIterator<ReadableStream<Uint8Array>, void>): Promise<void> {
   let num = 1;
   const url = () => urlJoin(serverUrl, path, num+'');
   const semaphore = new AsyncSemaphore(N_TRANSFERS);
@@ -14,9 +14,7 @@ async function send(serverUrl: string, path: string, data: AsyncIterator<Blob, v
     if (bodyResult.done) {
       break;
     }
-    if (bodyResult.value.size === 0) {
-      continue;
-    }
+    // TODO: should not send 0-byte ReadableStream because 0-byte means done. how to know its length? but not critical issue because send everything.
     // no await
     ensureSend(url(), bodyResult.value).then(() => {
       semaphore.release();
@@ -27,7 +25,7 @@ async function send(serverUrl: string, path: string, data: AsyncIterator<Blob, v
   await ensureSend(url(), new Uint8Array());
 }
 
-async function ensureSend(url: string, body: BodyInit) {
+async function ensureSend(url: string, body: Uint8Array | ReadableStream<Uint8Array>) {
   while(true) {
     let timer;
     try {
@@ -36,11 +34,16 @@ async function ensureSend(url: string, body: BodyInit) {
         console.debug('POST timeout: ', url);
         controller.abort();
       }, 60 * 1000);
+      // TODO: support resend ReadableStream
+      // TODO: support for fetch-upload-streaming-not-supported browsers
+      console.log('sending', url);
       const res = await fetch(url, {
         method: 'POST',
         body: body,
+        // TODO: not always?
+        duplex: 'half',
         signal: controller.signal
-      });
+      } as RequestInit);
       clearTimeout(timer);
       if (res.status !== 200) {
         throw new Error(`status ${res.status}`);
@@ -56,28 +59,36 @@ async function ensureSend(url: string, body: BodyInit) {
   }
 }
 
-export async function sendReadableStream(serverUrl: string, path: string, stream: ReadableStream<Uint8Array>): Promise<void> {
+async function* chunkReadableStream(stream: ReadableStream<Uint8Array>, chunkSizeThreshold: number): AsyncGenerator<ReadableStream<Uint8Array>, void> {
+  const lock = new AsyncSemaphore(1);
   const reader = stream.getReader();
-  const chunks: Uint8Array[] = [];
-  let chunksByteSize = 0;
-  const data = (async function* () {
-    while (true) {
-      const result = await reader.read();
-      if (result.done) {
-        break;
-      }
-      chunks.push(result.value);
-      chunksByteSize += result.value.byteLength;
-      if (chunksByteSize > CHUNKS_BYTE_SIZE_THRESHOLD) {
-        yield new Blob(chunks);
-        chunks.length = 0;
-        chunksByteSize = 0;
-      }
-    }
-    if (chunks.length !== 0) {
-      yield new Blob(chunks);
-    }
-  })();
+  let done: boolean = false;
+  while (!done) {
+    await lock.acquire();
+    let chunkByteSize = 0;
+    yield new ReadableStream<Uint8Array>({
+      async pull(ctrl) {
+        const result = await reader.read();
+        if (result.done) {
+          done = true;
+          ctrl.close();
+          lock.release();
+          return;
+        }
+        chunkByteSize += result.value.byteLength;
+        ctrl.enqueue(result.value);
+        if (chunkByteSize > chunkSizeThreshold) {
+          ctrl.close();
+          lock.release();
+          return;
+        }
+      },
+    });
+  }
+}
+
+export async function sendReadableStream(serverUrl: string, path: string, stream: ReadableStream<Uint8Array>): Promise<void> {
+  const data = chunkReadableStream(stream, CHUNKS_BYTE_SIZE_THRESHOLD);
   await send(serverUrl, path, data);
 }
 
