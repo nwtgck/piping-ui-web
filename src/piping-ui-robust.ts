@@ -24,8 +24,43 @@ async function send(serverUrl: string, path: string, data: AsyncIterator<Readabl
   // Notify finished
   await ensureSend(url(), new Uint8Array());
 }
+function makeReusableReadableStream<T>(stream: ReadableStream<T>): () => ReadableStream<T> {
+  const cachedValues: T[] = [];
+  let first = true;
+  return () => {
+    if (!first) {
+      let i = 0;
+      return new ReadableStream({
+        pull(ctrl) {
+          if (i >= cachedValues.length) {
+            ctrl.close();
+            return;
+          }
+          ctrl.enqueue(cachedValues[i]);
+          console.log('enq');
+          i++;
+        }
+      });
+    }
+    first = false;
+    const reader = stream.getReader();
+    return new ReadableStream<T>({
+      async pull(ctrl) {
+        const result = await reader.read();
+        if (result.done) {
+          ctrl.close();
+          return;
+        }
+        cachedValues.push(result.value);
+        ctrl.enqueue(result.value);
+      },
+    })
+  };
+}
 
 async function ensureSend(url: string, body: Uint8Array | ReadableStream<Uint8Array>) {
+  const makeBody: () => Uint8Array | ReadableStream<Uint8Array> =
+    body instanceof ReadableStream ? makeReusableReadableStream(body) : () => body;
   while(true) {
     let timer;
     try {
@@ -34,9 +69,9 @@ async function ensureSend(url: string, body: Uint8Array | ReadableStream<Uint8Ar
         console.debug('POST timeout: ', url);
         controller.abort();
       }, 60 * 1000);
-      // TODO: support resend ReadableStream
       // TODO: support for fetch-upload-streaming-not-supported browsers
-      console.log('sending', url);
+      const body = makeBody();
+      console.log('sending', url, body);
       const res = await fetch(url, {
         method: 'POST',
         body: body,
