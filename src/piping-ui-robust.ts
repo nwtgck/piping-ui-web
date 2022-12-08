@@ -1,7 +1,8 @@
 import urlJoin from "url-join";
 import {AsyncSemaphore} from "@/utils/AsyncSemaphore";
 
-const N_TRANSFERS = 2;
+// FIXME: Setting N_TRANSFERS = 2 make transferring unstable after using chunked ReadableStreams instead of chunked Blobs. Receiving stopped halfway when transferring a 1G file.
+const N_TRANSFERS = 1;
 const CHUNKS_BYTE_SIZE_THRESHOLD = 1048576; // 1MB
 
 async function send(serverUrl: string, path: string, data: AsyncIterator<ReadableStream<Uint8Array>, void>): Promise<void> {
@@ -37,7 +38,6 @@ function makeReusableReadableStream<T>(stream: ReadableStream<T>): () => Readabl
             return;
           }
           ctrl.enqueue(cachedValues[i]);
-          console.log('enq');
           i++;
         }
       });
