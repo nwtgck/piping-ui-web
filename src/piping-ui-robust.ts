@@ -1,7 +1,7 @@
 import urlJoin from "url-join";
 import {AsyncSemaphore} from "@/utils/AsyncSemaphore";
 
-// FIXME: Setting N_TRANSFERS = 2 make transferring unstable after using chunked ReadableStreams instead of chunked Blobs. Receiving stopped halfway when transferring a 1G file.
+// FIXME: Setting N_TRANSFERS = 2 make transferring unstable after using chunked ReadableStreams instead of chunked Blobs. Receiving stopped halfway when transferring a 1G file and "net::ERR_HTTP2_PROTOCOL_ERROR 200" caused in Chrome.
 const N_TRANSFERS = 1;
 const CHUNKS_BYTE_SIZE_THRESHOLD = 1048576; // 1MB
 const FINISH_CONTENT_TYPE = 'application/x-piping-finish';
