@@ -299,6 +299,11 @@ async function send(password: string | Uint8Array | undefined) {
     return
   }
 
+  // Check whether fetch() upload streaming is supported
+  const supportsUploadStreaming = await supportsFetchUploadStreaming(props.composedProps.serverUrl);
+  console.log("streaming upload support: ", supportsUploadStreaming);
+  console.log("force disable streaming upload: ", forceDisableStreamingUpload.value);
+
   if (experimentalEnablePipingUiRobust.value && props.composedProps.protection.type === "passwordless") {
     console.log("using experimental Piping UI Robust");
     // Convert plain body to ReadableStream
@@ -312,14 +317,10 @@ async function send(password: string | Uint8Array | undefined) {
       props.composedProps.serverUrl,
       props.composedProps.secretPath,
       encryptedStream,
+      {fetchUploadStreamingSupported: supportsUploadStreaming},
     );
     return;
   }
-
-  // Check whether fetch() upload streaming is supported
-  const supportsUploadStreaming = await supportsFetchUploadStreaming(props.composedProps.serverUrl);
-  console.log("streaming upload support: ", supportsUploadStreaming);
-  console.log("force disable streaming upload: ", forceDisableStreamingUpload.value);
 
   // fetch() upload streaming is not supported
   if (forceDisableStreamingUpload.value || !supportsUploadStreaming) {

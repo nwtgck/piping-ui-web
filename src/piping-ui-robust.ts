@@ -6,7 +6,7 @@ const N_TRANSFERS = 1;
 const CHUNKS_BYTE_SIZE_THRESHOLD = 1048576; // 1MB
 const FINISH_CONTENT_TYPE = 'application/x-piping-finish';
 
-async function send(serverUrl: string, path: string, data: AsyncIterator<ReadableStream<Uint8Array>, void>): Promise<void> {
+async function send(serverUrl: string, path: string, data: AsyncIterator<ReadableStream<Uint8Array>, void>, options: SendOptions | undefined): Promise<void> {
   let num = 1;
   const url = () => urlJoin(serverUrl, path, num+'');
   const semaphore = new AsyncSemaphore(N_TRANSFERS);
@@ -17,7 +17,7 @@ async function send(serverUrl: string, path: string, data: AsyncIterator<Readabl
       break;
     }
     // no await
-    ensureSend(url(), bodyResult.value, undefined).then(() => {
+    ensureSend(url(), bodyResult.value, undefined, options).then(() => {
       semaphore.release();
     });
     num++;
@@ -25,7 +25,7 @@ async function send(serverUrl: string, path: string, data: AsyncIterator<Readabl
   // Notify finished
   await ensureSend(url(), new Uint8Array(), {
     'Content-Type': FINISH_CONTENT_TYPE,
-  });
+  }, options);
 }
 function makeReusableReadableStream<T>(stream: ReadableStream<T>): () => ReadableStream<T> {
   const cachedValues: T[] = [];
@@ -60,9 +60,17 @@ function makeReusableReadableStream<T>(stream: ReadableStream<T>): () => Readabl
   };
 }
 
-async function ensureSend(url: string, body: Uint8Array | ReadableStream<Uint8Array>, headers: HeadersInit | undefined) {
-  const makeBody: () => Uint8Array | ReadableStream<Uint8Array> =
-    body instanceof ReadableStream ? makeReusableReadableStream(body) : () => body;
+async function ensureSend(url: string, body: Uint8Array | ReadableStream<Uint8Array>, headers: HeadersInit | undefined, options: SendOptions | undefined) {
+  const makeBody: () => Uint8Array | Blob | ReadableStream<Uint8Array> = await (async () => {
+    if (body instanceof ReadableStream) {
+      if (options?.fetchUploadStreamingSupported === true) {
+        return makeReusableReadableStream(body);
+      }
+      const blob = await new Response(body).blob();
+      return () => blob;
+    }
+    return () => body;
+  })();
   while(true) {
     let timer;
     try {
@@ -71,9 +79,7 @@ async function ensureSend(url: string, body: Uint8Array | ReadableStream<Uint8Ar
         console.debug('POST timeout: ', url);
         controller.abort();
       }, 60 * 1000);
-      // TODO: support for fetch-upload-streaming-not-supported browsers
       const body = makeBody();
-      console.log('sending', url, body);
       const res = await fetch(url, {
         method: 'POST',
         headers,
@@ -125,9 +131,11 @@ async function* chunkReadableStream(stream: ReadableStream<Uint8Array>, chunkSiz
   }
 }
 
-export async function sendReadableStream(serverUrl: string, path: string, stream: ReadableStream<Uint8Array>): Promise<void> {
+type SendOptions = { fetchUploadStreamingSupported: boolean };
+
+export async function sendReadableStream(serverUrl: string, path: string, stream: ReadableStream<Uint8Array>, options?: SendOptions): Promise<void> {
   const data = chunkReadableStream(stream, CHUNKS_BYTE_SIZE_THRESHOLD);
-  await send(serverUrl, path, data);
+  await send(serverUrl, path, data, options);
 }
 
 export function receiveReadableStream(serverUrl: string, path: string): ReadableStream<Uint8Array> {
