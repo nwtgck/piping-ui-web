@@ -4,6 +4,7 @@ import {AsyncSemaphore} from "@/utils/AsyncSemaphore";
 // FIXME: Setting N_TRANSFERS = 2 make transferring unstable after using chunked ReadableStreams instead of chunked Blobs. Receiving stopped halfway when transferring a 1G file.
 const N_TRANSFERS = 1;
 const CHUNKS_BYTE_SIZE_THRESHOLD = 1048576; // 1MB
+const FINISH_CONTENT_TYPE = 'application/x-piping-finish';
 
 async function send(serverUrl: string, path: string, data: AsyncIterator<ReadableStream<Uint8Array>, void>): Promise<void> {
   let num = 1;
@@ -15,15 +16,16 @@ async function send(serverUrl: string, path: string, data: AsyncIterator<Readabl
     if (bodyResult.done) {
       break;
     }
-    // TODO: should not send 0-byte ReadableStream because 0-byte means done. how to know its length? but not critical issue because send everything.
     // no await
-    ensureSend(url(), bodyResult.value).then(() => {
+    ensureSend(url(), bodyResult.value, undefined).then(() => {
       semaphore.release();
     });
     num++;
   }
   // Notify finished
-  await ensureSend(url(), new Uint8Array());
+  await ensureSend(url(), new Uint8Array(), {
+    'Content-Type': FINISH_CONTENT_TYPE,
+  });
 }
 function makeReusableReadableStream<T>(stream: ReadableStream<T>): () => ReadableStream<T> {
   const cachedValues: T[] = [];
@@ -58,7 +60,7 @@ function makeReusableReadableStream<T>(stream: ReadableStream<T>): () => Readabl
   };
 }
 
-async function ensureSend(url: string, body: Uint8Array | ReadableStream<Uint8Array>) {
+async function ensureSend(url: string, body: Uint8Array | ReadableStream<Uint8Array>, headers: HeadersInit | undefined) {
   const makeBody: () => Uint8Array | ReadableStream<Uint8Array> =
     body instanceof ReadableStream ? makeReusableReadableStream(body) : () => body;
   while(true) {
@@ -74,6 +76,7 @@ async function ensureSend(url: string, body: Uint8Array | ReadableStream<Uint8Ar
       console.log('sending', url, body);
       const res = await fetch(url, {
         method: 'POST',
+        headers,
         body: body,
         // TODO: not always?
         duplex: 'half',
@@ -172,7 +175,7 @@ async function ensureReceive(url: string): Promise<ArrayBuffer | 'done'> {
       if (res.status !== 200) {
         throw new Error(`status ${res.status}`);
       }
-      if (res.headers.get('content-length') === '0') {
+      if (res.headers.get('content-type')?.toLowerCase() === FINISH_CONTENT_TYPE) {
         return 'done';
       }
       return await res.arrayBuffer();
