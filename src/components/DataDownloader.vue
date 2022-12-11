@@ -154,14 +154,22 @@ onMounted(async () => {
       return;
     }
     console.log("downloading and decrypting with FileSaver.saveAs()...");
-    const binconv = await binconvAsync();
     // Get response
-    const res = await fetch(downloadPath.value);
-    const resBody = await binconv.blobToUint8Array(await res.blob());
+    const encryptedStream = await (async () => {
+      // Passwordless transfer always uses Piping UI Robust
+      if (props.composedProps.protection.type === "passwordless") {
+        return pipingUiRobust.receiveReadableStream(
+          props.composedProps.serverUrl,
+          encodeURI(props.composedProps.secretPath),
+        );
+      }
+      const res = await fetch(downloadPath.value);
+      return res.body!;
+    })();
     // Decrypt the response body
-    let plain: Uint8Array;
+    let plainStream: ReadableStream;
     try {
-      plain = await (await openPgpUtilsAsync()).decrypt(resBody, key);
+      plainStream = await (await openPgpUtilsAsync()).decryptStream(encryptedStream, key);
     } catch (e) {
       console.log("failed to decrypt", e);
       updateErrorMessage(() => strings.value['password_might_be_wrong']);
@@ -169,7 +177,7 @@ onMounted(async () => {
     }
     // Save
     const FileSaver = await FileSaverAsync();
-    FileSaver.saveAs(binconv.uint8ArrayToBlob(plain), props.composedProps.secretPath);
+    FileSaver.saveAs(await new Response(plainStream).blob(), props.composedProps.secretPath);
     return;
   }
   console.log("downloading streaming with the Service Worker and decrypting if need...");
@@ -177,8 +185,8 @@ onMounted(async () => {
 
   let readableStream: ReadableStream;
   let contentLengthStr: string | undefined = undefined;
-  if (experimentalEnablePipingUiRobust.value && props.composedProps.protection.type === "passwordless") {
-    console.log("using experimental Piping UI Robust");
+  // Passwordless transfer always uses Piping UI Robust
+  if (props.composedProps.protection.type === "passwordless") {
     readableStream = pipingUiRobust.receiveReadableStream(
       props.composedProps.serverUrl,
       encodeURI(props.composedProps.secretPath),

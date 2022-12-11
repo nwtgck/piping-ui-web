@@ -266,61 +266,67 @@ async function verify(verified: boolean) {
 
   await pipingUiAuth.verify(props.composedProps.serverUrl, props.composedProps.secretPath, key, verified, canceledPromise);
 
+  if (!verified) {
+    return;
+  }
+
   // If verified, send
-  if (verified) {
-    await send(key);
-  }
-}
-
-async function send(password: string | Uint8Array | undefined) {
-  const data: ActualFileObject[] | string = props.composedProps.data;
-
-  const plainBody: Blob = await (async () => {
-    // Text
-    if (typeof data === "string") {
-      return new Blob([data]);
-      // One file
-    } else if (data.length === 1) {
-      return data[0];
-      // Multiple files
-    } else {
-      const files: ActualFileObject[] = data;
-      isCompressing.value = true;
-      // Zip files
-      const zipBlob: Blob = await zipFilesAsBlob(files);
-      isCompressing.value = false;
-      return zipBlob;
-    }
-  })();
-
-  // If password protection is disabled
-  if (password === undefined) {
-    uploadByXhr(plainBody, plainBody.size);
-    return
-  }
+  const plainBody: Blob = await makePlainBody();
 
   // Check whether fetch() upload streaming is supported
   const supportsUploadStreaming = await supportsFetchUploadStreaming(props.composedProps.serverUrl);
   console.log("streaming upload support: ", supportsUploadStreaming);
   console.log("force disable streaming upload: ", forceDisableStreamingUpload.value);
 
-  if (experimentalEnablePipingUiRobust.value && props.composedProps.protection.type === "passwordless") {
-    console.log("using experimental Piping UI Robust");
-    // Convert plain body to ReadableStream
-    const plainStream = blobToReadableStream(plainBody);
-    // Attach progress
-    const plainStreamWithProgress = getReadableStreamWithProgress(plainStream, plainBody.size);
-    // Encrypt
-    const encryptedStream = await openPgpUtils.encrypt(plainStreamWithProgress, password);
+  // Convert plain body to ReadableStream
+  const plainStream = blobToReadableStream(plainBody);
+  // Attach progress
+  const plainStreamWithProgress = getReadableStreamWithProgress(plainStream, plainBody.size);
+  // Encrypt
+  const encryptedStream = await openPgpUtils.encrypt(plainStreamWithProgress, key);
 
-    await pipingUiRobust.sendReadableStream(
-      props.composedProps.serverUrl,
-      props.composedProps.secretPath,
-      encryptedStream,
-      {fetchUploadStreamingSupported: supportsUploadStreaming},
-    );
-    return;
+  // Passwordless transfer always uses Piping UI Robust
+  await pipingUiRobust.sendReadableStream(
+    props.composedProps.serverUrl,
+    props.composedProps.secretPath,
+    encryptedStream,
+    {
+      fetchUploadStreamingSupported: !forceDisableStreamingUpload.value && supportsUploadStreaming
+    },
+  );
+  return;
+}
+
+async function makePlainBody() {
+  const data: ActualFileObject[] | string = props.composedProps.data;
+  // Text
+  if (typeof data === "string") {
+    return new Blob([data]);
+    // One file
+  } else if (data.length === 1) {
+    return data[0];
+    // Multiple files
+  } else {
+    const files: ActualFileObject[] = data;
+    isCompressing.value = true;
+    // Zip files
+    const zipBlob: Blob = await zipFilesAsBlob(files);
+    isCompressing.value = false;
+    return zipBlob;
   }
+}
+
+async function send(password: string | Uint8Array | undefined) {
+  const plainBody: Blob = await makePlainBody();
+  // If password protection is disabled
+  if (password === undefined) {
+    uploadByXhr(plainBody, plainBody.size);
+    return
+  }
+  // Check whether fetch() upload streaming is supported
+  const supportsUploadStreaming = await supportsFetchUploadStreaming(props.composedProps.serverUrl);
+  console.log("streaming upload support: ", supportsUploadStreaming);
+  console.log("force disable streaming upload: ", forceDisableStreamingUpload.value);
 
   // fetch() upload streaming is not supported
   if (forceDisableStreamingUpload.value || !supportsUploadStreaming) {
