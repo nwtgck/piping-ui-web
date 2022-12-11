@@ -356,14 +356,20 @@ onMounted(async () => {
   if (contentLengthStr !== null) {
     progressSetting.value.totalBytes = parseInt(contentLengthStr, 10);
   }
-  const rawStream = getReadableStreamWithProgress(res.body!, (n) => {
+  const {stream: rawStream, cancel: cancelRawStream} = getReadableStreamWithProgress(res.body!, (n) => {
     progressSetting.value.loadedBytes += n;
   });
   try {
+    canceledPromise.then(() => {
+      cancelRawStream();
+    });
     // Get raw response body
     rawBlob = await new Response(rawStream).blob();
   } catch (err) {
     updateErrorMessage(() => strings.value['data_viewer_body_read_error']({ error: err }));
+    return;
+  }
+  if (canceled.value) {
     return;
   }
   isDoneDownload.value = true;
