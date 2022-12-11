@@ -1,5 +1,6 @@
 import urlJoin from "url-join";
 import {AsyncSemaphore} from "@/utils/AsyncSemaphore";
+import {makePromise} from "@/utils/makePromise";
 
 // FIXME: Setting N_TRANSFERS = 2 causes "net::ERR_HTTP2_PROTOCOL_ERROR 200" in Chrome Stable 108, but Piping UI Robust recovers and keep transferring.
 const N_TRANSFERS = 1;
@@ -118,6 +119,7 @@ export async function sendReadableStream(serverUrl: string, path: string, stream
 }
 
 export function receiveReadableStream(serverUrl: string, path: string): ReadableStream<Uint8Array> {
+  const {promise: canceledByFinishPromise, resolve: cancelByFinish} = makePromise<void>();
   return new ReadableStream({
     async start(ctrl) {
       let num = 1;
@@ -127,26 +129,34 @@ export function receiveReadableStream(serverUrl: string, path: string): Readable
       while(!done) {
         await semaphore.acquire();
         const url = urlJoin(serverUrl, path, num+'');
-        const chunkPromise = ensureReceive(url);
+        const chunkPromise = ensureReceive({
+          url,
+          canceledPromise: canceledByFinishPromise,
+        });
         lastPromise = lastPromise
           .then(() => chunkPromise)
-          .then((chunk: ArrayBuffer | 'done') => {
-            semaphore.release();
+          .then((chunk: ArrayBuffer | 'done' | 'canceled') => {
+            if (chunk === 'canceled') {
+              return;
+            }
             if (chunk === 'done') {
               done = true;
               ctrl.close();
+              semaphore.release();
               return;
             }
             ctrl.enqueue(new Uint8Array(chunk));
+            semaphore.release();
           });
         num++;
       }
-      // TODO: cancel requests
+      cancelByFinish();
     },
   });
 }
 
-async function ensureReceive(url: string): Promise<ArrayBuffer | 'done'> {
+async function ensureReceive({ url, canceledPromise }: { url: string, canceledPromise: Promise<void> }): Promise<ArrayBuffer | 'done' | 'canceled'> {
+  let canceled = false;
   while(true) {
     let timer;
     try {
@@ -155,6 +165,10 @@ async function ensureReceive(url: string): Promise<ArrayBuffer | 'done'> {
         console.debug('GET timeout: ', url);
         controller.abort();
       }, 60 * 1000);
+      canceledPromise.then(() => {
+        canceled = true;
+        controller.abort();
+      });
       const res = await fetch(url, {
         signal: controller.signal,
       });
@@ -166,9 +180,12 @@ async function ensureReceive(url: string): Promise<ArrayBuffer | 'done'> {
         return 'done';
       }
       return await res.arrayBuffer();
-    } catch (err) {
+    } catch (err: any) {
       if (timer !== undefined) {
         clearTimeout(timer);
+      }
+      if (canceled) {
+        return "canceled";
       }
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
