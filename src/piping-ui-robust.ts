@@ -64,7 +64,6 @@ async function ensureSend(url: string, body: Uint8Array | ReadableStream<Uint8Ar
         method: 'POST',
         headers,
         body: body,
-        // TODO: not always?
         duplex: 'half',
         signal: controller.signal
       } as RequestInit);
