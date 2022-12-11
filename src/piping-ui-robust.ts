@@ -1,7 +1,7 @@
 import urlJoin from "url-join";
 import {AsyncSemaphore} from "@/utils/AsyncSemaphore";
 
-// FIXME: Setting N_TRANSFERS = 2 make transferring unstable after using chunked ReadableStreams instead of chunked Blobs. Receiving stopped halfway when transferring a 1G file and "net::ERR_HTTP2_PROTOCOL_ERROR 200" caused in Chrome.
+// FIXME: Setting N_TRANSFERS = 2 causes "net::ERR_HTTP2_PROTOCOL_ERROR 200" in Chrome Stable 108, but Piping UI Robust recovers and keep transferring.
 const N_TRANSFERS = 1;
 const CHUNKS_BYTE_SIZE_THRESHOLD = 1048576; // 1MB
 const FINISH_CONTENT_TYPE = 'application/x-piping-finish';
@@ -28,35 +28,14 @@ async function send(serverUrl: string, path: string, data: AsyncIterator<Readabl
   }, options);
 }
 function makeReusableReadableStream<T>(stream: ReadableStream<T>): () => ReadableStream<T> {
-  const cachedValues: T[] = [];
-  let first = true;
+  let backupStream: ReadableStream<T> = stream;
   return () => {
-    if (!first) {
-      let i = 0;
-      return new ReadableStream({
-        pull(ctrl) {
-          if (i >= cachedValues.length) {
-            ctrl.close();
-            return;
-          }
-          ctrl.enqueue(cachedValues[i]);
-          i++;
-        }
-      });
-    }
-    first = false;
-    const reader = stream.getReader();
-    return new ReadableStream<T>({
-      async pull(ctrl) {
-        const result = await reader.read();
-        if (result.done) {
-          ctrl.close();
-          return;
-        }
-        cachedValues.push(result.value);
-        ctrl.enqueue(result.value);
-      },
-    })
+    let mainStream: ReadableStream<T>;
+    // NOTE: backupStream never blocks mainStream.
+    // MDN says:
+    // > If only one branch is consumed, then the entire body will be enqueued in memory. Therefore, you should not use the built-in tee() to read very large streams in parallel at different speeds.
+    [mainStream, backupStream] = backupStream.tee();
+    return mainStream;
   };
 }
 
