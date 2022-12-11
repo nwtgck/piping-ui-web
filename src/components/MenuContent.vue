@@ -59,13 +59,6 @@
         </v-list-item-action>
       </v-list-item>
 
-      <v-list-item>
-        <v-list-item-title>(experimental) Enable Piping UI Robust</v-list-item-title>
-        <v-list-item-action>
-          <v-switch v-model="experimentalEnablePipingUiRobust"></v-switch>
-        </v-list-item-action>
-      </v-list-item>
-
       <v-list-item @click="$emit('input', true)">
         <v-list-item-title>{{ strings['open_source_licenses'] }}</v-list-item-title>
       </v-list-item>
@@ -81,8 +74,6 @@ import DarkThemeSwitch from "@/components/DarkThemeSwitch.vue";
 import {recordsServerUrlHistory} from "@/settings/recordsServerUrlHistory";
 import {recordsSecretPathHistory} from "@/settings/recordsSecretPathHistory";
 import {forceDisableStreamingUpload} from "@/settings/forceDisableStreamingUpload";
-import {experimentalEnablePipingUiRobust} from "@/settings/experimentalEnablePipingUiRobust";
-
 
 // Available languages
 type Language = 'en' | 'ja';
@@ -111,7 +102,6 @@ export default defineComponent({
       recordsServerUrlHistory,
       recordsSecretPathHistory,
       forceDisableStreamingUpload,
-      experimentalEnablePipingUiRobust,
     };
   },
 });
