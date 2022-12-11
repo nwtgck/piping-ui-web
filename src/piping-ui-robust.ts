@@ -4,6 +4,8 @@ import {makePromise} from "@/utils/makePromise";
 
 // FIXME: Setting N_TRANSFERS = 2 causes "net::ERR_HTTP2_PROTOCOL_ERROR 200" in Chrome Stable 108, but Piping UI Robust recovers and keep transferring.
 const N_TRANSFERS = 1;
+// This speeds up the start of file download.
+const INITIAL_CHUNKS_BYTE_SIZE_THRESHOLD = 1024; // 1KB
 const CHUNKS_BYTE_SIZE_THRESHOLD = 1048576; // 1MB
 const FINISH_CONTENT_TYPE = 'application/x-piping-finish';
 
@@ -82,9 +84,10 @@ async function ensureSend(url: string, body: Uint8Array | ReadableStream<Uint8Ar
   }
 }
 
-async function* chunkReadableStream(stream: ReadableStream<Uint8Array>, chunkSizeThreshold: number): AsyncGenerator<ReadableStream<Uint8Array>, void> {
+async function* chunkReadableStream(stream: ReadableStream<Uint8Array>, options: { initialChunkSizeThreshold: number, chunkSizeThreshold: number }): AsyncGenerator<ReadableStream<Uint8Array>, void> {
   const lock = new AsyncSemaphore(1);
   const reader = stream.getReader();
+  let chunkSizeThreshold = options.initialChunkSizeThreshold;
   let done: boolean = false;
   while (!done) {
     await lock.acquire();
@@ -103,6 +106,7 @@ async function* chunkReadableStream(stream: ReadableStream<Uint8Array>, chunkSiz
         if (chunkByteSize > chunkSizeThreshold) {
           ctrl.close();
           lock.release();
+          chunkSizeThreshold = options.chunkSizeThreshold;
           return;
         }
       },
@@ -113,7 +117,10 @@ async function* chunkReadableStream(stream: ReadableStream<Uint8Array>, chunkSiz
 type SendOptions = { fetchUploadStreamingSupported: boolean };
 
 export async function sendReadableStream(serverUrl: string, path: string, stream: ReadableStream<Uint8Array>, options?: SendOptions): Promise<void> {
-  const data = chunkReadableStream(stream, CHUNKS_BYTE_SIZE_THRESHOLD);
+  const data = chunkReadableStream(stream, {
+    initialChunkSizeThreshold: INITIAL_CHUNKS_BYTE_SIZE_THRESHOLD,
+    chunkSizeThreshold: CHUNKS_BYTE_SIZE_THRESHOLD,
+  });
   await send(serverUrl, path, data, options);
 }
 
