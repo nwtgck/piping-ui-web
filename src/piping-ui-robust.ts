@@ -136,7 +136,9 @@ export async function sendReadableStream(serverUrl: string, path: string, stream
   await send(serverUrl, path, data, options);
 }
 
-export function receiveReadableStream(serverUrl: string, path: string): ReadableStream<Uint8Array> {
+type ReceiveOptions = { canceledPromise: Promise<void> };
+
+export function receiveReadableStream(serverUrl: string, path: string, options: ReceiveOptions): ReadableStream<Uint8Array> {
   const {promise: canceledByFinishPromise, resolve: cancelByFinish} = makePromise<void>();
   return new ReadableStream({
     async start(ctrl) {
@@ -149,7 +151,7 @@ export function receiveReadableStream(serverUrl: string, path: string): Readable
         const url = urlJoin(serverUrl, path, num+'');
         const chunkPromise = ensureReceive({
           url,
-          canceledPromise: canceledByFinishPromise,
+          canceledPromise: Promise.any([options.canceledPromise, canceledByFinishPromise]),
         });
         lastPromise = lastPromise
           .then(() => chunkPromise)

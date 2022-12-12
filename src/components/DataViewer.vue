@@ -339,7 +339,9 @@ onMounted(async () => {
   let rawStream: ReadableStream<Uint8Array>;
   if (props.composedProps.protection.type === "passwordless") {
     // Passwordless transfer always uses Piping UI Robust
-    rawStream = pipingUiRobust.receiveReadableStream(props.composedProps.serverUrl, props.composedProps.secretPath);
+    rawStream = pipingUiRobust.receiveReadableStream(props.composedProps.serverUrl, props.composedProps.secretPath, {
+      canceledPromise,
+    });
   } else {
     const abortController = new AbortController();
     canceledPromise.then(() => {
