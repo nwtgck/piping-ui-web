@@ -175,6 +175,7 @@ import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
 import {uint8ArrayToBlob} from 'binconv/dist/src/uint8ArrayToBlob';
 import {blobToReadableStream} from 'binconv/dist/src/blobToReadableStream';
 import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle, mdiEye, mdiEyeOff, mdiKey, mdiFeatureSearchOutline} from "@mdi/js";
+import * as pipingUiRobust from "@/piping-ui-robust";
 
 import {stringsByLang} from "@/strings/strings-by-lang";
 import * as openPgpUtils from '@/utils/openpgp-utils';
@@ -334,37 +335,45 @@ onMounted(async () => {
     return;
   }
   const {key} = keyExchangeRes;
-  const abortController = new AbortController();
 
-  canceledPromise.then(() => {
-    abortController.abort();
-  });
-  let res: Response;
-  try {
-    res = await fetch(downloadPath.value);
-  } catch (err) {
-    console.log(err);
-    updateErrorMessage(() => strings.value['data_viewer_fetch_error']);
-    return;
+  let rawStream: ReadableStream<Uint8Array>;
+  if (props.composedProps.protection.type === "passwordless") {
+    // Passwordless transfer always uses Piping UI Robust
+    rawStream = pipingUiRobust.receiveReadableStream(props.composedProps.serverUrl, props.composedProps.secretPath);
+  } else {
+    const abortController = new AbortController();
+    canceledPromise.then(() => {
+      abortController.abort();
+    });
+    let res: Response;
+    try {
+      res = await fetch(downloadPath.value);
+    } catch (err) {
+      console.log(err);
+      updateErrorMessage(() => strings.value['data_viewer_fetch_error']);
+      return;
+    }
+    if (res.status !== 200) {
+      const message = await res.text();
+      updateErrorMessage(() => strings.value['data_viewer_fetch_status_error']({ status: res.status, message }));
+      return;
+    }
+    const contentLengthStr = res.headers.get("Content-Length");
+    if (contentLengthStr !== null) {
+      progressSetting.value.totalBytes = parseInt(contentLengthStr, 10);
+    }
+    rawStream = res.body!;
   }
-  if (res.status !== 200) {
-    const message = await res.text();
-    updateErrorMessage(() => strings.value['data_viewer_fetch_status_error']({ status: res.status, message }));
-    return;
-  }
-  const contentLengthStr = res.headers.get("Content-Length");
-  if (contentLengthStr !== null) {
-    progressSetting.value.totalBytes = parseInt(contentLengthStr, 10);
-  }
-  const {stream: rawStream, cancel: cancelRawStream} = getReadableStreamWithProgress(res.body!, (n) => {
+
+  const {stream: rawStreamWithProgress, cancel: cancelRawStreamWithProgress} = getReadableStreamWithProgress(rawStream, (n) => {
     progressSetting.value.loadedBytes += n;
   });
   try {
     canceledPromise.then(() => {
-      cancelRawStream();
+      cancelRawStreamWithProgress();
     });
     // Get raw response body
-    rawBlob = await new Response(rawStream).blob();
+    rawBlob = await new Response(rawStreamWithProgress).blob();
   } catch (err) {
     updateErrorMessage(() => strings.value['data_viewer_body_read_error']({ error: err }));
     return;
