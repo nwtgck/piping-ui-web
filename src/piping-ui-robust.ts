@@ -58,6 +58,7 @@ async function ensureSend(url: string, body: Uint8Array | ReadableStream<Uint8Ar
     return () => body;
   })();
   let canceled = false;
+  let retryCount = 0;
   while(true) {
     let timer;
     try {
@@ -91,7 +92,9 @@ async function ensureSend(url: string, body: Uint8Array | ReadableStream<Uint8Ar
       if (canceled) {
         return;
       }
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const timeoutMillis = Math.min(10 * 4 ** retryCount, 30 * 1000);
+      await new Promise(resolve => setTimeout(resolve, timeoutMillis));
+      retryCount++;
     }
   }
 }
@@ -177,6 +180,7 @@ export function receiveReadableStream(serverUrl: string, path: string, options: 
 
 async function ensureReceive({ url, canceledPromise }: { url: string, canceledPromise: Promise<void> }): Promise<ArrayBuffer | 'done' | 'canceled'> {
   let canceled = false;
+  let retryCount = 0;
   while(true) {
     let timer;
     try {
@@ -207,7 +211,9 @@ async function ensureReceive({ url, canceledPromise }: { url: string, canceledPr
       if (canceled) {
         return "canceled";
       }
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const timeoutMillis = Math.min(10 * 4 ** retryCount, 30 * 1000);
+      await new Promise(resolve => setTimeout(resolve, timeoutMillis));
+      retryCount++;
     }
   }
 }
