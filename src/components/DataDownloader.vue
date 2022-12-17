@@ -61,7 +61,6 @@ import * as fileType from 'file-type/browser';
 import {canTransferReadableStream} from "@/utils/canTransferReadableStream";
 import {makePromise} from "@/utils/makePromise";
 import {useErrorMessage} from "@/useErrorMessage";
-import {experimentalEnablePipingUiRobust} from "@/settings/experimentalEnablePipingUiRobust";
 
 const FileSaverAsync = () => import('file-saver').then(p => p.default);
 const binconvAsync = () => import('binconv');
