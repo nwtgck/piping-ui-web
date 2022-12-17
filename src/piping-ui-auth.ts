@@ -59,7 +59,7 @@ type KeyExchangeResult =
   {type: "canceled"};
 
 export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver', secretPath: string, canceledPromise: Promise<void>): Promise<KeyExchangeResult> {
-  const KEY_EXCHANGE_VERSION = 1;
+  const KEY_EXCHANGE_VERSION = 2;
   // 256 is max value for deriveBits()
   const KEY_BITS = 256;
   // Create ECDH key pair

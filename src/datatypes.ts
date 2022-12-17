@@ -49,7 +49,7 @@ export const keyExchangeParcelType = t.type({
 export type KeyExchangeParcel = t.TypeOf<typeof keyExchangeParcelType>;
 
 export const keyExchangeV1ParcelType = t.type({
-  version: t.literal(1),
+  version: t.literal(2),
   // Public JWK for encryption
   encryptPublicJwk: ecJsonWebKeyType,
 });
