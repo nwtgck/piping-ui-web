@@ -63,7 +63,6 @@ import {makePromise} from "@/utils/makePromise";
 import {useErrorMessage} from "@/useErrorMessage";
 
 const FileSaverAsync = () => import('file-saver').then(p => p.default);
-const binconvAsync = () => import('binconv');
 const swDownloadAsync = () => import("@/sw-download");
 const openPgpUtilsAsync = () => import("@/utils/openpgp-utils");
 
