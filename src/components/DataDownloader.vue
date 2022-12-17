@@ -161,9 +161,11 @@ onMounted(async () => {
         return pipingUiRobust.receiveReadableStream(
           props.composedProps.serverUrl,
           encodeURI(props.composedProps.secretPath),
+          { canceledPromise },
         );
       }
       const res = await fetch(downloadPath.value);
+      // TODO: check status
       return res.body!;
     })();
     // Decrypt the response body
@@ -195,6 +197,7 @@ onMounted(async () => {
     );
   } else {
     const res = await fetch(downloadPath.value);
+    // TODO: check status
     contentLengthStr = key === undefined ? res.headers.get("Content-Length") ?? undefined : undefined;
     readableStream = res.body!
   }
