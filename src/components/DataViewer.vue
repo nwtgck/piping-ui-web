@@ -175,6 +175,7 @@ import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
 import {uint8ArrayToBlob} from 'binconv/dist/src/uint8ArrayToBlob';
 import {blobToReadableStream} from 'binconv/dist/src/blobToReadableStream';
 import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle, mdiEye, mdiEyeOff, mdiKey, mdiFeatureSearchOutline} from "@mdi/js";
+import * as pipingUiRobust from "@/piping-ui-robust";
 
 import {stringsByLang} from "@/strings/strings-by-lang";
 import * as openPgpUtils from '@/utils/openpgp-utils';
@@ -190,6 +191,7 @@ import {readBlobAsText} from "@/utils/readBlobAsText";
 import {sanitizeHtmlAllowingATag} from "@/utils/sanitizeHtmlAllowingATag";
 import {makePromise} from "@/utils/makePromise";
 import {useErrorMessage} from "@/useErrorMessage";
+import {getReadableStreamWithProgress} from "@/utils/getReadableStreamWithProgress";
 
 // eslint-disable-next-line no-undef
 const props = defineProps<{ composedProps: DataViewerProps }>();
@@ -205,7 +207,6 @@ const progressSetting = ref<{loadedBytes: number, totalBytes?: number}>({
   totalBytes: undefined,
 });
 const {errorMessage, updateErrorMessage} = useErrorMessage();
-const xhr: XMLHttpRequest = new XMLHttpRequest();
 const isDoneDownload = ref(false);
 const canceled = ref(false);
 const imgSrc= ref(new BlobUrlManager());
@@ -278,6 +279,7 @@ const isReadyToDownload = computed<boolean>(() => {
   return props.composedProps.protection.type === 'passwordless' ? verificationStep.value.type === 'verified' && verificationStep.value.verified : true
 });
 
+// TODO: rename to downloadUrl
 const downloadPath = computed<string>(() => {
   return urlJoin(props.composedProps.serverUrl, props.composedProps.secretPath);
 });
@@ -334,44 +336,56 @@ onMounted(async () => {
   }
   const {key} = keyExchangeRes;
 
-  canceledPromise.then(() => {
-    xhr.abort();
+  let rawStream: ReadableStream<Uint8Array>;
+  if (props.composedProps.protection.type === "passwordless") {
+    // Passwordless transfer always uses Piping UI Robust
+    rawStream = pipingUiRobust.receiveReadableStream(props.composedProps.serverUrl, props.composedProps.secretPath, {
+      canceledPromise,
+    });
+  } else {
+    const abortController = new AbortController();
+    canceledPromise.then(() => {
+      abortController.abort();
+    });
+    let res: Response;
+    try {
+      res = await fetch(downloadPath.value);
+    } catch (err) {
+      console.log(err);
+      updateErrorMessage(() => strings.value['data_viewer_fetch_error']);
+      return;
+    }
+    if (res.status !== 200) {
+      const message = await res.text();
+      updateErrorMessage(() => strings.value['data_viewer_fetch_status_error']({ status: res.status, message }));
+      return;
+    }
+    const contentLengthStr = res.headers.get("Content-Length");
+    if (contentLengthStr !== null) {
+      progressSetting.value.totalBytes = parseInt(contentLengthStr, 10);
+    }
+    rawStream = res.body!;
+  }
+
+  const {stream: rawStreamWithProgress, cancel: cancelRawStreamWithProgress} = getReadableStreamWithProgress(rawStream, (n) => {
+    progressSetting.value.loadedBytes += n;
   });
-  xhr.open('GET', downloadPath.value);
-  xhr.responseType = 'blob';
-  xhr.onprogress = (ev) => {
-    console.log(`Download: ${ev.loaded}`)
-  };
-  xhr.onreadystatechange = (ev) => {
-    if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
-      const length: string | null = xhr.getResponseHeader('Content-Length');
-      if (length !== null) {
-        progressSetting.value.totalBytes = parseInt(length, 10);
-      }
-    }
-  };
-  xhr.onprogress = (ev) => {
-    progressSetting.value.loadedBytes = ev.loaded;
-  };
-  xhr.onload = async (ev) => {
-    if (xhr.status === 200) {
-      isDoneDownload.value = true;
-      // Get raw response body
-      rawBlob = xhr.response;
-      // Decrypt and view blob if possible
-      decryptIfNeedAndViewBlob(key);
-    } else {
-      const responseText = await readBlobAsText(xhr.response);
-      updateErrorMessage(() => strings.value['xhr_status_error']({
-        status: xhr.status,
-        response: responseText,
-      }));
-    }
-  };
-  xhr.onerror = () => {
-    updateErrorMessage(() => strings.value['data_viewer_xhr_onerror']);
-  };
-  xhr.send();
+  try {
+    canceledPromise.then(() => {
+      cancelRawStreamWithProgress();
+    });
+    // Get raw response body
+    rawBlob = await new Response(rawStreamWithProgress).blob();
+  } catch (err) {
+    updateErrorMessage(() => strings.value['data_viewer_body_read_error']({ error: err }));
+    return;
+  }
+  if (canceled.value) {
+    return;
+  }
+  isDoneDownload.value = true;
+  // Decrypt and view blob if possible
+  await decryptIfNeedAndViewBlob(key);
 });
 
 async function viewBlob() {

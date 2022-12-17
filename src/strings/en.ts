@@ -70,7 +70,13 @@ export const en = {
   xhr_status_error: (p: {status: number, response: string}) => {
     return `Error (${p.status}): "${p.response}"`;
   },
-  data_viewer_xhr_onerror: 'Download error',
+  data_viewer_fetch_error: 'Download error',
+  data_viewer_fetch_status_error: (p: {status: number, message: string}) => {
+    return `Error (${p.status}): "${p.message}"`;
+  },
+  data_viewer_body_read_error: (p: { error: unknown }) => {
+    return `Body read error: ${p.error}`;
+  },
   save: 'Save',
   record_server_url: 'Record server URL',
   record_secret_path: 'Record secret path',

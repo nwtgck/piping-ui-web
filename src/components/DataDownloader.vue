@@ -52,6 +52,7 @@ import urlJoin from 'url-join';
 import {mdiAlert, mdiChevronDown} from "@mdi/js";
 import {stringsByLang} from "@/strings/strings-by-lang";
 import * as pipingUiUtils from "@/piping-ui-utils";
+import * as pipingUiRobust from "@/piping-ui-robust";
 import {type VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import * as pipingUiAuth from "@/piping-ui-auth";
@@ -62,7 +63,6 @@ import {makePromise} from "@/utils/makePromise";
 import {useErrorMessage} from "@/useErrorMessage";
 
 const FileSaverAsync = () => import('file-saver').then(p => p.default);
-const binconvAsync = () => import('binconv');
 const swDownloadAsync = () => import("@/sw-download");
 const openPgpUtilsAsync = () => import("@/utils/openpgp-utils");
 
@@ -152,14 +152,24 @@ onMounted(async () => {
       return;
     }
     console.log("downloading and decrypting with FileSaver.saveAs()...");
-    const binconv = await binconvAsync();
     // Get response
-    const res = await fetch(downloadPath.value);
-    const resBody = await binconv.blobToUint8Array(await res.blob());
+    const encryptedStream = await (async () => {
+      // Passwordless transfer always uses Piping UI Robust
+      if (props.composedProps.protection.type === "passwordless") {
+        return pipingUiRobust.receiveReadableStream(
+          props.composedProps.serverUrl,
+          encodeURI(props.composedProps.secretPath),
+          { canceledPromise },
+        );
+      }
+      const res = await fetch(downloadPath.value);
+      // TODO: check status
+      return res.body!;
+    })();
     // Decrypt the response body
-    let plain: Uint8Array;
+    let plainStream: ReadableStream;
     try {
-      plain = await (await openPgpUtilsAsync()).decrypt(resBody, key);
+      plainStream = await (await openPgpUtilsAsync()).decryptStream(encryptedStream, key);
     } catch (e) {
       console.log("failed to decrypt", e);
       updateErrorMessage(() => strings.value['password_might_be_wrong']);
@@ -167,17 +177,32 @@ onMounted(async () => {
     }
     // Save
     const FileSaver = await FileSaverAsync();
-    FileSaver.saveAs(binconv.uint8ArrayToBlob(plain), props.composedProps.secretPath);
+    FileSaver.saveAs(await new Response(plainStream).blob(), props.composedProps.secretPath);
     return;
   }
   console.log("downloading streaming with the Service Worker and decrypting if need...");
   const openPgpUtils = await openPgpUtilsAsync();
-  const res = await fetch(downloadPath.value);
-  const contentLengthStr: string | undefined = key === undefined ? res.headers.get("Content-Length") ?? undefined : undefined;
-  let readableStream: ReadableStream<Uint8Array> = res.body!
+
+  let readableStream: ReadableStream;
+  let contentLengthStr: string | undefined = undefined;
+  // Passwordless transfer always uses Piping UI Robust
+  if (props.composedProps.protection.type === "passwordless") {
+    // TODO: notify when canceled because Piping UI Robust on sender side keeps sending
+    readableStream = pipingUiRobust.receiveReadableStream(
+      props.composedProps.serverUrl,
+      encodeURI(props.composedProps.secretPath),
+      { canceledPromise },
+    );
+  } else {
+    const res = await fetch(downloadPath.value);
+    // TODO: check status
+    contentLengthStr = key === undefined ? res.headers.get("Content-Length") ?? undefined : undefined;
+    readableStream = res.body!
+  }
+
   if (key !== undefined) {
     try {
-      readableStream = await openPgpUtils.decryptStream(res.body!, key);
+      readableStream = await openPgpUtils.decryptStream(readableStream, key);
     } catch (e) {
       console.log("failed to decrypt", e);
       updateErrorMessage(() => strings.value['password_might_be_wrong']);
