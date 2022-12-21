@@ -1,5 +1,6 @@
 import {fetch} from "undici";
 import {spawn} from "child_process";
+import * as webdriver from "selenium-webdriver";
 
 export async function servePipingUiIfNotServed(port: number) {
   try {
@@ -39,6 +40,16 @@ export async function servePipingUiIfNotServed(port: number) {
     } catch (e) {
       // Do nothing
     }
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 500));
   }
+}
+
+export async function findByLabel(driver: webdriver.WebDriver, text: string | RegExp) {
+  const findPredicate: (({textContent}: {textContent: string}) => boolean) = typeof text === "string" ? ({textContent}) => textContent === text : ({textContent}) => !!textContent.match(text);
+  const elements = (await driver.findElements(webdriver.By.css('label')));
+  const id = await (await Promise.all(elements.map(async element => ({element, textContent: await element.getText()}))))
+    .find(findPredicate)!
+    .element
+    .getAttribute("for")
+  return driver.findElement(webdriver.By.id(id));
 }

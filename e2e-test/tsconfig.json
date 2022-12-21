@@ -7,8 +7,7 @@
     "preserveConstEnums": true,
     "sourceMap": true,
     "declaration": true,
-    "target": "es5",
-    "lib": ["es2015"],
+    "target": "es2021",
     "outDir": "dist",
     "rootDir": "./"
   },
