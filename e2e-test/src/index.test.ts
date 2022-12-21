@@ -5,6 +5,7 @@ import {dockerSeleniumStandalone} from "./docker-selenium-standalone";
 import * as crypto from "crypto";
 import * as fs from "fs";
 import * as path from "path";
+import * as os from "os";
 
 const PIPING_UI_PORT = 4000;
 const PIPING_UI_URL = `http://localhost:${PIPING_UI_PORT}`;
@@ -15,10 +16,11 @@ before(async () => {
 
 describe('Piping UI', () => {
   it('should transfer a file', async () => {
-    const sharePath = "/tmp/selenium-docker_tmp_share";
+    const sharePath = fs.mkdtempSync(path.join(os.tmpdir(), "selenium-docker-share-"));
     const sharePathInDocker = "/home/seluser/tmp";
-    const downloadPath = "/tmp/selenium-docker_downloads_share";
+    const downloadPath = fs.mkdtempSync(path.join(os.tmpdir(), "selenium-docker-downloads-share-"));
     const downloadPathInDocker = "/home/seluser/Downloads";
+
     await dockerSeleniumStandalone({
       baseImage: "selenium/standalone-firefox:107.0",
       port: 4444,
