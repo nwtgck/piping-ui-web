@@ -1,0 +1,21 @@
+name: e2e-test
+
+on:
+  push:
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+      - name: Install dependencies
+        run: |
+          set -eu
+          npm ci &
+          (cd e2e-test && npm ci) &
+          wait
+      - name: E2E test
+        run: cd e2e-test && npm start
