@@ -6,6 +6,7 @@ import * as crypto from "crypto";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
+import {WebDriver} from "selenium-webdriver";
 
 const PIPING_UI_PORT = 4000;
 const PIPING_UI_URL = `http://localhost:${PIPING_UI_PORT}`;
@@ -13,6 +14,16 @@ const PIPING_UI_URL = `http://localhost:${PIPING_UI_PORT}`;
 before(async () => {
   await servePipingUiIfNotServed(PIPING_UI_PORT);
 });
+
+function findElements(driver: WebDriver) {
+  return {
+    fileInput: async () => await driver.findElement(webdriver.By.css("input[type='file']")),
+    secretPathInput: async () => await findByLabel(driver, /Secret path/),
+    sendButton: async () => (await driver.findElements(webdriver.By.xpath(`//button[.//*[contains(text(), "Send")]]`)))[1],
+    getMenuButton: async () => driver.findElement(webdriver.By.xpath(`//button[.//*[contains(text(), "Get")]]`)),
+    downloadButton: async () => driver.findElement(webdriver.By.xpath(`//button[.//*[contains(text(), "Download")]]`)),
+  } as const;
+}
 
 describe('Piping UI', () => {
   it('should transfer a file', async () => {
@@ -41,28 +52,26 @@ describe('Piping UI', () => {
         .usingServer("http://localhost:4444/wd/hub").build();
       await driver.get(PIPING_UI_URL);
 
+      const elements = findElements(driver);
+
       fs.writeFileSync(path.join(sharePath, "mydata.dat"), transferContent);
-
-      await driver.findElement(webdriver.By.css("input[type='file']")).sendKeys(path.join(sharePathInDocker, "mydata.dat"));
-
-      const secretPathInput = await findByLabel(driver, /Secret path/);
-      await secretPathInput.sendKeys(secretPath);
-
+      await (await elements.fileInput()).sendKeys(path.join(sharePathInDocker, "mydata.dat"));
+      await (await elements.secretPathInput()).sendKeys(secretPath);
       await new Promise(resolve => setTimeout(resolve, 1000));
-      await (await driver.findElements(webdriver.By.xpath(`//button[.//*[contains(text(), "Send")]]`)))[1].click();
+      await (await elements.sendButton()).click();
     }
 
     {
       const driver = new webdriver.Builder().forBrowser(webdriver.Browser.FIREFOX)
         .usingServer("http://localhost:4444/wd/hub").build();
-
       await driver.get(PIPING_UI_URL);
-      await driver.findElement(webdriver.By.xpath(`//button[.//*[contains(text(), "Get")]]`)).click();
-      const secretPathInput = await findByLabel(driver, /Secret path/);
-      await secretPathInput.sendKeys(secretPath);
 
+      const elements = findElements(driver);
+
+      await (await elements.getMenuButton()).click();
+      await (await elements.secretPathInput()).sendKeys(secretPath);
       await new Promise(resolve => setTimeout(resolve, 1000));
-      await driver.findElement(webdriver.By.xpath(`//button[.//*[contains(text(), "Download")]]`)).click();
+      await (await elements.downloadButton()).click();
 
       const downloadedFilePath = path.join(downloadPath, secretPath);
       // NOTE: Firefox creates 0-byte file and .part file
