@@ -1,18 +1,24 @@
 import * as assert from 'power-assert';
 import * as webdriver from "selenium-webdriver";
-import {findByLabel, servePipingUiIfNotServed} from "./util";
-import {dockerSeleniumStandalone} from "./docker-selenium-standalone";
+import {WebDriver} from "selenium-webdriver";
+import {createDriverFactory, findByLabel, servePipingUiIfNotServed} from "./util";
 import * as crypto from "crypto";
 import * as fs from "fs";
 import * as path from "path";
-import * as os from "os";
-import {WebDriver} from "selenium-webdriver";
 
 const PIPING_UI_PORT = 4000;
 const PIPING_UI_URL = `http://localhost:${PIPING_UI_PORT}`;
 
+const driverFactoryPromise = createDriverFactory({
+  dockerBaseImage: process.env["E2E_DOCKER_IMAGE"] || (() => {throw new Error("$E2E_DOCKER_IMAGE not found")})(),
+  forwardingTcpPorts: [PIPING_UI_PORT],
+});
+
 before(async () => {
-  await servePipingUiIfNotServed(PIPING_UI_PORT);
+  await Promise.all([
+    servePipingUiIfNotServed(PIPING_UI_PORT),
+    driverFactoryPromise,
+  ]);
 });
 
 function findElements(driver: WebDriver) {
@@ -27,29 +33,13 @@ function findElements(driver: WebDriver) {
 
 describe('Piping UI', () => {
   it('should transfer a file', async () => {
-    const sharePath = fs.mkdtempSync(path.join(os.tmpdir(), "selenium-docker-share-"));
-    const sharePathInDocker = "/home/seluser/tmp";
-    const downloadPath = fs.mkdtempSync(path.join(os.tmpdir(), "selenium-docker-downloads-share-"));
-    const downloadPathInDocker = "/home/seluser/Downloads";
-
-    await dockerSeleniumStandalone({
-      baseImage: "selenium/standalone-firefox:107.0",
-      port: 4444,
-      noVncPort: 7900,
-      volumes: [
-        { hostPath: sharePath, containerPath: sharePathInDocker },
-        { hostPath: downloadPath, containerPath: downloadPathInDocker },
-      ],
-      forwardingTcpPorts: [PIPING_UI_PORT],
-    });
-    console.log("selenium is ready");
+    const {sharePath, sharePathInDocker, downloadPath, createDriver} = await driverFactoryPromise;
 
     const secretPath = crypto.randomBytes(8).toString("hex");
-    const transferContent = crypto.randomBytes(10 * 1024 * 1024);
+    const transferContent = crypto.randomBytes(1024 * 1024);
 
     {
-      const driver = new webdriver.Builder().forBrowser(webdriver.Browser.FIREFOX)
-        .usingServer("http://localhost:4444/wd/hub").build();
+      const driver = createDriver();
       await driver.get(PIPING_UI_URL);
 
       const elements = findElements(driver);
@@ -62,8 +52,7 @@ describe('Piping UI', () => {
     }
 
     {
-      const driver = new webdriver.Builder().forBrowser(webdriver.Browser.FIREFOX)
-        .usingServer("http://localhost:4444/wd/hub").build();
+      const driver = createDriver();
       await driver.get(PIPING_UI_URL);
 
       const elements = findElements(driver);
@@ -80,6 +69,7 @@ describe('Piping UI', () => {
       }
       const downloadedFileContent = fs.readFileSync(downloadedFilePath);
 
+      assert.strictEqual(transferContent.length, downloadedFileContent.length);
       assert(transferContent.equals(downloadedFileContent));
     }
   });

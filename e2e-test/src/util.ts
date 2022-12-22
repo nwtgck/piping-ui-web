@@ -1,6 +1,10 @@
 import {fetch} from "undici";
 import {spawn} from "child_process";
 import * as webdriver from "selenium-webdriver";
+import * as fs from "fs";
+import * as path from "path";
+import * as os from "os";
+import {dockerSeleniumStandalone} from "./docker-selenium-standalone";
 
 export async function servePipingUiIfNotServed(port: number) {
   try {
@@ -52,4 +56,45 @@ export async function findByLabel(driver: webdriver.WebDriver, text: string | Re
     .element
     .getAttribute("for")
   return driver.findElement(webdriver.By.id(id));
+}
+
+export async function createDriverFactory({dockerBaseImage, forwardingTcpPorts}: {dockerBaseImage: string, forwardingTcpPorts: readonly number[]}) {
+  const sharePath = fs.mkdtempSync(path.join(os.tmpdir(), "selenium-docker-share-"));
+  const sharePathInDocker = "/home/seluser/tmp";
+  const downloadPath = fs.mkdtempSync(path.join(os.tmpdir(), "selenium-docker-downloads-share-"));
+  const downloadPathInDocker = "/home/seluser/Downloads";
+
+  await dockerSeleniumStandalone({
+    baseImage: dockerBaseImage,
+    port: 4444,
+    noVncPort: 7900,
+    volumes: [
+      { hostPath: sharePath, containerPath: sharePathInDocker },
+      { hostPath: downloadPath, containerPath: downloadPathInDocker },
+    ],
+    forwardingTcpPorts,
+  });
+
+  console.log("selenium is ready");
+
+  const browserName = (() => {
+    if (dockerBaseImage.includes("-firefox:")) {
+      return "firefox";
+    }
+    if (dockerBaseImage.includes("-chrome:") || dockerBaseImage.includes("-chromium:")) {
+      return "chrome";
+    }
+    throw new Error(`unexpected docker image: ${dockerBaseImage}`);
+  })();
+
+  return {
+    sharePath,
+    sharePathInDocker,
+    downloadPath,
+    downloadPathInDocker,
+    createDriver() {
+      return new webdriver.Builder().forBrowser(browserName)
+        .usingServer("http://localhost:4444/wd/hub").build();
+    }
+  };
 }

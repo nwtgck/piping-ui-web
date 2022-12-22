@@ -18,5 +18,20 @@ jobs:
           npm ci &
           (cd e2e-test && npm ci) &
           wait
-      - name: E2E test
-        run: cd e2e-test && npm start
+      - run: PORT=4000 npm run serve &
+      - name: Wait for serving
+        run: |
+          set -eu
+          while true
+          do
+            if [ "$(curl -s -o /dev/null -w "%{http_code}" http://localhost:4000)" -eq 200 ]
+            then
+              break
+            fi
+            sleep 1
+          done
+        timeout-minutes: 3
+      - run: E2E_DOCKER_IMAGE=selenium/standalone-chrome:108.0 npm start
+        working-directory: e2e-test
+      - run: E2E_DOCKER_IMAGE=selenium/standalone-firefox:107.0 npm start
+        working-directory: e2e-test
