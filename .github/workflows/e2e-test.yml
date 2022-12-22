@@ -4,7 +4,13 @@ on:
   push:
 
 jobs:
-  build:
+  test:
+    strategy:
+      matrix:
+        e2e_docker_image:
+          - selenium/standalone-chrome:108.0
+          - selenium/standalone-firefox:107.0
+
     runs-on: ubuntu-20.04
     timeout-minutes: 10
     steps:
@@ -31,7 +37,5 @@ jobs:
             sleep 1
           done
         timeout-minutes: 3
-      - run: E2E_DOCKER_IMAGE=selenium/standalone-chrome:108.0 npm start
-        working-directory: e2e-test
-      - run: E2E_DOCKER_IMAGE=selenium/standalone-firefox:107.0 npm start
-        working-directory: e2e-test
+      - name: E2E test (${{ matrix.e2e_docker_image }})
+        run: cd e2e-test && E2E_DOCKER_IMAGE=${{ matrix.e2e_docker_image }} npm start
