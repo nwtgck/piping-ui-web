@@ -7,9 +7,11 @@ jobs:
   test:
     strategy:
       matrix:
-        e2e_docker_image:
-          - selenium/standalone-chrome:108.0
-          - selenium/standalone-firefox:107.0
+        # "selenium/standalone-xxx"
+        # These short names are more readable in GitHub UI
+        e2e_docker_image_fragment:
+          - chrome:108.0
+          - firefox:107.0
 
     runs-on: ubuntu-20.04
     timeout-minutes: 10
@@ -37,5 +39,5 @@ jobs:
             sleep 1
           done
         timeout-minutes: 3
-      - name: E2E test (${{ matrix.e2e_docker_image }})
-        run: cd e2e-test && E2E_DOCKER_IMAGE=${{ matrix.e2e_docker_image }} npm start
+      - name: E2E test (${{ matrix.e2e_docker_image_fragment }})
+        run: cd e2e-test && E2E_DOCKER_IMAGE=selenium/standalone-${{ matrix.e2e_docker_image_fragment }} npm start
