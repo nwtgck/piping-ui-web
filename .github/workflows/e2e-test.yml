@@ -20,6 +20,10 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 16.x
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            e2e-test/package-lock.json
       - name: Install dependencies
         run: |
           set -eu
