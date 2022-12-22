@@ -5,6 +5,7 @@ import {createDriverFactory, findByLabel, servePipingUiIfNotServed} from "./util
 import * as crypto from "crypto";
 import * as fs from "fs";
 import * as path from "path";
+import {afterEach} from "mocha";
 
 const PIPING_UI_PORT = 4000;
 const PIPING_UI_URL = `http://localhost:${PIPING_UI_PORT}`;
@@ -32,6 +33,17 @@ function findElements(driver: WebDriver) {
 }
 
 describe('Piping UI', () => {
+  const afterCallbacks: (() => void | Promise<void>)[] = [];
+  afterEach(async () => {
+    for (let i = afterCallbacks.length - 1; i >= 0; i--) {
+      await afterCallbacks[i]();
+    }
+    afterCallbacks.length = 0;
+  });
+  function defer(f: () => void | Promise<void>) {
+    afterCallbacks.push(f);
+  }
+
   it('should transfer a file', async () => {
     const {sharePath, sharePathInDocker, downloadPath, createDriver} = await driverFactoryPromise;
 
@@ -40,11 +52,15 @@ describe('Piping UI', () => {
 
     {
       const driver = createDriver();
+      defer(() => driver.quit());
+
       await driver.get(PIPING_UI_URL);
 
       const elements = findElements(driver);
 
-      fs.writeFileSync(path.join(sharePath, "mydata.dat"), transferContent);
+      const transferFilePath = path.join(sharePath, "mydata.dat");
+      fs.writeFileSync(transferFilePath, transferContent);
+      defer(() => fs.rmSync(transferFilePath));
       await (await elements.fileInput()).sendKeys(path.join(sharePathInDocker, "mydata.dat"));
       await (await elements.secretPathInput()).sendKeys(secretPath);
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -53,6 +69,8 @@ describe('Piping UI', () => {
 
     {
       const driver = createDriver();
+      defer(() => driver.quit());
+
       await driver.get(PIPING_UI_URL);
 
       const elements = findElements(driver);
@@ -71,6 +89,7 @@ describe('Piping UI', () => {
 
       assert.strictEqual(transferContent.length, downloadedFileContent.length);
       assert(transferContent.equals(downloadedFileContent));
+      fs.rmSync(downloadedFilePath);
     }
   });
 });
