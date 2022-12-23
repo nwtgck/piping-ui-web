@@ -2,9 +2,10 @@ import {spawn, spawnSync} from "child_process";
 import {fetch} from "undici";
 import * as os from "os";
 
-export async function dockerSeleniumStandalone({ baseImage, port = 4444, noVncPort = 7900, maxSessions = 4, volumes = [], forwardingTcpPorts = [] }: {
+export async function dockerSeleniumStandalone({ baseImage, port = 4444, vncPort, noVncPort, maxSessions = 4, volumes = [], forwardingTcpPorts = [] }: {
   baseImage: string,
   port?: number,
+  vncPort?: number,
   noVncPort?: number,
   maxSessions?: number,
   forwardingTcpPorts?: readonly number[],
@@ -23,7 +24,14 @@ RUN sudo apt update && sudo apt install -y socat
     throw new Error("failed to docker-build");
   }
   const volumesOptions = volumes.flatMap(({hostPath, containerPath}) => ["-v", `${hostPath}:${containerPath}`]);
-  const dockerRunResult = spawnSync("docker", ["run", "-dit", "--rm", "--user", `${os.userInfo().uid}`, "-p", `${port}:4444`, "-p", `${noVncPort}:7900`, "-p", `${5900}:5900`, ...volumesOptions, `--shm-size=2g`, "-e", "SE_START_XVFB=false", "-e", `SE_NODE_MAX_SESSIONS=${maxSessions}`, dockerImage]);
+
+  const dockerRunResult = spawnSync("docker", [
+    "run", "-dit", "--rm", "--user", `${os.userInfo().uid}`,
+    "-p", `${port}:4444`,
+    ...(vncPort === undefined ? []: ["-p", `${vncPort}:5900`]),
+    ...(noVncPort === undefined ? []: ["-p", `${noVncPort}:7900`]),
+    ...volumesOptions, `--shm-size=2g`, "-e", "SE_START_XVFB=false", "-e", `SE_NODE_MAX_SESSIONS=${maxSessions}`, dockerImage
+  ]);
   if (dockerRunResult.status !== 0) {
     throw new Error(`failed to docker-run: ${dockerRunResult.stderr.toString("utf-8")}`);
   }

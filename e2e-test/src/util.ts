@@ -68,6 +68,7 @@ export async function createDriverFactory({dockerBaseImage, forwardingTcpPorts}:
   await dockerSeleniumStandalone({
     baseImage: dockerBaseImage,
     port: 4444,
+    vncPort: 5900,
     noVncPort: 7900,
     volumes: [
       { hostPath: sharePath, containerPath: sharePathInDocker },
