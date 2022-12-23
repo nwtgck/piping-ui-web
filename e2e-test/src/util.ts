@@ -1,6 +1,7 @@
 import {fetch} from "undici";
 import {spawn} from "child_process";
 import * as webdriver from "selenium-webdriver";
+import * as firefox from "selenium-webdriver/firefox";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
@@ -77,12 +78,21 @@ export async function createDriverFactory({dockerBaseImage, forwardingTcpPorts}:
 
   console.log("selenium is ready");
 
-  const browserName = (() => {
+  const createDriver: () => webdriver.WebDriver = (() => {
     if (dockerBaseImage.includes("-firefox:")) {
-      return "firefox";
+      return () => {
+        return new webdriver.Builder().forBrowser(webdriver.Browser.FIREFOX)
+          .setFirefoxOptions(new firefox.Options()
+            .setPreference("browser.helperApps.neverAsk.saveToDisk", "application/x-unknown-content-type")
+          )
+          .usingServer("http://localhost:4444/wd/hub").build();
+      }
     }
     if (dockerBaseImage.includes("-chrome:") || dockerBaseImage.includes("-chromium:")) {
-      return "chrome";
+      return () => {
+        return new webdriver.Builder().forBrowser(webdriver.Browser.CHROME)
+          .usingServer("http://localhost:4444/wd/hub").build();
+      }
     }
     throw new Error(`unexpected docker image: ${dockerBaseImage}`);
   })();
@@ -92,9 +102,6 @@ export async function createDriverFactory({dockerBaseImage, forwardingTcpPorts}:
     sharePathInDocker,
     downloadPath,
     downloadPathInDocker,
-    createDriver() {
-      return new webdriver.Builder().forBrowser(browserName)
-        .usingServer("http://localhost:4444/wd/hub").build();
-    }
+    createDriver,
   };
 }

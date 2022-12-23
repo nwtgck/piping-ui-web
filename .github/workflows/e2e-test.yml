@@ -11,9 +11,9 @@ jobs:
         # These short names are more readable in GitHub UI
         e2e_docker_image_fragment:
           - chrome:108.0
-          - chrome:101.0
+          - chrome:84.0
           - firefox:107.0
-          - firefox:99.0
+          - firefox:78.0
 
     runs-on: ubuntu-20.04
     timeout-minutes: 10

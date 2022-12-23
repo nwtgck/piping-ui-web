@@ -23,7 +23,7 @@ RUN sudo apt update && sudo apt install -y socat
     throw new Error("failed to docker-build");
   }
   const volumesOptions = volumes.flatMap(({hostPath, containerPath}) => ["-v", `${hostPath}:${containerPath}`]);
-  const dockerRunResult = spawnSync("docker", ["run", "-dit", "--rm", "--user", `${os.userInfo().uid}`, "-p", `${port}:4444`, "-p", `${noVncPort}:7900`, ...volumesOptions, `--shm-size=2g`, "-e", "SE_START_XVFB=false", "-e", `SE_NODE_MAX_SESSIONS=${maxSessions}`, dockerImage]);
+  const dockerRunResult = spawnSync("docker", ["run", "-dit", "--rm", "--user", `${os.userInfo().uid}`, "-p", `${port}:4444`, "-p", `${noVncPort}:7900`, "-p", `${5900}:5900`, ...volumesOptions, `--shm-size=2g`, "-e", "SE_START_XVFB=false", "-e", `SE_NODE_MAX_SESSIONS=${maxSessions}`, dockerImage]);
   if (dockerRunResult.status !== 0) {
     throw new Error(`failed to docker-run: ${dockerRunResult.stderr.toString("utf-8")}`);
   }
