@@ -12,9 +12,9 @@ jobs:
           # Why fragment? These short names are more readable in GitHub UI
           - e2e_docker_image_fragment: chrome:108.0
           - e2e_docker_image_fragment: chrome:84.0
-          - e2e_docker_image_fragment: firefox:107.0
+          - e2e_docker_image_fragment: firefox:108.0
           - e2e_docker_image_fragment: firefox:78.0
-          - e2e_docker_image_fragment: firefox:107.0
+          - e2e_docker_image_fragment: firefox:108.0
             e2e_service_worker_disable: true
           - e2e_docker_image_fragment: firefox:78.0
             e2e_service_worker_disable: true
