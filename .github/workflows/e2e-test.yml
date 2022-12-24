@@ -8,6 +8,16 @@ jobs:
     strategy:
       matrix:
         include:
+          # Chrome 84.0 is the oldest version available on selenium/standalone-xxx.
+          # Firefox 78.0 is also the oldest available on selenium/standalone-xxx.
+
+          # [Purposes]
+          # fetch() upload streaming: the latest version of Chrome used in this test
+          # Non fetch()-upload streaming: the other browser
+          # Streaming download: All browser with disable_service_worker=false
+          # Non-streaming download: disable_service_worker=true
+          # Fallback to posting chunks of ReadableStream over MessageChannel: chrome:84.0
+
           # "selenium/standalone-${e2e_docker_image_fragment}"
           # Why fragment? These short names are more readable in GitHub UI
           - e2e_docker_image_fragment: chrome:108.0
