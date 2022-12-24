@@ -95,7 +95,7 @@ export async function waitForDownload(filePath: string) {
   }
 }
 
-export async function createDriverFactory({dockerBaseImage, forwardingTcpPorts}: {dockerBaseImage: string, forwardingTcpPorts: readonly number[]}) {
+export async function createDriverFactory({dockerBaseImage, disablesServiceWorker, forwardingTcpPorts}: {dockerBaseImage: string, disablesServiceWorker: boolean, forwardingTcpPorts: readonly number[]}) {
   const sharePath = fs.mkdtempSync(path.join(os.tmpdir(), "selenium-docker-share-"));
   const sharePathInDocker = "/home/seluser/tmp";
   const downloadPath = fs.mkdtempSync(path.join(os.tmpdir(), "selenium-docker-downloads-share-"));
@@ -119,13 +119,18 @@ export async function createDriverFactory({dockerBaseImage, forwardingTcpPorts}:
     if (dockerBaseImage.includes("-firefox:")) {
       return () => {
         return new webdriver.Builder().forBrowser(webdriver.Browser.FIREFOX)
-          .setFirefoxOptions(new firefox.Options()
-            .setPreference("browser.helperApps.neverAsk.saveToDisk", "application/x-unknown-content-type")
+          .setFirefoxOptions(
+            new firefox.Options()
+              .setPreference("browser.helperApps.neverAsk.saveToDisk", "application/octet-stream;application/x-unknown-content-type")
+              .setPreference("dom.serviceWorkers.enabled", !disablesServiceWorker)
           )
           .usingServer("http://localhost:4444/wd/hub").build();
       }
     }
     if (dockerBaseImage.includes("-chrome:") || dockerBaseImage.includes("-chromium:")) {
+      if (disablesServiceWorker) {
+        throw new Error(`can not disable Service Worker on Chrome/Chromium`);
+      }
       return () => {
         return new webdriver.Builder().forBrowser(webdriver.Browser.CHROME)
           .usingServer("http://localhost:4444/wd/hub").build();

@@ -19,6 +19,7 @@ const PIPING_UI_URL = `http://localhost:${PIPING_UI_PORT}`;
 
 const driverFactoryPromise = createDriverFactory({
   dockerBaseImage: process.env["E2E_DOCKER_IMAGE"] || (() => {throw new Error("$E2E_DOCKER_IMAGE not found")})(),
+  disablesServiceWorker: process.env["E2E_DISABLE_SERVICE_WORKER"] === "true",
   forwardingTcpPorts: [PIPING_UI_PORT],
 });
 
