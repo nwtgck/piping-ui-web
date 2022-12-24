@@ -4,11 +4,13 @@ import {WebDriver} from "selenium-webdriver";
 import {
   createDriverFactory,
   findElementByLabel,
-  findElementsByTagNameAndContent, getBufferByBlobUrl,
+  findElementsByTagNameAndContent,
+  getBufferByBlobUrl,
   nativeClick,
   randomBytesAvoidingMimeTypeDetection,
   rayTracingPngImage,
-  servePipingUiIfNotServed, waitFor,
+  servePipingUiIfNotServed,
+  waitFor,
   waitForDownload,
 } from "./util";
 import * as crypto from "crypto";
@@ -102,7 +104,7 @@ describe('Piping UI', () => {
     }
   });
 
-  it('should send and shows a file', async () => {
+  it('should send and show a file', async () => {
     const {sharePath, sharePathInDocker, downloadPath, createDriver} = await driverFactoryPromise;
 
     const secretPath = crypto.randomBytes(8).toString("hex");
@@ -186,6 +188,52 @@ describe('Piping UI', () => {
       assert.strictEqual(transferContent.length, downloadedFileContent.length);
       assert(transferContent.equals(downloadedFileContent));
       fs.rmSync(downloadedFilePath);
+    }
+  });
+
+  it('should send and show an E2E encrypted file with password', async () => {
+    const {sharePath, sharePathInDocker, downloadPath, createDriver} = await driverFactoryPromise;
+
+    const secretPath = crypto.randomBytes(8).toString("hex");
+    const filePassword = crypto.randomBytes(32).toString("binary");
+
+    {
+      const driver = createDriver();
+      defer(() => driver.quit());
+      await driver.get(PIPING_UI_URL);
+      const elements = findElements(driver);
+
+      const transferFilePath = path.join(sharePath, "myimg.png");
+      fs.writeFileSync(transferFilePath, rayTracingPngImage);
+      defer(() => fs.rmSync(transferFilePath));
+      await (await elements.fileInput()).sendKeys(path.join(sharePathInDocker, "myimg.png"));
+      await (await elements.secretPathInput()).sendKeys(secretPath);
+      // NOTE: passwordElement.click() causes "Element <input id="..." type="checkbox"> is not clickable at point because another element <div class="..."> obscures it"
+      await nativeClick(driver, (await elements.passwordSwitch()));
+      await (await elements.passwordInput()).sendKeys(filePassword);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await (await elements.sendButton()).click();
+    }
+
+    {
+      const driver = createDriver();
+      defer(() => driver.quit());
+      await driver.get(PIPING_UI_URL);
+      const elements = findElements(driver);
+
+      await (await elements.getMenuButton()).click();
+      await (await elements.secretPathInput()).sendKeys(secretPath);
+      // NOTE: passwordElement.click() causes "Element <input id="..." type="checkbox"> is not clickable at point because another element <div class="..."> obscures it"
+      await nativeClick(driver, await elements.passwordSwitch());
+      await (await elements.passwordInput()).sendKeys(filePassword);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await (await elements.viewButton()).click();
+
+      const imageBlobUrl = await (await waitFor(() => elements.image0InView())).getAttribute("src");
+      const shownFileContent = await getBufferByBlobUrl(driver, imageBlobUrl);
+
+      assert.strictEqual(rayTracingPngImage.length, shownFileContent.length);
+      assert(rayTracingPngImage.equals(shownFileContent));
     }
   });
 
