@@ -4,9 +4,11 @@ import {WebDriver} from "selenium-webdriver";
 import {
   createDriverFactory,
   findElementByLabel,
-  findElementsByTagNameAndContent,
-  nativeClick, randomBytesAvoidingMimeTypeDetection,
-  servePipingUiIfNotServed,
+  findElementsByTagNameAndContent, getBufferByBlobUrl,
+  nativeClick,
+  randomBytesAvoidingMimeTypeDetection,
+  rayTracingPngImage,
+  servePipingUiIfNotServed, waitFor,
   waitForDownload,
 } from "./util";
 import * as crypto from "crypto";
@@ -37,6 +39,8 @@ function findElements(driver: WebDriver) {
     sendButton: async () => (await driver.findElements(webdriver.By.xpath(`//button[.//*[contains(text(), "Send")]]`)))[1],
     getMenuButton: async () => driver.findElement(webdriver.By.xpath(`//button[.//*[contains(text(), "Get")]]`)),
     downloadButton: async () => driver.findElement(webdriver.By.xpath(`//button[.//*[contains(text(), "Download")]]`)),
+    viewButton: async () => driver.findElement(webdriver.By.xpath(`//button[.//*[contains(text(), "View")]]`)),
+    image0InView: async () => driver.findElement(webdriver.By.xpath("//img[contains(@src, 'blob:')]")),
     passwordlessSwitch: async () => await findElementByLabel(driver, /Passwordless/),
     verifySendButton0: async () => (await findElementsByTagNameAndContent(driver, "button", /Verify & Send/i))[0],
     passwordSwitch: async () => await findElementByLabel(driver, /Protect with password/),
@@ -56,7 +60,7 @@ describe('Piping UI', () => {
     afterCallbacks.push(f);
   }
 
-  it('should transfer a file', async () => {
+  it('should send and download a file', async () => {
     const {sharePath, sharePathInDocker, downloadPath, createDriver} = await driverFactoryPromise;
 
     const secretPath = crypto.randomBytes(8).toString("hex");
@@ -102,7 +106,45 @@ describe('Piping UI', () => {
     }
   });
 
-  it('should transfer an E2E encrypted file with password', async () => {
+  it('should send and shows a file', async () => {
+    const {sharePath, sharePathInDocker, downloadPath, createDriver} = await driverFactoryPromise;
+
+    const secretPath = crypto.randomBytes(8).toString("hex");
+    {
+      const driver = createDriver();
+      defer(() => driver.quit());
+      await driver.get(PIPING_UI_URL);
+      const elements = findElements(driver);
+
+      const transferFilePath = path.join(sharePath, "myimg.png");
+      fs.writeFileSync(transferFilePath, rayTracingPngImage);
+      defer(() => fs.rmSync(transferFilePath));
+      await (await elements.fileInput()).sendKeys(path.join(sharePathInDocker, "myimg.png"));
+      await (await elements.secretPathInput()).sendKeys(secretPath);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await (await elements.sendButton()).click();
+    }
+
+    {
+      const driver = createDriver();
+      defer(() => driver.quit());
+      await driver.get(PIPING_UI_URL);
+      const elements = findElements(driver);
+
+      await (await elements.getMenuButton()).click();
+      await (await elements.secretPathInput()).sendKeys(secretPath);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await (await elements.viewButton()).click();
+
+      const imageBlobUrl = await (await waitFor(() => elements.image0InView())).getAttribute("src");
+      const shownFileContent = await getBufferByBlobUrl(driver, imageBlobUrl);
+
+      assert.strictEqual(rayTracingPngImage.length, shownFileContent.length);
+      assert(rayTracingPngImage.equals(shownFileContent));
+    }
+  });
+
+  it('should send and download an E2E encrypted file with password', async () => {
     const {sharePath, sharePathInDocker, downloadPath, createDriver} = await driverFactoryPromise;
 
     const secretPath = crypto.randomBytes(8).toString("hex");
@@ -155,7 +197,7 @@ describe('Piping UI', () => {
     }
   });
 
-  it('should transfer a file by passwordless E2E encryption', async () => {
+  it('should send and download a file by passwordless E2E encryption', async () => {
     const {sharePath, sharePathInDocker, downloadPath, createDriver} = await driverFactoryPromise;
 
     const secretPath = crypto.randomBytes(8).toString("hex");

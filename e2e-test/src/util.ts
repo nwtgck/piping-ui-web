@@ -79,6 +79,18 @@ export async function nativeClick(driver: webdriver.WebDriver, element: webdrive
   await driver.executeScript((e: any) => e.click(), element);
 }
 
+export async function getBufferByBlobUrl(driver: webdriver.WebDriver, blobUrl: string): Promise<Buffer> {
+  const array: number[] = await driver.executeAsyncScript(async function (blobUrl: string) {
+    // eslint-disable-next-line prefer-rest-params
+    const callback = arguments[arguments.length - 1];
+    const res = await window.fetch(blobUrl);
+    const arrayBuffer = await res.arrayBuffer();
+    // NOTE: transferring raw Uint8Array causes "Error: Accessing TypedArray data over Xrays is slow, and forbidden in order to encourage performant code. To copy TypedArrays across origin boundaries, consider using Components.utils.cloneInto()."
+    callback([...new Uint8Array(arrayBuffer)]);
+  }, blobUrl);
+  return Buffer.from(array);
+}
+
 export function randomBytesAvoidingMimeTypeDetection(size: number): Buffer {
   // NOTE: 4100 was used in FileType.minimumBytes in file-type until 13.1.2
   const zeroPadSize = 4100;
@@ -94,6 +106,18 @@ export async function waitForDownload(filePath: string) {
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
 }
+
+export async function waitFor<T>(f: () => T | Promise<T>, { intervalMillis = 1000 }: { intervalMillis?: number }  = {}): Promise<T> {
+  while (true) {
+    try {
+      return await f();
+    } catch (e) {
+      await new  Promise(resolve => setTimeout(resolve, intervalMillis));
+    }
+  }
+}
+
+export const rayTracingPngImage: Buffer = fs.readFileSync("./resources/ray-tracing-iow-1280x720.png");
 
 export async function createDriverFactory({dockerBaseImage, disablesServiceWorker, forwardingTcpPorts}: {dockerBaseImage: string, disablesServiceWorker: boolean, forwardingTcpPorts: readonly number[]}) {
   const sharePath = fs.mkdtempSync(path.join(os.tmpdir(), "selenium-docker-share-"));
