@@ -10,6 +10,16 @@ updates:
   - nwtgck
   assignees:
   - nwtgck
+- package-ecosystem: npm
+  directory: "/e2e-test"
+  schedule:
+    interval: daily
+    timezone: Asia/Tokyo
+  open-pull-requests-limit: 99
+  reviewers:
+    - nwtgck
+  assignees:
+    - nwtgck
 - package-ecosystem: github-actions
   directory: "/"
   schedule:

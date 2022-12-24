@@ -1,0 +1,50 @@
+name: e2e-test
+
+on:
+  push:
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        include:
+          # Chrome 84.0 is the oldest version available on selenium/standalone-xxx.
+          # Firefox 78.0 is also the oldest available on selenium/standalone-xxx.
+
+          # [Purposes]
+          # fetch() upload streaming: the latest version of Chrome used in this test
+          # Non fetch()-upload streaming: the other browser
+          # Streaming download: All browser with disable_service_worker=false
+          # Non-streaming download: disable_service_worker=true
+          # Fallback to posting chunks of ReadableStream over MessageChannel: chrome:84.0
+
+          # "selenium/standalone-${e2e_docker_image_fragment}"
+          # Why fragment? These short names are more readable in GitHub UI
+          - e2e_docker_image_fragment: chrome:108.0
+          - e2e_docker_image_fragment: chrome:84.0
+          - e2e_docker_image_fragment: firefox:108.0
+          - e2e_docker_image_fragment: firefox:78.0
+          - e2e_docker_image_fragment: firefox:108.0
+            e2e_service_worker_disable: true
+          - e2e_docker_image_fragment: firefox:78.0
+            e2e_service_worker_disable: true
+
+    runs-on: ubuntu-20.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            e2e-test/package-lock.json
+      - name: Install dependencies
+        run: |
+          set -eu
+          npm ci &
+          (cd e2e-test && npm ci) &
+          wait
+      - name: E2E test (${{ matrix.e2e_docker_image_fragment }})
+        run: cd e2e-test && E2E_DOCKER_IMAGE=selenium/standalone-${{ matrix.e2e_docker_image_fragment }} E2E_DISABLE_SERVICE_WORKER=${{ matrix.e2e_service_worker_disable }} npm start
