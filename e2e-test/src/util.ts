@@ -5,6 +5,7 @@ import * as firefox from "selenium-webdriver/firefox";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
+import * as crypto from "crypto";
 import {dockerSeleniumStandalone} from "./docker-selenium-standalone";
 
 export async function servePipingUiIfNotServed(port: number) {
@@ -76,6 +77,15 @@ export async function findElementsByTagNameAndContent(driver: webdriver.WebDrive
 
 export async function nativeClick(driver: webdriver.WebDriver, element: webdriver.WebElement) {
   await driver.executeScript((e: any) => e.click(), element);
+}
+
+export function randomBytesAvoidingMimeTypeDetection(size: number): Buffer {
+  // NOTE: 4100 was used in FileType.minimumBytes in file-type until 13.1.2
+  const zeroPadSize = 4100;
+  if (size < zeroPadSize) {
+    throw new Error(`size should be at least ${zeroPadSize}`);
+  }
+  return Buffer.concat([Buffer.alloc(zeroPadSize), crypto.randomBytes(size - zeroPadSize)]);
 }
 
 export async function createDriverFactory({dockerBaseImage, forwardingTcpPorts}: {dockerBaseImage: string, forwardingTcpPorts: readonly number[]}) {

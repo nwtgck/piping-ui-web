@@ -5,7 +5,7 @@ import {
   createDriverFactory,
   findElementByLabel,
   findElementsByTagNameAndContent,
-  nativeClick,
+  nativeClick, randomBytesAvoidingMimeTypeDetection,
   servePipingUiIfNotServed,
 } from "./util";
 import * as crypto from "crypto";
@@ -58,7 +58,7 @@ describe('Piping UI', () => {
     const {sharePath, sharePathInDocker, downloadPath, createDriver} = await driverFactoryPromise;
 
     const secretPath = crypto.randomBytes(8).toString("hex");
-    const transferContent = crypto.randomBytes(1024 * 1024);
+    const transferContent = randomBytesAvoidingMimeTypeDetection(1024 * 1024);
 
     {
       const driver = createDriver();
@@ -107,7 +107,7 @@ describe('Piping UI', () => {
     const {sharePath, sharePathInDocker, downloadPath, createDriver} = await driverFactoryPromise;
 
     const secretPath = crypto.randomBytes(8).toString("hex");
-    const transferContent = crypto.randomBytes(1024 * 1024);
+    const transferContent = randomBytesAvoidingMimeTypeDetection(1024 * 1024);
     const filePassword = crypto.randomBytes(32).toString("binary");
 
     {
@@ -163,7 +163,7 @@ describe('Piping UI', () => {
     const {sharePath, sharePathInDocker, downloadPath, createDriver} = await driverFactoryPromise;
 
     const secretPath = crypto.randomBytes(8).toString("hex");
-    const transferContent = crypto.randomBytes(1024 * 1024);
+    const transferContent = randomBytesAvoidingMimeTypeDetection(1024 * 1024);
 
     const senderDriver = createDriver();
     defer(() => senderDriver.quit());
