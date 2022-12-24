@@ -69,9 +69,7 @@ describe('Piping UI', () => {
     {
       const driver = createDriver();
       defer(() => driver.quit());
-
       await driver.get(PIPING_UI_URL);
-
       const elements = findElements(driver);
 
       const transferFilePath = path.join(sharePath, "mydata.dat");
@@ -86,9 +84,7 @@ describe('Piping UI', () => {
     {
       const driver = createDriver();
       defer(() => driver.quit());
-
       await driver.get(PIPING_UI_URL);
-
       const elements = findElements(driver);
 
       await (await elements.getMenuButton()).click();
@@ -154,9 +150,7 @@ describe('Piping UI', () => {
     {
       const driver = createDriver();
       defer(() => driver.quit());
-
       await driver.get(PIPING_UI_URL);
-
       const elements = findElements(driver);
 
       const transferFilePath = path.join(sharePath, "mydata.dat");
@@ -174,9 +168,7 @@ describe('Piping UI', () => {
     {
       const driver = createDriver();
       defer(() => driver.quit());
-
       await driver.get(PIPING_UI_URL);
-
       const elements = findElements(driver);
 
       await (await elements.getMenuButton()).click();
