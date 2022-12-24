@@ -88,6 +88,13 @@ export function randomBytesAvoidingMimeTypeDetection(size: number): Buffer {
   return Buffer.concat([Buffer.alloc(zeroPadSize), crypto.randomBytes(size - zeroPadSize)]);
 }
 
+export async function waitForDownload(filePath: string) {
+  // NOTE: Firefox creates 0-byte file and .part file
+  while (!fs.existsSync(filePath) || fs.statSync(filePath).size === 0) {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+}
+
 export async function createDriverFactory({dockerBaseImage, forwardingTcpPorts}: {dockerBaseImage: string, forwardingTcpPorts: readonly number[]}) {
   const sharePath = fs.mkdtempSync(path.join(os.tmpdir(), "selenium-docker-share-"));
   const sharePathInDocker = "/home/seluser/tmp";

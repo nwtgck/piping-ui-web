@@ -7,6 +7,7 @@ import {
   findElementsByTagNameAndContent,
   nativeClick, randomBytesAvoidingMimeTypeDetection,
   servePipingUiIfNotServed,
+  waitForDownload,
 } from "./util";
 import * as crypto from "crypto";
 import * as fs from "fs";
@@ -91,10 +92,7 @@ describe('Piping UI', () => {
       await (await elements.downloadButton()).click();
 
       const downloadedFilePath = path.join(downloadPath, secretPath);
-      // NOTE: Firefox creates 0-byte file and .part file
-      while (!fs.existsSync(downloadedFilePath) || fs.statSync(downloadedFilePath).size === 0) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
+      await waitForDownload(downloadedFilePath);
       const downloadedFileContent = fs.readFileSync(downloadedFilePath);
 
       assert.strictEqual(transferContent.length, downloadedFileContent.length);
@@ -147,10 +145,7 @@ describe('Piping UI', () => {
       await (await elements.downloadButton()).click();
 
       const downloadedFilePath = path.join(downloadPath, secretPath);
-      // NOTE: Firefox creates 0-byte file and .part file
-      while (!fs.existsSync(downloadedFilePath) || fs.statSync(downloadedFilePath).size === 0) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
+      await waitForDownload(downloadedFilePath);
       const downloadedFileContent = fs.readFileSync(downloadedFilePath);
 
       assert.strictEqual(transferContent.length, downloadedFileContent.length);
@@ -196,10 +191,7 @@ describe('Piping UI', () => {
     await (await senderElements.verifySendButton0()).click();
 
     const downloadedFilePath = path.join(downloadPath, secretPath);
-    // NOTE: Firefox creates 0-byte file and .part file
-    while (!fs.existsSync(downloadedFilePath) || fs.statSync(downloadedFilePath).size === 0) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
+    await waitForDownload(downloadedFilePath);
     const downloadedFileContent = fs.readFileSync(downloadedFilePath);
 
     assert.strictEqual(transferContent.length, downloadedFileContent.length);
