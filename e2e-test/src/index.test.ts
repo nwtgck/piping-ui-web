@@ -281,4 +281,46 @@ describe('Piping UI', () => {
     assert(transferContent.equals(downloadedFileContent));
     fs.rmSync(downloadedFilePath);
   });
+
+  it('should send and show a file by passwordless E2E encryption', async () => {
+    const {sharePath, sharePathInDocker, downloadPath, createDriver} = await driverFactoryPromise;
+
+    const secretPath = crypto.randomBytes(8).toString("hex");
+
+    const senderDriver = createDriver();
+    defer(() => senderDriver.quit());
+    await senderDriver.get(PIPING_UI_URL);
+    const senderElements = findElements(senderDriver);
+
+    const transferFilePath = path.join(sharePath, "myimg.png");
+    fs.writeFileSync(transferFilePath, rayTracingPngImage);
+    defer(() => fs.rmSync(transferFilePath));
+    await (await senderElements.fileInput()).sendKeys(path.join(sharePathInDocker, "myimg.png"));
+    await (await senderElements.secretPathInput()).sendKeys(secretPath);
+    // NOTE: e.click() causes "Element <input id="..." type="checkbox"> is not clickable at point because another element <div class="..."> obscures it"
+    await nativeClick(senderDriver, (await senderElements.passwordlessSwitch()));
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    await (await senderElements.sendButton()).click();
+
+    const receiverDriver = createDriver();
+    defer(() => receiverDriver.quit());
+    await receiverDriver.get(PIPING_UI_URL);
+    const receiverElements = findElements(receiverDriver);
+
+    await (await receiverElements.getMenuButton()).click();
+    await (await receiverElements.secretPathInput()).sendKeys(secretPath);
+    // NOTE: e.click() causes "Element <input id="..." type="checkbox"> is not clickable at point because another element <div class="..."> obscures it"
+    await nativeClick(receiverDriver, await receiverElements.passwordlessSwitch());
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    await (await receiverElements.viewButton()).click();
+
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    await (await senderElements.verifySendButton0()).click();
+
+    const imageBlobUrl = await (await waitFor(() => receiverElements.image0InView())).getAttribute("src");
+    const shownFileContent = await getBufferByBlobUrl(receiverDriver, imageBlobUrl);
+
+    assert.strictEqual(rayTracingPngImage.length, shownFileContent.length);
+    assert(rayTracingPngImage.equals(shownFileContent));
+  });
 });
