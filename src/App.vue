@@ -14,12 +14,6 @@
         </v-tooltip>
       </v-toolbar-title>
 
-      <!-- PWA update button -->
-      <v-btn v-if="pwa.updateExists"
-             @click="refreshApp"
-             depressed color="blue" dark small outlined>
-        <v-icon dark left>{{ mdiCached }}</v-icon>{{ strings['pwa_update'] }}
-      </v-btn>
       <v-spacer></v-spacer>
 
       <!-- Menu -->
@@ -49,56 +43,21 @@
 <script setup lang="ts">
 /* eslint-disable */
 import type Vue from "vue";
-import {ref, onMounted, reactive} from "vue";
+import {ref, onMounted} from "vue";
 const PipingUI = () => import('@/components/PipingUI.vue');
 const MenuContent = () => import('@/components/MenuContent.vue');
 const Licenses = () => import("@/components/Licenses.vue");
 import {VERSION} from '@/version';
-import {strings} from "@/strings/strings";
-import {mdiCached, mdiDotsVertical} from "@mdi/js";
+import {mdiDotsVertical} from "@mdi/js";
 import {appBarPromiseResolverWhichShouldBeUsedInAppVue} from "@/app-bar-promise";
 
 const appBarRef = ref<Vue>();
 const licenseDialog = ref(false);
 
-const pwa = reactive<{refreshing: boolean, registration?: ServiceWorkerRegistration, updateExists: boolean}>({
-  refreshing: false,
-  registration: undefined,
-  updateExists: false
-});
-
-document.addEventListener(
-  'swUpdated', showRefreshUI as EventListenerOrEventListenerObject, { once: true }
-);
-
 onMounted(() => {
   // Resolve app bar element
   appBarPromiseResolverWhichShouldBeUsedInAppVue(appBarRef.value!.$el);
 });
-
-function showRefreshUI (e: CustomEvent<ServiceWorkerRegistration>) {
-  pwa.registration = e.detail;
-  pwa.updateExists = true;
-}
-
-// Update PWA app
-function refreshApp () {
-  pwa.updateExists = false;
-  if (pwa.registration === undefined || !pwa.registration.waiting) {
-    return;
-  }
-  pwa.registration.waiting.postMessage({
-    type: 'skip-waiting'
-  });
-  navigator.serviceWorker.addEventListener(
-    'controllerchange', () => {
-      if (pwa.refreshing) return;
-      pwa.refreshing = true;
-      window.location.reload();
-    },
-    {once: true}
-  );
-}
 </script>
 
 <style>

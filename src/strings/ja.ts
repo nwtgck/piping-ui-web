@@ -8,7 +8,6 @@ const sanitizeHtmlAllowingATagAsync = () => import('@/utils/sanitizeHtmlAllowing
 export const ja: Strings = {
   language: '言語 (Language)',
   dark_theme: 'ダークテーマ',
-  pwa_update: 'Update',
   version: `バージョン: ${VERSION}`,
   view_on_github: 'GitHubでソースコードを見る',
   open_source_licenses: 'オープンソース ライセンス',
