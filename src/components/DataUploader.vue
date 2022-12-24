@@ -24,7 +24,8 @@
             <v-btn :color="canceled ? 'grey' : 'success'"
                    :disabled="canceled"
                    @click="verify(true)"
-                   block>
+                   block
+                   data-testid="verify_and_send_button">
               <v-icon left dark>{{ icons.mdiCheck }}</v-icon>
               {{ strings['verify_and_send'] }}
             </v-btn>

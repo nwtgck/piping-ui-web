@@ -50,31 +50,6 @@ export async function servePipingUiIfNotServed(port: number) {
   }
 }
 
-export async function findElementByLabel(driver: webdriver.WebDriver, text: string | RegExp) {
-  return (await findElementsByLabel(driver, text))[0];
-}
-
-export async function findElementsByLabel(driver: webdriver.WebDriver, text: string | RegExp) {
-  const findPredicate: (({textContent}: {textContent: string}) => boolean) = typeof text === "string" ? ({textContent}) => textContent === text : ({textContent}) => !!textContent.match(text);
-  const elements = (await driver.findElements(webdriver.By.css('label')));
-  const ids: readonly string[] = await Promise.all(
-    (await Promise.all(elements.map(async element => ({element, textContent: await element.getText()}))))
-      .filter(findPredicate)
-      .map(e => e.element.getAttribute("for"))
-  );
-  return ids.map(id => driver.findElement(webdriver.By.id(id)));
-}
-
-export async function findElementsByTagNameAndContent(driver: webdriver.WebDriver, tagName: string, text: string | RegExp) {
-  const findPredicate: (({textContent}: {textContent: string}) => boolean) = typeof text === "string" ? ({textContent}) => textContent === text : ({textContent}) => !!textContent.match(text);
-  const elements = await driver.findElements(webdriver.By.css(tagName));
-  return await Promise.all(
-    (await Promise.all(elements.map(async element => ({element, textContent: await element.getText()}))))
-      .filter(findPredicate)
-      .map(x => x.element)
-  );
-}
-
 export async function nativeClick(driver: webdriver.WebDriver, element: webdriver.WebElement) {
   await driver.executeScript((e: any) => e.click(), element);
 }

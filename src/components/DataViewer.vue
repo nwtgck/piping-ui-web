@@ -93,14 +93,16 @@
       <!-- Image viewer -->
       <div v-show="imgSrc.url !== undefined" style="text-align: center">
         <img :src="imgSrc.url"
-             style="width: 95%">
+             style="width: 95%"
+             data-testid="image">
       </div>
 
       <!-- Video viewer -->
       <div v-if="videoSrc.url !== undefined" style="text-align: center">
         <video :src="videoSrc.url"
                style="width: 95%"
-               controls />
+               controls
+               data-testid="video"/>
       </div>
 
       <!-- Text viewer -->

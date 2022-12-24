@@ -3,8 +3,6 @@ import * as webdriver from "selenium-webdriver";
 import {WebDriver} from "selenium-webdriver";
 import {
   createDriverFactory,
-  findElementByLabel,
-  findElementsByTagNameAndContent,
   getBufferByBlobUrl,
   nativeClick,
   randomBytesAvoidingMimeTypeDetection,
@@ -36,17 +34,17 @@ before(async () => {
 
 function findElements(driver: WebDriver) {
   return {
-    fileInput: async () => await driver.findElement(webdriver.By.css("input[type='file']")),
-    secretPathInput: async () => await findElementByLabel(driver, /Secret path/),
-    sendButton: async () => (await driver.findElements(webdriver.By.xpath(`//button[.//*[contains(text(), "Send")]]`)))[1],
-    getMenuButton: async () => driver.findElement(webdriver.By.xpath(`//button[.//*[contains(text(), "Get")]]`)),
-    downloadButton: async () => driver.findElement(webdriver.By.xpath(`//button[.//*[contains(text(), "Download")]]`)),
-    viewButton: async () => driver.findElement(webdriver.By.xpath(`//button[.//*[contains(text(), "View")]]`)),
-    image0InView: async () => driver.findElement(webdriver.By.xpath("//img[contains(@src, 'blob:')]")),
-    passwordlessSwitch: async () => await findElementByLabel(driver, /Passwordless/),
-    verifySendButton0: async () => (await findElementsByTagNameAndContent(driver, "button", /Verify & Send/i))[0],
-    passwordSwitch: async () => await findElementByLabel(driver, /Protect with password/),
-    passwordInput: async () => driver.findElement(webdriver.By.css("input[type=password]")),
+    fileInput: async () => driver.findElement(webdriver.By.css("[data-testid=file_input] input[type=file]")),
+    secretPathInput: async () => driver.findElement(webdriver.By.css("[data-testid=secret_path_input]")),
+    sendButton: async () => driver.findElement(webdriver.By.css("[data-testid=send_button]")),
+    getMenuButton: async () => driver.findElement(webdriver.By.css("[data-testid=get_menu_button]")),
+    downloadButton: async () => driver.findElement(webdriver.By.css("[data-testid=download_button]")),
+    viewButton: async () => driver.findElement(webdriver.By.css("[data-testid=view_button]")),
+    image0InView: async () => driver.findElement(webdriver.By.xpath("//*[@data-testid='expand_panel_0']//*[@data-testid='image' and contains(@src, 'blob:')]")),
+    passwordlessSwitch: async () => driver.findElement(webdriver.By.css("[data-testid=passwordless_switch]")),
+    verifySendButton0: async () => driver.findElement(webdriver.By.css("[data-testid=expand_panel_0] [data-testid=verify_and_send_button]")),
+    passwordSwitch: async () => driver.findElement(webdriver.By.css("[data-testid=password_switch]")),
+    passwordInput: async () => driver.findElement(webdriver.By.css("[data-testid=password_input]")),
   } as const;
 }
 
