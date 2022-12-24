@@ -135,7 +135,6 @@ import {supportsFetchUploadStreaming} from "@/utils/supportsFetchUploadStreaming
 import {makePromise} from "@/utils/makePromise";
 import {forceDisableStreamingUpload} from "@/settings/forceDisableStreamingUpload";
 import {useErrorMessage} from "@/useErrorMessage";
-import {experimentalEnablePipingUiRobust} from "@/settings/experimentalEnablePipingUiRobust";
 
 const props = defineProps<{ composedProps: DataUploaderProps }>();
 
