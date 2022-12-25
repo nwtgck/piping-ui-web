@@ -352,8 +352,13 @@ onMounted(async () => {
     });
     let res: Response;
     try {
-      res = await fetch(downloadPath.value);
-    } catch (err) {
+      res = await fetch(downloadPath.value, {
+        signal: abortController.signal,
+      });
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        return;
+      }
       console.log(err);
       updateErrorMessage(() => strings.value?.['data_viewer_fetch_error']);
       return;
