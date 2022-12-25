@@ -206,7 +206,11 @@ onMounted(async () => {
     );
   } else {
     const res = await fetch(downloadPath.value);
-    // TODO: check status
+    if (res.status !== 200) {
+      const message = await res.text();
+      updateErrorMessage(() => strings.value?.['fetch_status_error']({status: res.status, message}));
+      return;
+    }
     contentLengthStr = key === undefined ? res.headers.get("Content-Length") ?? undefined : undefined;
     readableStream = res.body!
   }
