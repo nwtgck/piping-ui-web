@@ -156,10 +156,14 @@ onMounted(async () => {
     const encryptedStream = await (async () => {
       // Passwordless transfer always uses Piping UI Robust
       if (props.composedProps.protection.type === "passwordless") {
+        const abortController = new AbortController();
+        canceledPromise.then(() => {
+          abortController.abort();
+        });
         return pipingUiRobust.receiveReadableStream(
           props.composedProps.serverUrl,
           encodeURI(props.composedProps.secretPath),
-          { canceledPromise },
+          { abortSignal: abortController.signal },
         );
       }
       const res = await fetch(downloadPath.value);
@@ -187,11 +191,15 @@ onMounted(async () => {
   let contentLengthStr: string | undefined = undefined;
   // Passwordless transfer always uses Piping UI Robust
   if (props.composedProps.protection.type === "passwordless") {
+    const abortController = new AbortController();
+    canceledPromise.then(() => {
+      abortController.abort();
+    });
     // TODO: notify when canceled because Piping UI Robust on sender side keeps sending
     readableStream = pipingUiRobust.receiveReadableStream(
       props.composedProps.serverUrl,
       encodeURI(props.composedProps.secretPath),
-      { canceledPromise },
+      { abortSignal: abortController.signal },
     );
   } else {
     const res = await fetch(downloadPath.value);

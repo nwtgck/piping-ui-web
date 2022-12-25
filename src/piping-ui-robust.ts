@@ -2,6 +2,7 @@ import urlJoin from "url-join";
 import {AsyncSemaphore} from "@/utils/AsyncSemaphore";
 import {makePromise} from "@/utils/makePromise";
 import {onceAbort} from "@/utils/onceAbort";
+import {mergeAbortSignals} from "@/utils/mergeAbortSignals";
 
 // FIXME: Setting N_TRANSFERS = 2 causes "net::ERR_HTTP2_PROTOCOL_ERROR 200" in Chrome Stable 108, but Piping UI Robust recovers and keep transferring.
 const N_TRANSFERS = 1;
@@ -142,10 +143,11 @@ export async function sendReadableStream(serverUrl: string, path: string, stream
   await send(serverUrl, path, data, options);
 }
 
-type ReceiveOptions = { canceledPromise: Promise<void> };
+type ReceiveOptions = { abortSignal: AbortSignal };
 
 export function receiveReadableStream(serverUrl: string, path: string, options: ReceiveOptions): ReadableStream<Uint8Array> {
-  const {promise: canceledByFinishPromise, resolve: cancelByFinish} = makePromise<void>();
+  // const {promise: canceledByFinishPromise, resolve: cancelByFinish} = makePromise<void>();
+  const abortControllerByFinish = new AbortController();
   return new ReadableStream({
     async start(ctrl) {
       let num = 1;
@@ -155,9 +157,10 @@ export function receiveReadableStream(serverUrl: string, path: string, options: 
       while(!done) {
         await semaphore.acquire();
         const url = urlJoin(serverUrl, path, num+'');
+        const abortSignal = mergeAbortSignals(options.abortSignal, abortControllerByFinish.signal).signal;
         const chunkPromise = ensureReceive({
           url,
-          canceledPromise: Promise.any([options.canceledPromise, canceledByFinishPromise]),
+          abortSignal,
         });
         lastPromise = lastPromise
           .then(() => chunkPromise)
@@ -176,12 +179,12 @@ export function receiveReadableStream(serverUrl: string, path: string, options: 
           });
         num++;
       }
-      cancelByFinish();
+      abortControllerByFinish.abort();
     },
   });
 }
 
-async function ensureReceive({ url, canceledPromise }: { url: string, canceledPromise: Promise<void> }): Promise<ArrayBuffer | 'done' | 'canceled'> {
+async function ensureReceive({ url, abortSignal }: { url: string, abortSignal: AbortSignal }): Promise<ArrayBuffer | 'done' | 'canceled'> {
   let canceled = false;
   let retryCount = 0;
   while(true) {
@@ -192,7 +195,7 @@ async function ensureReceive({ url, canceledPromise }: { url: string, canceledPr
         console.debug('GET timeout: ', url);
         controller.abort();
       }, 60 * 1000);
-      canceledPromise.then(() => {
+      onceAbort(abortSignal, () => {
         canceled = true;
         controller.abort();
       });
