@@ -1,5 +1,5 @@
 # Piping UI
-[![main](https://github.com/nwtgck/piping-ui-web/workflows/main/badge.svg)](https://github.com/nwtgck/piping-ui-web/actions?query=workflow%3Amain)  
+[![Cloudflare Pages](https://github.com/nwtgck/piping-ui-web/actions/workflows/cloudflare-pages.yml/badge.svg)](https://github.com/nwtgck/piping-ui-web/actions/workflows/cloudflare-pages.yml) [![E2E testing](https://github.com/nwtgck/piping-ui-web/actions/workflows/e2e-test.yml/badge.svg)](https://github.com/nwtgck/piping-ui-web/actions/workflows/e2e-test.yml)  
 <a href="https://piping-ui.org"><img src="https://user-images.githubusercontent.com/9122190/28998409-c5bf7362-7a00-11e7-9b63-db56694522e7.png" alt="Launch now as Web App" height="48"></a>
 
 Web UI for [Piping Server](https://github.com/nwtgck/piping-server) - Easy and secure file transfer between every device over HTTPS  
