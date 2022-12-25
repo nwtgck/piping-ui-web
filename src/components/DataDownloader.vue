@@ -151,24 +151,28 @@ onMounted(async () => {
       return;
     }
     console.log("downloading and decrypting with FileSaver.saveAs()...");
-    // Get response
-    const encryptedStream = await (async () => {
-      // Passwordless transfer always uses Piping UI Robust
-      if (props.composedProps.protection.type === "passwordless") {
-        const abortController = new AbortController();
-        canceledPromise.then(() => {
-          abortController.abort();
-        });
-        return pipingUiRobust.receiveReadableStream(
-          props.composedProps.serverUrl,
-          encodeURI(props.composedProps.secretPath),
-          { abortSignal: abortController.signal },
-        );
-      }
+
+    let encryptedStream: ReadableStream<Uint8Array>;
+    // Passwordless transfer always uses Piping UI Robust
+    if (props.composedProps.protection.type === "passwordless") {
+      const abortController = new AbortController();
+      canceledPromise.then(() => {
+        abortController.abort();
+      });
+      encryptedStream = pipingUiRobust.receiveReadableStream(
+        props.composedProps.serverUrl,
+        encodeURI(props.composedProps.secretPath),
+        { abortSignal: abortController.signal },
+      );
+    } else {
       const res = await fetch(downloadPath.value);
-      // TODO: check status
-      return res.body!;
-    })();
+      if (res.status !== 200) {
+        const message = await res.text();
+        updateErrorMessage(() => strings.value?.['fetch_status_error']({status: res.status, message}));
+        return;
+      }
+      encryptedStream = res.body!;
+    }
     // Decrypt the response body
     let plainStream: ReadableStream;
     try {
