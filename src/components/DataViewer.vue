@@ -179,14 +179,12 @@ import {blobToReadableStream} from 'binconv/dist/src/blobToReadableStream';
 import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle, mdiEye, mdiEyeOff, mdiKey, mdiFeatureSearchOutline} from "@mdi/js";
 import * as pipingUiRobust from "@/piping-ui-robust";
 
-import {stringsByLang} from "@/strings/strings-by-lang";
 import * as openPgpUtils from '@/utils/openpgp-utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
 import {type VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import {BlobUrlManager} from "@/blob-url-manager";
 import * as pipingUiAuth from "@/piping-ui-auth";
-import {language} from "@/language";
 import {uint8ArrayIsText} from "@/utils/uint8ArrayIsText";
 import {readableBytesString} from "@/utils/readableBytesString";
 import {readBlobAsText} from "@/utils/readBlobAsText";
@@ -194,6 +192,7 @@ import {sanitizeHtmlAllowingATag} from "@/utils/sanitizeHtmlAllowingATag";
 import {makePromise} from "@/utils/makePromise";
 import {useErrorMessage} from "@/useErrorMessage";
 import {getReadableStreamWithProgress} from "@/utils/getReadableStreamWithProgress";
+import {strings} from "@/strings/strings";
 
 // eslint-disable-next-line no-undef
 const props = defineProps<{ composedProps: DataViewerProps }>();
@@ -223,8 +222,6 @@ let blob = new Blob();
 const showsCopied = ref(false);
 const isDecrypting = ref(false);
 
-// for language support
-const strings = computed(() => stringsByLang(language.value));
 
 const icons = {
   mdiContentSave,
@@ -328,10 +325,10 @@ onMounted(async () => {
   if (keyExchangeRes.type === "error") {
     switch (keyExchangeRes.error.code) {
       case "key_exchange_error":
-        updateErrorMessage(() => strings.value["key_exchange_error"](keyExchangeRes.error.keyExchangeErrorCode));
+        updateErrorMessage(() => strings.value?.["key_exchange_error"](keyExchangeRes.error.keyExchangeErrorCode));
         break;
       case "sender_not_verified":
-        updateErrorMessage(() => strings.value["sender_not_verified"]);
+        updateErrorMessage(() => strings.value?.["sender_not_verified"]);
         break;
     }
     return;
@@ -358,12 +355,12 @@ onMounted(async () => {
       res = await fetch(downloadPath.value);
     } catch (err) {
       console.log(err);
-      updateErrorMessage(() => strings.value['data_viewer_fetch_error']);
+      updateErrorMessage(() => strings.value?.['data_viewer_fetch_error']);
       return;
     }
     if (res.status !== 200) {
       const message = await res.text();
-      updateErrorMessage(() => strings.value['data_viewer_fetch_status_error']({ status: res.status, message }));
+      updateErrorMessage(() => strings.value?.['data_viewer_fetch_status_error']({ status: res.status, message }));
       return;
     }
     const contentLengthStr = res.headers.get("Content-Length");
@@ -383,7 +380,7 @@ onMounted(async () => {
     // Get raw response body
     rawBlob = await new Response(rawStreamWithProgress).blob();
   } catch (err) {
-    updateErrorMessage(() => strings.value['data_viewer_body_read_error']({ error: err }));
+    updateErrorMessage(() => strings.value?.['data_viewer_body_read_error']({ error: err }));
     return;
   }
   if (canceled.value) {
@@ -444,7 +441,7 @@ async function decryptIfNeedAndViewBlob(password: string | Uint8Array | undefine
         return uint8ArrayToBlob(plain);
       } catch (err) {
         enablePasswordReinput.value = true;
-        updateErrorMessage(() => strings.value['password_might_be_wrong']);
+        updateErrorMessage(() => strings.value?.['password_might_be_wrong']);
         console.log('Decrypt error:', err);
         return new Blob();
       } finally {

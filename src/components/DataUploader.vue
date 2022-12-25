@@ -124,18 +124,17 @@ import {blobToReadableStream} from 'binconv/dist/src/blobToReadableStream';
 import * as openPgpUtils from '@/utils/openpgp-utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
 import * as pipingUiRobust from "@/piping-ui-robust";
-import {stringsByLang} from "@/strings/strings-by-lang";
 import {mdiAlert, mdiCancel, mdiCheck, mdiChevronDown, mdiCloseCircle} from "@mdi/js";
 import type {VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import * as pipingUiAuth from "@/piping-ui-auth";
-import {language} from "@/language";
 import {readableBytesString} from "@/utils/readableBytesString";
 import {zipFilesAsBlob} from "@/utils/zipFilesAsBlob";
 import {supportsFetchUploadStreaming} from "@/utils/supportsFetchUploadStreaming";
 import {makePromise} from "@/utils/makePromise";
 import {forceDisableStreamingUpload} from "@/settings/forceDisableStreamingUpload";
 import {useErrorMessage} from "@/useErrorMessage";
+import {strings} from "@/strings/strings";
 
 const props = defineProps<{ composedProps: DataUploaderProps }>();
 
@@ -219,8 +218,6 @@ const isCancelable = computed<boolean>(() =>
   isReadyToUpload && !isDoneUpload.value && !hasError.value && !canceled.value && verificationStep.value.type !== "verification_code_arrived"
 );
 
-// for language support
-const strings = computed(() => stringsByLang(language.value));
 
 const rootElement = ref<Vue>();
 
@@ -247,7 +244,7 @@ onMounted(async () => {
       }
       if (keyExchangeRes.type === 'error') {
         verificationStep.value = {type: 'error'};
-        updateErrorMessage(() => strings.value['key_exchange_error'](keyExchangeRes.errorCode));
+        updateErrorMessage(() => strings.value?.['key_exchange_error'](keyExchangeRes.errorCode));
         return;
       }
       const {key, verificationCode} = keyExchangeRes;
@@ -370,7 +367,7 @@ async function send(password: string | Uint8Array | undefined) {
     if (e.name === 'AbortError') {
       return;
     }
-    updateErrorMessage(() => strings.value['data_uploader_xhr_upload_error']);
+    updateErrorMessage(() => strings.value?.['data_uploader_xhr_upload_error']);
   }
 }
 
@@ -396,17 +393,17 @@ function uploadByXhr(body: Blob | Uint8Array, bodyLength: number) {
   };
   xhr.onload = () => {
     if (xhr.status !== 200) {
-      updateErrorMessage(() => strings.value['xhr_status_error']({
+      updateErrorMessage(() => strings.value?.['xhr_status_error']({
         status: xhr.status,
         response: xhr.responseText
       }));
     }
   };
   xhr.onerror = (ev) => {
-    updateErrorMessage(() => strings.value['data_uploader_xhr_onerror']({serverUrl: props.composedProps.serverUrl}));
+    updateErrorMessage(() => strings.value?.['data_uploader_xhr_onerror']({serverUrl: props.composedProps.serverUrl}));
   };
   xhr.upload.onerror = () => {
-    updateErrorMessage(() => strings.value['data_uploader_xhr_upload_error']);
+    updateErrorMessage(() => strings.value?.['data_uploader_xhr_upload_error']);
   };
   xhr.send(body);
   // Initialize progress bar
