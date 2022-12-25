@@ -361,7 +361,11 @@ async function send(password: string | Uint8Array | undefined) {
       duplex: 'half',
       signal: abortController.signal,
     } as RequestInit);
-    // TODO: check res status
+    if (res.status !== 200) {
+      const message = await res.text();
+      updateErrorMessage(() => strings.value?.['fetch_status_error']({status: res.status, message}));
+      return;
+    }
     await res.text();
   } catch (e: any) {
     if (e.name === 'AbortError') {

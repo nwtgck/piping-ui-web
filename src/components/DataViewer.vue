@@ -360,7 +360,7 @@ onMounted(async () => {
     }
     if (res.status !== 200) {
       const message = await res.text();
-      updateErrorMessage(() => strings.value?.['data_viewer_fetch_status_error']({ status: res.status, message }));
+      updateErrorMessage(() => strings.value?.['fetch_status_error']({ status: res.status, message }));
       return;
     }
     const contentLengthStr = res.headers.get("Content-Length");

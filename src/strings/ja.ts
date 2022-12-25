@@ -71,7 +71,7 @@ export const ja: Strings = {
     return `エラー (${p.status}): "${p.response}"`;
   },
   data_viewer_fetch_error: 'ダウンロードエラー',
-  data_viewer_fetch_status_error: (p: {status: number, message: string}) => {
+  fetch_status_error: (p: {status: number, message: string}) => {
     return `エラー (${p.status}): "${p.message}"`;
   },
   data_viewer_body_read_error: (p: { error: unknown }) => {
