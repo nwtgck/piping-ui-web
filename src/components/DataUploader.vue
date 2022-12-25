@@ -285,6 +285,10 @@ async function verify(verified: boolean) {
   // Encrypt
   const encryptedStream = await openPgpUtils.encrypt(plainStreamWithProgress, key);
 
+  const abortController = new AbortController();
+  canceledPromise.then(() => {
+    abortController.abort();
+  });
   // Passwordless transfer always uses Piping UI Robust
   // TODO: notify when canceled because Piping UI Robust on receiver side keeps receiving
   await pipingUiRobust.sendReadableStream(
@@ -292,7 +296,7 @@ async function verify(verified: boolean) {
     props.composedProps.secretPath,
     encryptedStream,
     {
-      canceledPromise,
+      abortSignal: abortController.signal,
       fetchUploadStreamingSupported: !forceDisableStreamingUpload.value && supportsUploadStreaming
     },
   );

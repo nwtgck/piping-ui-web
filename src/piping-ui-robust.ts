@@ -1,6 +1,7 @@
 import urlJoin from "url-join";
 import {AsyncSemaphore} from "@/utils/AsyncSemaphore";
 import {makePromise} from "@/utils/makePromise";
+import {onceAbort} from "@/utils/onceAbort";
 
 // FIXME: Setting N_TRANSFERS = 2 causes "net::ERR_HTTP2_PROTOCOL_ERROR 200" in Chrome Stable 108, but Piping UI Robust recovers and keep transferring.
 const N_TRANSFERS = 1;
@@ -14,7 +15,7 @@ async function send(serverUrl: string, path: string, data: AsyncIterator<Readabl
   const url = () => urlJoin(serverUrl, path, num+'');
   const semaphore = new AsyncSemaphore(N_TRANSFERS);
   let canceled = false;
-  options.canceledPromise.then(() => {
+  const cancelAbort = onceAbort(options.abortSignal, () => {
     canceled = true;
   });
   while(!canceled) {
@@ -29,6 +30,7 @@ async function send(serverUrl: string, path: string, data: AsyncIterator<Readabl
     });
     num++;
   }
+  cancelAbort();
   // Notify finished
   await ensureSend(url(), new Uint8Array(), {
     'Content-Type': FINISH_CONTENT_TYPE,
@@ -67,7 +69,7 @@ async function ensureSend(url: string, body: Uint8Array | ReadableStream<Uint8Ar
         console.debug('POST timeout: ', url);
         controller.abort();
       }, 60 * 1000);
-      options.canceledPromise.then(() => {
+      const cancelAbort = onceAbort(options.abortSignal, () => {
         canceled = true;
         controller.abort();
       });
@@ -80,6 +82,7 @@ async function ensureSend(url: string, body: Uint8Array | ReadableStream<Uint8Ar
         signal: controller.signal
       } as RequestInit);
       clearTimeout(timer);
+      cancelAbort();
       if (res.status !== 200) {
         throw new Error(`status ${res.status}`);
       }
@@ -129,7 +132,7 @@ async function* chunkReadableStream(stream: ReadableStream<Uint8Array>, options:
   }
 }
 
-type SendOptions = { canceledPromise: Promise<void>, fetchUploadStreamingSupported: boolean };
+type SendOptions = { abortSignal: AbortSignal, fetchUploadStreamingSupported: boolean };
 
 export async function sendReadableStream(serverUrl: string, path: string, stream: ReadableStream<Uint8Array>, options: SendOptions): Promise<void> {
   const data = chunkReadableStream(stream, {
