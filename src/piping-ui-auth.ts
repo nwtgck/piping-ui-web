@@ -42,14 +42,25 @@ export async function verify(serverUrl: string, secretPath: string, key: Uint8Ar
   canceledPromise.then(() => {
     abortController.abort();
   });
-  // Send verified or not
-  const res = await fetch(path, {
-    method: 'POST',
-    body: encryptedVerifiedParcel,
-    signal: abortController.signal,
-  });
-  // TODO: check res status
-  await res.text();
+  while (true) {
+    try {
+      // Send verified or not
+      const res = await fetch(path, {
+        method: 'POST',
+        body: encryptedVerifiedParcel,
+        signal: abortController.signal,
+      });
+      if (res.status === 200) {
+        await res.text();
+        break;
+      }
+    } catch (e: any) {
+      if (e.name === 'AbortError') {
+        return;
+      }
+    }
+    await new Promise(resolve => setTimeout(resolve, 2000));
+  }
 }
 
 export type KeyExchangeErrorCode = 'send_failed' | 'receive_failed' | 'invalid_parcel_format' | 'invalid_v1_parcel_format' | 'different_key_exchange_version';
@@ -59,7 +70,7 @@ type KeyExchangeResult =
   {type: "canceled"};
 
 export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver', secretPath: string, canceledPromise: Promise<void>): Promise<KeyExchangeResult> {
-  const KEY_EXCHANGE_VERSION = 1;
+  const KEY_EXCHANGE_VERSION = 2;
   // 256 is max value for deriveBits()
   const KEY_BITS = 256;
   // Create ECDH key pair
@@ -207,22 +218,26 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
         abortController.abort();
       });
       // Get verified or not
-      let res: Response;
-      try {
-        res = await fetch(path, {
-          signal: abortController.signal,
-        });
-      } catch (e: any) {
-        if (e.name === 'AbortError') {
-          return {type: "canceled"};
+      let encryptedVerified: Uint8Array;
+      while (true) {
+        try {
+          const res = await fetch(path, {
+            signal: abortController.signal,
+          });
+          if (res.status === 200) {
+            encryptedVerified = new Uint8Array(await res.arrayBuffer());
+            break;
+          }
+        } catch (e: any) {
+          if (e.name === 'AbortError') {
+            return {type: "canceled"};
+          }
         }
-        // TODO: return { type: "error" }
-        throw e;
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
-      // TODO: check res status
       const utils = await openPgpUtilsAsync();
       // Decrypt body
-      const decryptedBody: Uint8Array = await utils.decrypt(new Uint8Array(await res.arrayBuffer()), key);
+      const decryptedBody: Uint8Array = await utils.decrypt(encryptedVerified, key);
       // Parse
       const verifiedParcelEither: Validation<VerifiedParcel> = verifiedParcelType.decode(JSON.parse(uint8ArrayToString(decryptedBody)));
       if (verifiedParcelEither._tag === "Left") {

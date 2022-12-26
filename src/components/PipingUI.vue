@@ -5,11 +5,11 @@
 
         <div style="text-align: center">
           <v-btn-toggle v-model="sendOrGet" mandatory>
-            <v-btn text value="send">
+            <v-btn text value="send" data-testid="send_menu_button">
               {{ strings?.['send'] }}
               <v-icon right dark>{{ icons.mdiUpload }}</v-icon>
             </v-btn>
-            <v-btn text value="get">
+            <v-btn text value="get" data-testid="get_menu_button">
               {{ strings?.['get'] }}
               <v-icon right dark>{{ icons.mdiDownload }}</v-icon>
             </v-btn>
@@ -30,6 +30,7 @@
           <file-pond-wrapper v-if="!isTextMode"
                              v-model="files"
                              :label-idle="filePondLabelIdle"
+                             data-testid="file_input"
           />
           <v-textarea v-if="isTextMode"
                       :label="strings?.['text_placeholder']"
@@ -50,7 +51,7 @@
                     :clear-icon="icons.mdiClose"
                     style="margin-bottom: 0.8em;"
                     class="readable-font"
-        >
+                    data-testid="server_url_input">
           <template v-slot:item="{ index, item }">
             <span class="readable-font">{{ item }}</span>
             <div class="flex-grow-1"></div>
@@ -71,6 +72,7 @@
                     class="ma-0 pa-0 readable-font"
                     clearable
                     :clear-icon="icons.mdiClose"
+                    data-testid="secret_path_input"
         >
           <template v-slot:item="{ index, item }">
             <span class="readable-font">{{ item }}</span>
@@ -105,7 +107,8 @@
                       @change="onEnablePasswordlessProtection"
                       inset
                       color="blue"
-                      class="ma-0 pa-0">
+                      class="ma-0 pa-0"
+                      data-testid="passwordless_switch">
               <template v-slot:label>
                 <v-icon class="icon-and-text-margin" :color="protectionType === 'passwordless' ? 'blue' : ''">{{ icons.mdiShieldHalfFull }}</v-icon>
                 {{ strings?.['passwordless_protection'] }}
@@ -118,7 +121,8 @@
                       @change="onEnablePasswordProtection"
                       inset
                       color="blue"
-                      class="ma-0 pa-0" >
+                      class="ma-0 pa-0"
+                      data-testid="password_switch">
               <template v-slot:label>
                 <v-icon class="icon-and-text-margin" :color="protectionType === 'password' ? 'blue' : ''">{{ icons.mdiKey }}</v-icon>
                 {{ protectionType === 'password' ? '' : strings?.['protect_with_password'] }}
@@ -133,7 +137,8 @@
                           @click:append="showsPassword = !showsPassword"
                           single-line
                           class="pa-0"
-                          style="margin-left: 0.5em;" />
+                          style="margin-left: 0.5em;"
+                          data-testid="password_input" />
           </v-row>
         </v-col>
 
@@ -141,7 +146,8 @@
           <v-btn v-if="sendOrGet === 'send'"
                  color="primary"
                  v-on:click="send()"
-                 block>
+                 block
+                 data-testid="send_button">
             {{ strings?.['send'] }}
             <v-icon right dark>{{ icons.mdiUpload }}</v-icon>
           </v-btn>
@@ -150,7 +156,8 @@
               <v-btn color="light-blue"
                      dark
                      @click="view()"
-                     block>
+                     block
+                     data-testid="view_button">
                 {{ strings?.['view'] }}
                 <v-icon right dark>{{ icons.mdiFileFind }}</v-icon>
               </v-btn>
@@ -159,7 +166,8 @@
               <v-btn color="blue"
                      @click="get()"
                      dark
-                     block>
+                     block
+                     data-testid="download_button">
                 {{ strings?.['download'] }}
                 <v-icon right dark>{{ icons.mdiDownload }}</v-icon>
               </v-btn>
@@ -171,15 +179,15 @@
 
       <div style="padding: 0.5em;">
         <v-expansion-panels v-model="expandedPanelIds" multiple>
-          <template v-for="expandedPanel in expandedPanels">
+          <template v-for="(expandedPanel, idx) in expandedPanels">
             <template v-if="expandedPanel.type === 'data_uploader'">
-              <DataUploader :composedProps="expandedPanel.props" :key="`upload-${expandedPanel.props.uploadNo}`"/>
+              <DataUploader :composedProps="expandedPanel.props" :key="`upload-${expandedPanel.props.uploadNo}`" :data-testid="`expand_panel_${idx}`" />
             </template>
             <template v-if="expandedPanel.type === 'data_viewer'">
-              <DataViewer :composedProps="expandedPanel.props" :key="`view-${expandedPanel.props.viewNo}`"/>
+              <DataViewer :composedProps="expandedPanel.props" :key="`view-${expandedPanel.props.viewNo}`" :data-testid="`expand_panel_${idx}`"/>
             </template>
             <template v-if="expandedPanel.type === 'data_downloader'">
-              <DataDownloader :composedProps="expandedPanel.props" :key="`download-${expandedPanel.props.downloadNo}`"/>
+              <DataDownloader :composedProps="expandedPanel.props" :key="`download-${expandedPanel.props.downloadNo}`" :data-testid="`expand_panel_${idx}`"/>
             </template>
           </template>
         </v-expansion-panels>

@@ -75,7 +75,6 @@ import {recordsServerUrlHistory} from "@/settings/recordsServerUrlHistory";
 import {recordsSecretPathHistory} from "@/settings/recordsSecretPathHistory";
 import {forceDisableStreamingUpload} from "@/settings/forceDisableStreamingUpload";
 
-
 // Available languages
 type Language = 'en' | 'ja';
 

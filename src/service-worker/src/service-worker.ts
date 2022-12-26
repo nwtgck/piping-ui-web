@@ -17,7 +17,6 @@ const idToSwDownload: Map<string, SwDownload> = new Map();
 
 // Generate unique sw-download ID
 function generateUniqueSwDownloadId(): string {
-  // eslint-disable-next-line no-constant-condition
   while(true) {
     const id = generateRandomString(128);
     if (!idToSwDownload.has(id)) {

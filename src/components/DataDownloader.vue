@@ -25,7 +25,7 @@
       <v-alert type="error"
                outlined
                :value="hasError">
-        {{ errorMessage() }}
+        {{ errorMessage }}
       </v-alert>
 
     </v-expansion-panel-content>
@@ -50,18 +50,18 @@ export type DataDownloaderProps = {
 import Vue, {ref, computed, onMounted} from "vue";
 import urlJoin from 'url-join';
 import {mdiAlert, mdiChevronDown} from "@mdi/js";
-import {stringsByLang} from "@/strings/strings-by-lang";
 import * as pipingUiUtils from "@/piping-ui-utils";
+import * as pipingUiRobust from "@/piping-ui-robust";
 import {type VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import * as pipingUiAuth from "@/piping-ui-auth";
-import {language} from "@/language";
 import * as fileType from 'file-type/browser';
 import {canTransferReadableStream} from "@/utils/canTransferReadableStream";
 import {makePromise} from "@/utils/makePromise";
+import {useErrorMessage} from "@/useErrorMessage";
+import {strings} from "@/strings/strings";
 
 const FileSaverAsync = () => import('file-saver').then(p => p.default);
-const binconvAsync = () => import('binconv');
 const swDownloadAsync = () => import("@/sw-download");
 const openPgpUtilsAsync = () => import("@/utils/openpgp-utils");
 
@@ -73,11 +73,9 @@ canceledPromise.then(() => {
   // canceled.value = true;
 });
 
-const errorMessage = ref<() => string>(() => "");
+const {errorMessage, updateErrorMessage} = useErrorMessage();
 const verificationStep = ref<VerificationStep>({type: 'initial'});
-// for language support
-const strings = computed(() => stringsByLang(language.value));
-const hasError = computed<boolean>(() => errorMessage.value() !== "");
+const hasError = computed<boolean>(() => errorMessage.value !== undefined);
 const headerIcon = computed<string>(() => {
   if (hasError.value) {
     return mdiAlert;
@@ -124,11 +122,13 @@ onMounted(async () => {
   // If error
   if (keyExchangeRes.type === "error") {
     switch (keyExchangeRes.error.code) {
-      case "key_exchange_error":
-        errorMessage.value = () => strings.value["key_exchange_error"](keyExchangeRes.error.keyExchangeErrorCode);
+      case "key_exchange_error": {
+        const errorCode = keyExchangeRes.error.keyExchangeErrorCode;
+        updateErrorMessage(() => strings.value?.["key_exchange_error"](errorCode));
         break;
+      }
       case "sender_not_verified":
-        errorMessage.value = () => strings.value["sender_not_verified"];
+        updateErrorMessage(() => strings.value?.["sender_not_verified"]);
         break;
     }
     return;
@@ -151,35 +151,76 @@ onMounted(async () => {
       return;
     }
     console.log("downloading and decrypting with FileSaver.saveAs()...");
-    const binconv = await binconvAsync();
-    // Get response
-    const res = await fetch(downloadPath.value);
-    const resBody = await binconv.blobToUint8Array(await res.blob());
+
+    let encryptedStream: ReadableStream<Uint8Array>;
+    // Passwordless transfer always uses Piping UI Robust
+    if (props.composedProps.protection.type === "passwordless") {
+      const abortController = new AbortController();
+      canceledPromise.then(() => {
+        abortController.abort();
+      });
+      encryptedStream = pipingUiRobust.receiveReadableStream(
+        props.composedProps.serverUrl,
+        encodeURI(props.composedProps.secretPath),
+        { abortSignal: abortController.signal },
+      );
+    } else {
+      const res = await fetch(downloadPath.value);
+      if (res.status !== 200) {
+        const message = await res.text();
+        updateErrorMessage(() => strings.value?.['fetch_status_error']({status: res.status, message}));
+        return;
+      }
+      encryptedStream = res.body!;
+    }
     // Decrypt the response body
-    let plain: Uint8Array;
+    let plainStream: ReadableStream;
     try {
-      plain = await (await openPgpUtilsAsync()).decrypt(resBody, key);
+      plainStream = await (await openPgpUtilsAsync()).decryptStream(encryptedStream, key);
     } catch (e) {
       console.log("failed to decrypt", e);
-      errorMessage.value = () => strings.value['password_might_be_wrong'];
+      updateErrorMessage(() => strings.value?.['password_might_be_wrong']);
       return;
     }
     // Save
     const FileSaver = await FileSaverAsync();
-    FileSaver.saveAs(binconv.uint8ArrayToBlob(plain), props.composedProps.secretPath);
+    FileSaver.saveAs(await new Response(plainStream).blob(), props.composedProps.secretPath);
     return;
   }
   console.log("downloading streaming with the Service Worker and decrypting if need...");
   const openPgpUtils = await openPgpUtilsAsync();
-  const res = await fetch(downloadPath.value);
-  const contentLengthStr: string | undefined = key === undefined ? res.headers.get("Content-Length") ?? undefined : undefined;
-  let readableStream: ReadableStream<Uint8Array> = res.body!
+
+  let readableStream: ReadableStream;
+  let contentLengthStr: string | undefined = undefined;
+  // Passwordless transfer always uses Piping UI Robust
+  if (props.composedProps.protection.type === "passwordless") {
+    const abortController = new AbortController();
+    canceledPromise.then(() => {
+      abortController.abort();
+    });
+    // TODO: notify when canceled because Piping UI Robust on sender side keeps sending
+    readableStream = pipingUiRobust.receiveReadableStream(
+      props.composedProps.serverUrl,
+      encodeURI(props.composedProps.secretPath),
+      { abortSignal: abortController.signal },
+    );
+  } else {
+    const res = await fetch(downloadPath.value);
+    if (res.status !== 200) {
+      const message = await res.text();
+      updateErrorMessage(() => strings.value?.['fetch_status_error']({status: res.status, message}));
+      return;
+    }
+    contentLengthStr = key === undefined ? res.headers.get("Content-Length") ?? undefined : undefined;
+    readableStream = res.body!
+  }
+
   if (key !== undefined) {
     try {
-      readableStream = await openPgpUtils.decryptStream(res.body!, key);
+      readableStream = await openPgpUtils.decryptStream(readableStream, key);
     } catch (e) {
       console.log("failed to decrypt", e);
-      errorMessage.value = () => strings.value['password_might_be_wrong'];
+      updateErrorMessage(() => strings.value?.['password_might_be_wrong']);
       return;
     }
   }
@@ -193,9 +234,9 @@ onMounted(async () => {
   // Make filename RFC5987 compatible
   const escapedFileName = encodeURIComponent(fileName).replace(/['()]/g, escape).replace(/\*/g, '%2A');
   const headers: [string, string][] = [
-    ...( contentLengthStr === undefined ? [] : [ [ "Content-Length", contentLengthStr ] ] ),
+    ...( contentLengthStr === undefined ? [] : [ [ "Content-Length", contentLengthStr ] ] satisfies [[string, string]] ),
     // Without "Content-Type", Safari in iOS 15 adds ".html" to the downloading file
-    ...( fileTypeResult === undefined ? [] : [ [ "Content-Type", fileTypeResult.mime ] ] ),
+    ...( fileTypeResult === undefined ? [] : [ [ "Content-Type", fileTypeResult.mime ] ] satisfies [[string, string]] ),
     ['Content-Disposition', "attachment; filename*=UTF-8''" + escapedFileName],
   ];
   // Enroll download ReadableStream and get sw-download ID
@@ -244,7 +285,6 @@ async function enrollDownload(headers: readonly [string, string][], readableStre
     }, [messageChannel.port2]);
 
     const reader = readableStream.getReader();
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       const result = await reader.read();
       if (result.done) {

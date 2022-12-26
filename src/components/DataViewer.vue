@@ -34,7 +34,7 @@
 
           <!-- Progress bar -->
         <v-progress-linear :value="progressPercentage"
-                           :indeterminate="progressPercentage === null && !canceled && errorMessage() === ''"
+                           :indeterminate="progressPercentage === null && !canceled && !hasError"
                            :color="canceled ? 'grey' : undefined" />
       </span>
 
@@ -93,14 +93,16 @@
       <!-- Image viewer -->
       <div v-show="imgSrc.url !== undefined" style="text-align: center">
         <img :src="imgSrc.url"
-             style="width: 95%">
+             style="width: 95%"
+             data-testid="image">
       </div>
 
       <!-- Video viewer -->
       <div v-if="videoSrc.url !== undefined" style="text-align: center">
         <video :src="videoSrc.url"
                style="width: 95%"
-               controls />
+               controls
+               data-testid="video"/>
       </div>
 
       <!-- Text viewer -->
@@ -145,7 +147,7 @@
       <v-alert type="error"
                outlined
                :value="hasError">
-        {{ errorMessage() }}
+        {{ errorMessage }}
       </v-alert>
 
     </v-expansion-panel-content>
@@ -175,20 +177,22 @@ import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
 import {uint8ArrayToBlob} from 'binconv/dist/src/uint8ArrayToBlob';
 import {blobToReadableStream} from 'binconv/dist/src/blobToReadableStream';
 import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle, mdiEye, mdiEyeOff, mdiKey, mdiFeatureSearchOutline} from "@mdi/js";
+import * as pipingUiRobust from "@/piping-ui-robust";
 
-import {stringsByLang} from "@/strings/strings-by-lang";
 import * as openPgpUtils from '@/utils/openpgp-utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
 import {type VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import {BlobUrlManager} from "@/blob-url-manager";
 import * as pipingUiAuth from "@/piping-ui-auth";
-import {language} from "@/language";
 import {uint8ArrayIsText} from "@/utils/uint8ArrayIsText";
 import {readableBytesString} from "@/utils/readableBytesString";
 import {readBlobAsText} from "@/utils/readBlobAsText";
 import {sanitizeHtmlAllowingATag} from "@/utils/sanitizeHtmlAllowingATag";
 import {makePromise} from "@/utils/makePromise";
+import {useErrorMessage} from "@/useErrorMessage";
+import {getReadableStreamWithProgress} from "@/utils/getReadableStreamWithProgress";
+import {strings} from "@/strings/strings";
 
 // eslint-disable-next-line no-undef
 const props = defineProps<{ composedProps: DataViewerProps }>();
@@ -203,8 +207,7 @@ const progressSetting = ref<{loadedBytes: number, totalBytes?: number}>({
   loadedBytes: 0,
   totalBytes: undefined,
 });
-const errorMessage = ref<() => string>(() => "");
-const xhr: XMLHttpRequest = new XMLHttpRequest();
+const {errorMessage, updateErrorMessage} = useErrorMessage();
 const isDoneDownload = ref(false);
 const canceled = ref(false);
 const imgSrc= ref(new BlobUrlManager());
@@ -219,8 +222,6 @@ let blob = new Blob();
 const showsCopied = ref(false);
 const isDecrypting = ref(false);
 
-// for language support
-const strings = computed(() => stringsByLang(language.value));
 
 const icons = {
   mdiContentSave,
@@ -243,7 +244,7 @@ const progressPercentage = computed<number | null>(() => {
   }
 });
 
-const hasError = computed<boolean>(() => errorMessage.value() !== "");
+const hasError = computed<boolean>(() => errorMessage.value !== undefined);
 
 const headerIcon = computed<string>(() => {
   if (hasError.value) {
@@ -277,6 +278,7 @@ const isReadyToDownload = computed<boolean>(() => {
   return props.composedProps.protection.type === 'passwordless' ? verificationStep.value.type === 'verified' && verificationStep.value.verified : true
 });
 
+// TODO: rename to downloadUrl
 const downloadPath = computed<string>(() => {
   return urlJoin(props.composedProps.serverUrl, props.composedProps.secretPath);
 });
@@ -322,55 +324,78 @@ onMounted(async () => {
   // If error
   if (keyExchangeRes.type === "error") {
     switch (keyExchangeRes.error.code) {
-      case "key_exchange_error":
-        errorMessage.value = () => strings.value["key_exchange_error"](keyExchangeRes.error.keyExchangeErrorCode);
+      case "key_exchange_error": {
+        const errorCode = keyExchangeRes.error.keyExchangeErrorCode;
+        updateErrorMessage(() => strings.value?.["key_exchange_error"](errorCode));
         break;
+      }
       case "sender_not_verified":
-        errorMessage.value = () => strings.value["sender_not_verified"];
+        updateErrorMessage(() => strings.value?.["sender_not_verified"]);
         break;
     }
     return;
   }
   const {key} = keyExchangeRes;
 
-  canceledPromise.then(() => {
-    xhr.abort();
-  });
-  xhr.open('GET', downloadPath.value);
-  xhr.responseType = 'blob';
-  xhr.onprogress = (ev) => {
-    console.log(`Download: ${ev.loaded}`)
-  };
-  xhr.onreadystatechange = (ev) => {
-    if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
-      const length: string | null = xhr.getResponseHeader('Content-Length');
-      if (length !== null) {
-        progressSetting.value.totalBytes = parseInt(length, 10);
-      }
-    }
-  };
-  xhr.onprogress = (ev) => {
-    progressSetting.value.loadedBytes = ev.loaded;
-  };
-  xhr.onload = async (ev) => {
-    if (xhr.status === 200) {
-      isDoneDownload.value = true;
-      // Get raw response body
-      rawBlob = xhr.response;
-      // Decrypt and view blob if possible
-      decryptIfNeedAndViewBlob(key);
-    } else {
-      const responseText = await readBlobAsText(xhr.response);
-      errorMessage.value = () => strings.value['xhr_status_error']({
-        status: xhr.status,
-        response: responseText,
+  let rawStream: ReadableStream<Uint8Array>;
+  if (props.composedProps.protection.type === "passwordless") {
+    const abortController = new AbortController();
+    canceledPromise.then(() => {
+      abortController.abort();
+    });
+    // Passwordless transfer always uses Piping UI Robust
+    rawStream = pipingUiRobust.receiveReadableStream(props.composedProps.serverUrl, props.composedProps.secretPath, {
+      abortSignal: abortController.signal,
+    });
+  } else {
+    const abortController = new AbortController();
+    canceledPromise.then(() => {
+      abortController.abort();
+    });
+    let res: Response;
+    try {
+      res = await fetch(downloadPath.value, {
+        signal: abortController.signal,
       });
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        return;
+      }
+      console.log(err);
+      updateErrorMessage(() => strings.value?.['data_viewer_fetch_error']);
+      return;
     }
-  };
-  xhr.onerror = () => {
-    errorMessage.value = () => strings.value['data_viewer_xhr_onerror'];
-  };
-  xhr.send();
+    if (res.status !== 200) {
+      const message = await res.text();
+      updateErrorMessage(() => strings.value?.['fetch_status_error']({ status: res.status, message }));
+      return;
+    }
+    const contentLengthStr = res.headers.get("Content-Length");
+    if (contentLengthStr !== null) {
+      progressSetting.value.totalBytes = parseInt(contentLengthStr, 10);
+    }
+    rawStream = res.body!;
+  }
+
+  const {stream: rawStreamWithProgress, cancel: cancelRawStreamWithProgress} = getReadableStreamWithProgress(rawStream, (n) => {
+    progressSetting.value.loadedBytes += n;
+  });
+  try {
+    canceledPromise.then(() => {
+      cancelRawStreamWithProgress();
+    });
+    // Get raw response body
+    rawBlob = await new Response(rawStreamWithProgress).blob();
+  } catch (err) {
+    updateErrorMessage(() => strings.value?.['data_viewer_body_read_error']({ error: err }));
+    return;
+  }
+  if (canceled.value) {
+    return;
+  }
+  isDoneDownload.value = true;
+  // Decrypt and view blob if possible
+  await decryptIfNeedAndViewBlob(key);
 });
 
 async function viewBlob() {
@@ -419,11 +444,11 @@ async function decryptIfNeedAndViewBlob(password: string | Uint8Array | undefine
         // Decrypt the response body
         const plain = await openPgpUtils.decrypt(resBody, password);
         enablePasswordReinput.value = false;
-        errorMessage.value = () => '';
+        updateErrorMessage(undefined);
         return uint8ArrayToBlob(plain);
       } catch (err) {
         enablePasswordReinput.value = true;
-        errorMessage.value = () => strings.value['password_might_be_wrong'];
+        updateErrorMessage(() => strings.value?.['password_might_be_wrong']);
         console.log('Decrypt error:', err);
         return new Blob();
       } finally {
@@ -439,7 +464,7 @@ async function decryptIfNeedAndViewBlob(password: string | Uint8Array | undefine
 function viewRaw() {
   blob = rawBlob;
   enablePasswordReinput.value = false;
-  errorMessage.value = () => '';
+  updateErrorMessage(undefined);
   // View blob if possible
   viewBlob();
 }

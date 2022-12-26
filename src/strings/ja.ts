@@ -8,7 +8,6 @@ const sanitizeHtmlAllowingATagAsync = () => import('@/utils/sanitizeHtmlAllowing
 export const ja: Strings = {
   language: '言語 (Language)',
   dark_theme: 'ダークテーマ',
-  pwa_update: 'Update',
   version: `バージョン: ${VERSION}`,
   view_on_github: 'GitHubでソースコードを見る',
   open_source_licenses: 'オープンソース ライセンス',
@@ -71,7 +70,13 @@ export const ja: Strings = {
   xhr_status_error: (p: {status: number, response: string}) => {
     return `エラー (${p.status}): "${p.response}"`;
   },
-  data_viewer_xhr_onerror: 'ダウンロードエラー',
+  data_viewer_fetch_error: 'ダウンロードエラー',
+  fetch_status_error: (p: {status: number, message: string}) => {
+    return `エラー (${p.status}): "${p.message}"`;
+  },
+  data_viewer_body_read_error: (p: { error: unknown }) => {
+    return `読み込みエラー: ${p.error}`;
+  },
   save: '保存',
   record_server_url: 'サーバーURLを記憶',
   record_secret_path: '転送パスを記憶',
