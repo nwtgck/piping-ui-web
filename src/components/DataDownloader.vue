@@ -234,9 +234,9 @@ onMounted(async () => {
   // Make filename RFC5987 compatible
   const escapedFileName = encodeURIComponent(fileName).replace(/['()]/g, escape).replace(/\*/g, '%2A');
   const headers: [string, string][] = [
-    ...( contentLengthStr === undefined ? [] : [ [ "Content-Length", contentLengthStr ] ] ),
+    ...( contentLengthStr === undefined ? [] : [ [ "Content-Length", contentLengthStr ] ] satisfies [[string, string]] ),
     // Without "Content-Type", Safari in iOS 15 adds ".html" to the downloading file
-    ...( fileTypeResult === undefined ? [] : [ [ "Content-Type", fileTypeResult.mime ] ] ),
+    ...( fileTypeResult === undefined ? [] : [ [ "Content-Type", fileTypeResult.mime ] ] satisfies [[string, string]] ),
     ['Content-Disposition', "attachment; filename*=UTF-8''" + escapedFileName],
   ];
   // Enroll download ReadableStream and get sw-download ID

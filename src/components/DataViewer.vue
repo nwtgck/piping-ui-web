@@ -324,9 +324,11 @@ onMounted(async () => {
   // If error
   if (keyExchangeRes.type === "error") {
     switch (keyExchangeRes.error.code) {
-      case "key_exchange_error":
-        updateErrorMessage(() => strings.value?.["key_exchange_error"](keyExchangeRes.error.keyExchangeErrorCode));
+      case "key_exchange_error": {
+        const errorCode = keyExchangeRes.error.keyExchangeErrorCode;
+        updateErrorMessage(() => strings.value?.["key_exchange_error"](errorCode));
         break;
+      }
       case "sender_not_verified":
         updateErrorMessage(() => strings.value?.["sender_not_verified"]);
         break;
