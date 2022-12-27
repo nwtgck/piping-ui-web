@@ -248,6 +248,9 @@ onMounted(async () => {
   aTag.href = `/sw-download/v2#?id=${swDownloadId}`;
   aTag.target = "_blank";
   aTag.click();
+  // Without this, memory leak occurs. It consumes as much memory as the received file size.
+  // Memory still leaks when using `npm run serve`. Build and serve to confirm.
+  await readableStreamForFileType.cancel();
 });
 
 // (base: https://googlechrome.github.io/samples/service-worker/post-message/)
