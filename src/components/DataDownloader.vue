@@ -19,6 +19,10 @@
           <td>{{ strings['download_url'] }}</td>
           <td>{{ downloadPath }}</td>
         </tr>
+        <tr v-if="pipingUiAuthVerificationCode !== undefined" class="text-left">
+          <td>{{ strings['verification_code'] }}</td>
+          <td>{{ pipingUiAuthVerificationCode }}</td>
+        </tr>
         </tbody>
       </v-simple-table>
 
@@ -97,6 +101,7 @@ const downloadPath = computed<string>(() => {
   return urlJoin(props.composedProps.serverUrl, encodeURI(props.composedProps.secretPath));
 });
 const rootElement = ref<Vue>();
+const pipingUiAuthVerificationCode = ref<string | undefined>();
 
 // NOTE: Automatically download when mounted
 onMounted(async () => {
@@ -133,6 +138,11 @@ onMounted(async () => {
     }
     return;
   }
+
+  if ("verificationCode" in keyExchangeRes) {
+    pipingUiAuthVerificationCode.value = keyExchangeRes.verificationCode;
+  }
+
   const {key} = keyExchangeRes;
 
   const swDownload = await swDownloadAsync();

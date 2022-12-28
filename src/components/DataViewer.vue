@@ -52,6 +52,10 @@
           <td>{{ strings['download_url'] }}</td>
           <td>{{ downloadPath }}</td>
         </tr>
+        <tr v-if="pipingUiAuthVerificationCode !== undefined" class="text-left">
+          <td>{{ strings['verification_code'] }}</td>
+          <td>{{ pipingUiAuthVerificationCode }}</td>
+        </tr>
         </tbody>
       </v-simple-table>
 
@@ -221,6 +225,7 @@ let rawBlob = new Blob();
 let blob = new Blob();
 const showsCopied = ref(false);
 const isDecrypting = ref(false);
+const pipingUiAuthVerificationCode = ref<string | undefined>();
 
 const progressPercentage = computed<number | null>(() => {
   if (isDoneDownload.value) {
@@ -325,6 +330,11 @@ onMounted(async () => {
     }
     return;
   }
+
+  if ("verificationCode" in keyExchangeRes) {
+    pipingUiAuthVerificationCode.value = keyExchangeRes.verificationCode;
+  }
+
   const {key} = keyExchangeRes;
 
   let rawStream: ReadableStream<Uint8Array>;

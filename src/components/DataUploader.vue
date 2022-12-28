@@ -78,6 +78,10 @@
           <td>{{ strings['upload_url'] }}</td>
           <td>{{ uploadPath }}</td>
         </tr>
+        <tr v-if="pipingUiAuthVerificationCode !== undefined" class="text-left">
+          <td>{{ strings['verification_code'] }}</td>
+          <td>{{ pipingUiAuthVerificationCode }}</td>
+        </tr>
         </tbody>
       </v-simple-table>
 
@@ -156,6 +160,7 @@ const canceled = ref(false);
 const isCompressing = ref(false);
 const isNonStreamingEncrypting = ref(false);
 const verificationStep = ref<VerificationStep>({type: 'initial'});
+const pipingUiAuthVerificationCode = ref<string | undefined>();
 
 const progressPercentage = computed<number | null>(() => {
   if (progressSetting.value.totalBytes === undefined) {
@@ -255,7 +260,7 @@ async function verify(verified: boolean) {
   if (verificationStep.value.type !== 'verification_code_arrived') {
     throw new Error("Unexpected state: this.verificationStep.type should be 'verification_code_arrived'");
   }
-  const {key} = verificationStep.value;
+  const {key, verificationCode} = verificationStep.value;
   verificationStep.value = {type: 'verified', verified};
 
   await pipingUiAuth.verify(props.composedProps.serverUrl, props.composedProps.secretPath, key, verified, canceledPromise);
@@ -263,6 +268,8 @@ async function verify(verified: boolean) {
   if (!verified) {
     return;
   }
+
+  pipingUiAuthVerificationCode.value = verificationCode;
 
   // If verified, send
   const plainBody: Blob = await makePlainBody();
