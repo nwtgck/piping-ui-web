@@ -68,7 +68,7 @@
                         v-model="password"
                         :type="showsPassword ? 'text' : 'password'"
                         :label="strings['password']"
-                        :append-icon="showsPassword ? icons.mdiEye : icons.mdiEyeOff"
+                        :append-icon="showsPassword ? mdiEye : mdiEyeOff"
                         @click:append="showsPassword = !showsPassword"
                         single-line
                         style="margin-left: 0.5em;"
@@ -78,13 +78,13 @@
           <v-btn color="primary"
                  text
                  @click="decryptIfNeedAndViewBlob(password)">
-            <v-icon >{{ icons.mdiKey }}</v-icon>
+            <v-icon >{{ mdiKey }}</v-icon>
             {{ strings['unlock'] }}
           </v-btn>
           <v-btn color="primary"
                  text
                  @click="viewRaw()">
-            <v-icon >{{ icons.mdiFeatureSearchOutline }}</v-icon>
+            <v-icon >{{ mdiFeatureSearchOutline }}</v-icon>
             {{ strings['view_raw'] }}
           </v-btn>
         </div>
@@ -129,7 +129,7 @@
                outlined
                class="ma-2 justify-end"
                @click="cancel()">
-          <v-icon >{{ icons.mdiCloseCircle }}</v-icon>
+          <v-icon >{{ mdiCloseCircle }}</v-icon>
           {{ strings['cancel'] }}
         </v-btn>
       </div>
@@ -140,7 +140,7 @@
              block
              @click="save()"
              style="margin-top: 1em;">
-        <v-icon >{{ icons.mdiContentSave }}</v-icon>
+        <v-icon >{{ mdiContentSave }}</v-icon>
         {{ strings['save'] }}
       </v-btn>
 
@@ -221,16 +221,6 @@ let rawBlob = new Blob();
 let blob = new Blob();
 const showsCopied = ref(false);
 const isDecrypting = ref(false);
-
-
-const icons = {
-  mdiContentSave,
-  mdiCloseCircle,
-  mdiEye,
-  mdiEyeOff,
-  mdiKey,
-  mdiFeatureSearchOutline,
-};
 
 const progressPercentage = computed<number | null>(() => {
   if (isDoneDownload.value) {

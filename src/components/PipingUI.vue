@@ -7,11 +7,11 @@
           <v-btn-toggle v-model="sendOrGet" mandatory>
             <v-btn text value="send" data-testid="send_menu_button">
               {{ strings?.['send'] }}
-              <v-icon right dark>{{ icons.mdiUpload }}</v-icon>
+              <v-icon right dark>{{ mdiUpload }}</v-icon>
             </v-btn>
             <v-btn text value="get" data-testid="get_menu_button">
               {{ strings?.['get'] }}
-              <v-icon right dark>{{ icons.mdiDownload }}</v-icon>
+              <v-icon right dark>{{ mdiDownload }}</v-icon>
             </v-btn>
           </v-btn-toggle>
         </div>
@@ -22,7 +22,7 @@
                     inset
                     v-model="isTextMode">
               <template v-slot:label>
-                <v-icon class="icon-and-text-margin">{{ icons.mdiText }}</v-icon>
+                <v-icon class="icon-and-text-margin">{{ mdiText }}</v-icon>
                 {{ strings?.['text_mode'] }}
               </template>
             </v-switch>
@@ -36,7 +36,7 @@
                       :label="strings?.['text_placeholder']"
                       v-model="inputText"
                       clearable
-                      :clear-icon="icons.mdiClose"
+                      :clear-icon="mdiClose"
                       outlined
           ></v-textarea>
         </div>
@@ -48,7 +48,7 @@
                     @blur="attachProtocolToUrl()"
                     ref="server_url_ref"
                     clearable
-                    :clear-icon="icons.mdiClose"
+                    :clear-icon="mdiClose"
                     style="margin-bottom: 0.8em;"
                     class="readable-font"
                     data-testid="server_url_input">
@@ -59,7 +59,7 @@
               <v-btn icon
                      @click.stop.prevent="deleteServerUrl(item)"
               >
-                <v-icon>{{ icons.mdiDelete }}</v-icon>
+                <v-icon>{{ mdiDelete }}</v-icon>
               </v-btn>
             </v-list-item-action>
           </template>
@@ -71,7 +71,7 @@
                     ref="secret_path_ref"
                     class="ma-0 pa-0 readable-font"
                     clearable
-                    :clear-icon="icons.mdiClose"
+                    :clear-icon="mdiClose"
                     data-testid="secret_path_input"
         >
           <template v-slot:item="{ index, item }">
@@ -81,7 +81,7 @@
               <v-btn icon
                      @click.stop.prevent="deleteSecretPath(item)"
               >
-                <v-icon>{{ icons.mdiDelete }}</v-icon>
+                <v-icon>{{ mdiDelete }}</v-icon>
               </v-btn>
             </v-list-item-action>
           </template>
@@ -109,7 +109,7 @@
                       data-testid="passwordless_switch"
                       style="margin-right: 2.5rem;">
               <template v-slot:label>
-                <v-icon class="icon-and-text-margin" :color="protectionType === 'passwordless' ? 'blue' : ''">{{ icons.mdiShieldHalfFull }}</v-icon>
+                <v-icon class="icon-and-text-margin" :color="protectionType === 'passwordless' ? 'blue' : ''">{{ mdiShieldHalfFull }}</v-icon>
                 {{ strings?.['passwordless_protection'] }}
               </template>
             </v-switch>
@@ -119,7 +119,7 @@
                       inset
                       data-testid="passwordless_send_and_verify_switch">
               <template v-slot:label>
-                <v-icon class="icon-and-text-margin" :color="passwordlessSendAndVerify ? 'blue' : ''">{{ icons.mdiShieldCheck }}</v-icon>
+                <v-icon class="icon-and-text-margin" :color="passwordlessSendAndVerify ? 'blue' : ''">{{ mdiShieldCheck }}</v-icon>
                 {{ strings?.['passwordless_verify_and_send'] }}
               </template>
             </v-switch>
@@ -133,7 +133,7 @@
                       class="ma-0 pa-0"
                       data-testid="password_switch">
               <template v-slot:label>
-                <v-icon class="icon-and-text-margin" :color="protectionType === 'password' ? 'blue' : ''">{{ icons.mdiKey }}</v-icon>
+                <v-icon class="icon-and-text-margin" :color="protectionType === 'password' ? 'blue' : ''">{{ mdiKey }}</v-icon>
                 {{ protectionType === 'password' ? '' : strings?.['protect_with_password'] }}
               </template>
             </v-switch>
@@ -142,7 +142,7 @@
                           v-model="password"
                           :type="showsPassword ? 'text' : 'password'"
                           :label="strings?.['password']"
-                          :append-icon="showsPassword ? icons.mdiEye : icons.mdiEyeOff"
+                          :append-icon="showsPassword ? mdiEye : mdiEyeOff"
                           @click:append="showsPassword = !showsPassword"
                           single-line
                           class="pa-0"
@@ -153,7 +153,7 @@
 
         <v-btn @click="showsMoreOptions = !showsMoreOptions" depressed plain style="margin-bottom: 1rem; text-transform: none" data-testid="more_options_button">
           <v-icon left dark>
-            {{ showsMoreOptions ? icons.mdiCollapseAll : icons.mdiExpandAll }}
+            {{ showsMoreOptions ? mdiCollapseAll : mdiExpandAll }}
           </v-icon>
           {{ showsMoreOptions ? strings?.['hide_options'] : strings?.['more_options'] }}
         </v-btn>
@@ -165,7 +165,7 @@
                  block
                  data-testid="send_button">
             {{ strings?.['send'] }}
-            <v-icon right dark>{{ icons.mdiUpload }}</v-icon>
+            <v-icon right dark>{{ mdiUpload }}</v-icon>
           </v-btn>
           <v-layout v-if="sendOrGet === 'get'">
             <v-flex xs6>
@@ -175,7 +175,7 @@
                      block
                      data-testid="view_button">
                 {{ strings?.['view'] }}
-                <v-icon right dark>{{ icons.mdiFileFind }}</v-icon>
+                <v-icon right dark>{{ mdiFileFind }}</v-icon>
               </v-btn>
             </v-flex>
             <v-flex xs6>
@@ -185,7 +185,7 @@
                      block
                      data-testid="download_button">
                 {{ strings?.['download'] }}
-                <v-icon right dark>{{ icons.mdiDownload }}</v-icon>
+                <v-icon right dark>{{ mdiDownload }}</v-icon>
               </v-btn>
             </v-flex>
           </v-layout>
@@ -215,7 +215,7 @@
       {{ snackbarMessage }}
       <v-btn text
              @click="showsSnackbar = false">
-        <v-icon>{{ icons.mdiClose }}</v-icon>
+        <v-icon>{{ mdiClose }}</v-icon>
       </v-btn>
     </v-snackbar>
   </v-layout>
@@ -320,22 +320,6 @@ const expandedPanelIds = ref<number[]>([]);
 const showsSnackbar = ref<boolean>(false);
 // Message of snackbar
 const snackbarMessage = ref<string>('');
-
-const icons = {
-  mdiUpload,
-  mdiDownload,
-  mdiDelete,
-  mdiFileFind,
-  mdiClose,
-  mdiEye,
-  mdiEyeOff,
-  mdiKey,
-  mdiShieldHalfFull,
-  mdiText,
-  mdiShieldCheck,
-  mdiExpandAll,
-  mdiCollapseAll,
-};
 
 // FIXME: Should be removed
 // This for lazy v-model of Combobox

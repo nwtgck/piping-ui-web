@@ -26,7 +26,7 @@
                    @click="verify(true)"
                    block
                    data-testid="passwordless_verified_button">
-              <v-icon left dark>{{ icons.mdiCheck }}</v-icon>
+              <v-icon left dark>{{ mdiCheck }}</v-icon>
               {{ strings['passwordless_verified'] }}
             </v-btn>
           </v-flex>
@@ -35,7 +35,7 @@
                    :disabled="canceled"
                    @click="verify(false)"
                    block>
-              <v-icon left dark>{{ icons.mdiCancel }}</v-icon>
+              <v-icon left dark>{{ mdiCancel }}</v-icon>
               {{ strings['cancel'] }}
             </v-btn>
           </v-flex>
@@ -87,7 +87,7 @@
                outlined
                class="ma-2 justify-end"
                @click="cancel()">
-          <v-icon >{{ icons.mdiCloseCircle }}</v-icon>
+          <v-icon >{{ mdiCloseCircle }}</v-icon>
           {{ strings['cancel'] }}
         </v-btn>
       </div>
@@ -156,12 +156,6 @@ const canceled = ref(false);
 const isCompressing = ref(false);
 const isNonStreamingEncrypting = ref(false);
 const verificationStep = ref<VerificationStep>({type: 'initial'});
-
-const icons = {
-  mdiCloseCircle,
-  mdiCheck,
-  mdiCancel,
-};
 
 const progressPercentage = computed<number | null>(() => {
   if (progressSetting.value.totalBytes === undefined) {
