@@ -341,12 +341,15 @@ onMounted(async () => {
 
   let rawStream: ReadableStream<Uint8Array>;
   if (props.composedProps.protection.type === "passwordless") {
+    if (!("mainPath" in keyExchangeRes)) {
+      throw new Error(`invalid condition. mainPath should be contained in ${JSON.stringify(keyExchangeRes)}`);
+    }
     const abortController = new AbortController();
     canceledPromise.then(() => {
       abortController.abort();
     });
     // Passwordless transfer always uses Piping UI Robust
-    rawStream = pipingUiRobust.receiveReadableStream(props.composedProps.serverUrl, props.composedProps.secretPath, {
+    rawStream = pipingUiRobust.receiveReadableStream(props.composedProps.serverUrl, keyExchangeRes.mainPath, {
       abortSignal: abortController.signal,
     });
   } else {

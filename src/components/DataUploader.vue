@@ -253,8 +253,8 @@ onMounted(async () => {
         updateErrorMessage(() => strings.value?.['key_exchange_error'](keyExchangeRes.errorCode));
         return;
       }
-      const {key, verificationCode} = keyExchangeRes;
-      verificationStep.value = {type: 'verification_code_arrived', verificationCode, key};
+      const {key, mainPath, verificationCode} = keyExchangeRes;
+      verificationStep.value = {type: 'verification_code_arrived', mainPath, verificationCode, key};
       if (props.composedProps.protection.alwaysSendVerify) {
         await verify(true);
       }
@@ -267,10 +267,10 @@ async function verify(verified: boolean) {
   if (verificationStep.value.type !== 'verification_code_arrived') {
     throw new Error("Unexpected state: this.verificationStep.type should be 'verification_code_arrived'");
   }
-  const {key, verificationCode} = verificationStep.value;
+  const {key, mainPath, verificationCode} = verificationStep.value;
   verificationStep.value = {type: 'verified', verified};
 
-  await pipingUiAuth.verify(props.composedProps.serverUrl, props.composedProps.secretPath, key, verified, canceledPromise);
+  await pipingUiAuth.verify(props.composedProps.serverUrl, mainPath, key, verified, canceledPromise);
 
   if (!verified) {
     return;
@@ -301,7 +301,7 @@ async function verify(verified: boolean) {
   // TODO: notify when canceled because Piping UI Robust on receiver side keeps receiving
   await pipingUiRobust.sendReadableStream(
     props.composedProps.serverUrl,
-    props.composedProps.secretPath,
+    mainPath,
     encryptedStream,
     {
       abortSignal: abortController.signal,

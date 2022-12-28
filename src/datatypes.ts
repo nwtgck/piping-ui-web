@@ -61,6 +61,8 @@ export type KeyExchangeV3Parcel = t.TypeOf<typeof keyExchangeV3ParcelType>;
 export const keyExchangeParcelPayloadType = t.type({
   // Public encryption JWK
   publicEncryptJwk: ecJsonWebKeyType,
+  // For mitigating path collision
+  pathFactor: t.string,
 });
 export type keyExchangeParcelPayloadType = t.TypeOf<typeof keyExchangeParcelPayloadType>;
 
@@ -72,5 +74,5 @@ export type VerifiedParcel = t.TypeOf<typeof verifiedParcelType>
 export type VerificationStep =
   {type: 'initial'} |
   {type: 'error'} |
-  {type: 'verification_code_arrived', verificationCode: string, key: Uint8Array} |
+  {type: 'verification_code_arrived', mainPath: string, verificationCode: string, key: Uint8Array} |
   {type: 'verified', verified: boolean};

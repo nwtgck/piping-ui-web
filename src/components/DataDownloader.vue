@@ -167,13 +167,16 @@ onMounted(async () => {
     let encryptedStream: ReadableStream<Uint8Array>;
     // Passwordless transfer always uses Piping UI Robust
     if (props.composedProps.protection.type === "passwordless") {
+      if (!("mainPath" in keyExchangeRes)) {
+        throw new Error(`invalid condition. mainPath should be contained in ${JSON.stringify(keyExchangeRes)}`);
+      }
       const abortController = new AbortController();
       canceledPromise.then(() => {
         abortController.abort();
       });
       encryptedStream = pipingUiRobust.receiveReadableStream(
         props.composedProps.serverUrl,
-        encodeURI(props.composedProps.secretPath),
+        keyExchangeRes.mainPath,
         { abortSignal: abortController.signal },
       );
     } else {
@@ -206,6 +209,9 @@ onMounted(async () => {
   let contentLengthStr: string | undefined = undefined;
   // Passwordless transfer always uses Piping UI Robust
   if (props.composedProps.protection.type === "passwordless") {
+    if (!("mainPath" in keyExchangeRes)) {
+      throw new Error(`invalid condition. mainPath should be contained in ${JSON.stringify(keyExchangeRes)}`);
+    }
     const abortController = new AbortController();
     canceledPromise.then(() => {
       abortController.abort();
@@ -213,7 +219,7 @@ onMounted(async () => {
     // TODO: notify when canceled because Piping UI Robust on sender side keeps sending
     readableStream = pipingUiRobust.receiveReadableStream(
       props.composedProps.serverUrl,
-      encodeURI(props.composedProps.secretPath),
+      keyExchangeRes.mainPath,
       { abortSignal: abortController.signal },
     );
   } else {

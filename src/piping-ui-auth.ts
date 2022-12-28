@@ -19,17 +19,18 @@ const uint8ArrayToStringAsync = () => import('binconv/dist/src/uint8ArrayToStrin
 const stringToUint8ArrayAsync = () => import('binconv/dist/src/stringToUint8Array').then(p => p.stringToUint8Array);
 const uint8ArrayToBase64Async = () => import('binconv/dist/src/uint8ArrayToBase64').then(p => p.uint8ArrayToBase64);
 const base64ToUint8ArrayAsync = () => import('binconv/dist/src/base64ToUint8Array').then(p => p.base64ToUint8Array);
+const uint8ArrayToHexStringAsync = () => import('binconv/dist/src/uint8ArrayToHexString').then(p => p.uint8ArrayToHexString);
 const urlJoinAsync = () => import('url-join').then(p => p.default);
 
 async function keyExchangePath(type: 'sender' | 'receiver', secretPath: string): Promise<string> {
   return await sha256(`${secretPath}/key_exchange/${type}`);
 }
 
-async function verifiedPath(secretPath: string): Promise<string> {
-  return await sha256(`${secretPath}/verified`);
+async function verifiedPath(mainPath: string): Promise<string> {
+  return await sha256(`${mainPath}/verified`);
 }
 
-export async function verify(serverUrl: string, secretPath: string, key: Uint8Array, verified: boolean, canceledPromise: Promise<void>) {
+export async function verify(serverUrl: string, mainPath: string, key: Uint8Array, verified: boolean, canceledPromise: Promise<void>) {
   const openPgpUtils = await openPgpUtilsAsync();
   const urlJoin = await urlJoinAsync();
   const stringToUint8Array = await stringToUint8ArrayAsync();
@@ -40,7 +41,7 @@ export async function verify(serverUrl: string, secretPath: string, key: Uint8Ar
     stringToUint8Array(JSON.stringify(verifiedParcel)),
     key,
   );
-  const path = urlJoin(serverUrl, await verifiedPath(secretPath));
+  const path = urlJoin(serverUrl, await verifiedPath(mainPath));
   const abortController = new AbortController();
   canceledPromise.then(() => {
     abortController.abort();
@@ -68,7 +69,7 @@ export async function verify(serverUrl: string, secretPath: string, key: Uint8Ar
 
 export type KeyExchangeErrorCode = 'send_failed' | 'receive_failed' | 'invalid_parcel_format' | 'invalid_v1_parcel_format' | 'different_key_exchange_version';
 type KeyExchangeResult =
-  {type: "key", key: Uint8Array, verificationCode: string} |
+  {type: "key", key: Uint8Array, mainPath: string, verificationCode: string} |
   {type: "error", errorCode: KeyExchangeErrorCode} |
   {type: "canceled"};
 
@@ -90,6 +91,7 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
   ) as JsonWebKey & {kty: 'EC'};
   const payloadJson: keyExchangeParcelPayloadType = {
     publicEncryptJwk,
+    pathFactor: (await uint8ArrayToHexStringAsync())(new Uint8Array(await crypto.subtle.digest('SHA-256', crypto.getRandomValues(new Uint8Array(32))))),
   };
   const payload = JSON.stringify(payloadJson);
   const signature = await window.crypto.subtle.sign(
@@ -163,7 +165,7 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
   const peerPublicSigningKey: CryptoKey = await crypto.subtle.importKey(
     'jwk',
     peerKeyExchangeV3.publicSigningJwk,
-    { name: 'ECDSA', hash: { name: "SHA-384" } },
+    { name: 'ECDSA', namedCurve: 'P-384' },
     false,
     ["verify"],
   );
@@ -194,12 +196,20 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
     encryptKeyPair.privateKey,
     KEY_BITS,
   );
+  const mainPath = await generateMainPath(payloadJson.pathFactor, peerKeyExchangePayload.pathFactor);
   const verificationCode = await generateVerificationCode(publicSigningJwk, peerKeyExchangeV3.publicSigningJwk);
   return {
     type: 'key',
     key: new Uint8Array(keyBits),
+    mainPath,
     verificationCode,
   };
+}
+
+async function generateMainPath(pathFactor1: string, pathFactor2: string) {
+  const factors = [pathFactor1, pathFactor2];
+  const sha256: ArrayBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(factors.sort().join('-')));
+  return (await uint8ArrayToBase64Async())(new Uint8Array(sha256).slice(0, 16)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
 }
 
 async function generateVerificationCode(publicJwk1: JsonWebKey, publicJwk2: JsonWebKey) {
@@ -218,7 +228,7 @@ type KeyExchangeAndReceiveVerifiedError =
 export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPath: string, protection: Protection, signingKeyPair: CryptoKeyPair, setVerificationStep: (step: VerificationStep) => void, canceledPromise: Promise<void>):
   Promise<
     {type: 'key', key: string | undefined} |
-    {type: 'key', key: Uint8Array, verificationCode: string} |
+    {type: 'key', key: Uint8Array, mainPath: string, verificationCode: string} |
     {type: 'error', error: KeyExchangeAndReceiveVerifiedError } |
     {type: 'canceled' }
   > {
@@ -246,11 +256,11 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
           error: { code: 'key_exchange_error', keyExchangeErrorCode: keyExchangeRes.errorCode },
         };
       }
-      const {key, verificationCode} = keyExchangeRes;
-      setVerificationStep({type: 'verification_code_arrived', verificationCode, key});
+      const {key, mainPath, verificationCode} = keyExchangeRes;
+      setVerificationStep({type: 'verification_code_arrived', mainPath, verificationCode, key});
       const uint8ArrayToString = await uint8ArrayToStringAsync();
       const urlJoin = await urlJoinAsync();
-      const path = urlJoin(serverUrl, await verifiedPath(secretPath));
+      const path = urlJoin(serverUrl, await verifiedPath(mainPath));
       const abortController = new AbortController();
       canceledPromise.then(() => {
         abortController.abort();
@@ -295,6 +305,7 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
       return {
         type: 'key',
         key,
+        mainPath,
         verificationCode,
       };
     }
