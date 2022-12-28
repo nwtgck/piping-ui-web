@@ -21,8 +21,11 @@ export const en = {
   drop_a_file_here_or_browse: 'Drop a file here or <span class=\'filepond--label-action\'>Browse</span>',
   protect_with_password: 'Protect with password',
   passwordless_protection: 'Passwordless',
+  passwordless_verify_and_send: 'Verify and send',
   password: 'Password',
   password_is_required: 'Password is required',
+  more_options: 'More options',
+  hide_options: 'Hide options',
   view: 'View',
   download: 'Download',
   error_file_not_selected: 'Error: File not selected',
@@ -30,7 +33,7 @@ export const en = {
   upload: 'Upload',
   waiting_for_receiver: 'Waiting for receiver...',
   verification_code: 'Verification code',
-  verify_and_send: 'Verify & Send',
+  passwordless_verified: 'Verified',
   key_exchange_error: (errorCode: KeyExchangeErrorCode): string => {
     switch (errorCode) {
       case "send_failed":

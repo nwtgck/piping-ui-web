@@ -43,7 +43,7 @@ function findElements(driver: WebDriver) {
     viewButton: async () => driver.findElement(webdriver.By.css("[data-testid=view_button]")),
     image0InView: async () => driver.findElement(webdriver.By.xpath("//*[@data-testid='expand_panel_0']//*[@data-testid='image' and contains(@src, 'blob:')]")),
     passwordlessSwitch: async () => driver.findElement(webdriver.By.css("[data-testid=passwordless_switch]")),
-    verifySendButton0: async () => driver.findElement(webdriver.By.css("[data-testid=expand_panel_0] [data-testid=verify_and_send_button]")),
+    passwordlessVerifiedButton0: async () => driver.findElement(webdriver.By.css("[data-testid=expand_panel_0] [data-testid=passwordless_verified_button]")),
     moreOptionsButton: async () => driver.findElement(webdriver.By.css("[data-testid=more_options_button]")),
     passwordSwitch: async () => driver.findElement(webdriver.By.css("[data-testid=password_switch]")),
     passwordInput: async () => driver.findElement(webdriver.By.css("[data-testid=password_input]")),
@@ -281,7 +281,7 @@ describe('Piping UI', () => {
     await (await receiverElements.downloadButton()).click();
 
     await new Promise(resolve => setTimeout(resolve, 2000));
-    await (await senderElements.verifySendButton0()).click();
+    await (await senderElements.passwordlessVerifiedButton0()).click();
 
     const downloadedFilePath = path.join(downloadPath, secretPath);
     await waitForDownload(downloadedFilePath);
@@ -323,7 +323,7 @@ describe('Piping UI', () => {
     await (await receiverElements.viewButton()).click();
 
     await new Promise(resolve => setTimeout(resolve, 2000));
-    await (await senderElements.verifySendButton0()).click();
+    await (await senderElements.passwordlessVerifiedButton0()).click();
 
     const imageBlobUrl = await (await waitFor(() => receiverElements.image0InView())).getAttribute("src");
     const shownFileContent = await getBufferByBlobUrl(receiverDriver, imageBlobUrl);

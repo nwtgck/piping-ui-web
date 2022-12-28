@@ -120,7 +120,7 @@
                       data-testid="passwordless_send_and_verify_switch">
               <template v-slot:label>
                 <v-icon class="icon-and-text-margin" :color="passwordlessSendAndVerify ? 'blue' : ''">{{ icons.mdiShieldCheck }}</v-icon>
-                {{ "Verify and send" }}
+                {{ strings?.['passwordless_verify_and_send'] }}
               </template>
             </v-switch>
           </v-row>
@@ -151,11 +151,11 @@
           </v-row>
         </v-col>
 
-        <v-btn @click="showsMoreOptions = !showsMoreOptions" depressed style="margin-bottom: 1rem; text-transform: none" data-testid="more_options_button">
+        <v-btn @click="showsMoreOptions = !showsMoreOptions" depressed plain style="margin-bottom: 1rem; text-transform: none" data-testid="more_options_button">
           <v-icon left dark>
             {{ showsMoreOptions ? icons.mdiCollapseAll : icons.mdiExpandAll }}
           </v-icon>
-          {{ showsMoreOptions ? "Hide options" : "More options" }}
+          {{ showsMoreOptions ? strings?.['hide_options'] : strings?.['more_options'] }}
         </v-btn>
 
         <div style="margin-top: 1.2em;">

@@ -25,9 +25,9 @@
                    :disabled="composedProps.protection.alwaysSendVerify || canceled"
                    @click="verify(true)"
                    block
-                   data-testid="verify_and_send_button">
+                   data-testid="passwordless_verified_button">
               <v-icon left dark>{{ icons.mdiCheck }}</v-icon>
-              {{ strings['verify_and_send'] }}
+              {{ strings['passwordless_verified'] }}
             </v-btn>
           </v-flex>
           <v-flex xs6>
