@@ -64,6 +64,7 @@ import {canTransferReadableStream} from "@/utils/canTransferReadableStream";
 import {makePromise} from "@/utils/makePromise";
 import {useErrorMessage} from "@/useErrorMessage";
 import {strings} from "@/strings/strings";
+import {ecdsaP384SigningKeyPairPromise} from "@/signing-key";
 
 const FileSaverAsync = () => import('file-saver').then(p => p.default);
 const swDownloadAsync = () => import("@/sw-download");
@@ -114,6 +115,7 @@ onMounted(async () => {
       props.composedProps.serverUrl,
       props.composedProps.secretPath,
       props.composedProps.protection,
+      await ecdsaP384SigningKeyPairPromise.value,
       (step: VerificationStep) => {
         verificationStep.value = step;
       },

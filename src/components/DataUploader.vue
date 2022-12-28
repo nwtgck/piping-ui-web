@@ -139,6 +139,7 @@ import {makePromise} from "@/utils/makePromise";
 import {forceDisableStreamingUpload} from "@/settings/forceDisableStreamingUpload";
 import {useErrorMessage} from "@/useErrorMessage";
 import {strings} from "@/strings/strings";
+import {ecdsaP384SigningKeyPairPromise} from "@/signing-key";
 
 const props = defineProps<{ composedProps: DataUploaderProps }>();
 
@@ -237,7 +238,13 @@ onMounted(async () => {
       break;
     case 'passwordless': {
       // Key exchange
-      const keyExchangeRes = await pipingUiAuth.keyExchange(props.composedProps.serverUrl, 'sender', props.composedProps.secretPath, canceledPromise);
+      const keyExchangeRes = await pipingUiAuth.keyExchange(
+        props.composedProps.serverUrl,
+        'sender',
+        props.composedProps.secretPath,
+        await ecdsaP384SigningKeyPairPromise.value,
+        canceledPromise,
+      );
       if (keyExchangeRes.type === 'canceled') {
         return;
       }

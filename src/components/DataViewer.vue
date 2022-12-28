@@ -197,6 +197,7 @@ import {makePromise} from "@/utils/makePromise";
 import {useErrorMessage} from "@/useErrorMessage";
 import {getReadableStreamWithProgress} from "@/utils/getReadableStreamWithProgress";
 import {strings} from "@/strings/strings";
+import {ecdsaP384SigningKeyPairPromise} from "@/signing-key";
 
 // eslint-disable-next-line no-undef
 const props = defineProps<{ composedProps: DataViewerProps }>();
@@ -306,6 +307,7 @@ onMounted(async () => {
     props.composedProps.serverUrl,
     props.composedProps.secretPath,
     props.composedProps.protection,
+    await ecdsaP384SigningKeyPairPromise.value,
     (step: VerificationStep) => {
       verificationStep.value = step;
     },

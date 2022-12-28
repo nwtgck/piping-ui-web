@@ -19,29 +19,30 @@ const rsaOtherPrimesInfoType = t.partial({
   r: t.string,
   t: t.string,
 });
+const jsonWebKeyType = t.partial({
+  alg: t.string,
+  crv: t.string,
+  d: t.string,
+  dp: t.string,
+  dq: t.string,
+  e: t.string,
+  ext: t.boolean,
+  k: t.string,
+  key_ops: t.array(t.string),
+  n: t.string,
+  oth: t.array(rsaOtherPrimesInfoType),
+  p: t.string,
+  q: t.string,
+  qi: t.string,
+  use: t.string,
+  x: t.string,
+  y: t.string,
+});
 const ecJsonWebKeyType = t.intersection([
   t.type({
     kty: t.literal('EC'),
   }),
-  t.partial({
-    alg: t.string,
-    crv: t.string,
-    d: t.string,
-    dp: t.string,
-    dq: t.string,
-    e: t.string,
-    ext: t.boolean,
-    k: t.string,
-    key_ops: t.array(t.string),
-    n: t.string,
-    oth: t.array(rsaOtherPrimesInfoType),
-    p: t.string,
-    q: t.string,
-    qi: t.string,
-    use: t.string,
-    x: t.string,
-    y: t.string,
-  })
+  jsonWebKeyType,
 ]);
 
 export const keyExchangeParcelType = t.type({
@@ -49,12 +50,19 @@ export const keyExchangeParcelType = t.type({
 });
 export type KeyExchangeParcel = t.TypeOf<typeof keyExchangeParcelType>;
 
-export const keyExchangeV1ParcelType = t.type({
-  version: t.literal(2),
-  // Public JWK for encryption
-  encryptPublicJwk: ecJsonWebKeyType,
+export const keyExchangeV3ParcelType = t.type({
+  version: t.literal(3),
+  publicSigningJwk: jsonWebKeyType,
+  payload: t.string,
+  signature: t.string,
 });
-export type KeyExchangeV1Parcel = t.TypeOf<typeof keyExchangeV1ParcelType>;
+export type KeyExchangeV3Parcel = t.TypeOf<typeof keyExchangeV3ParcelType>;
+
+export const keyExchangeParcelPayloadType = t.type({
+  // Public encryption JWK
+  publicEncryptJwk: ecJsonWebKeyType,
+});
+export type keyExchangeParcelPayloadType = t.TypeOf<typeof keyExchangeParcelPayloadType>;
 
 export const verifiedParcelType = t.type({
   verified: t.boolean,

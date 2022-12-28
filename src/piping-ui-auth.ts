@@ -1,8 +1,9 @@
 import {
   KeyExchangeParcel,
+  keyExchangeParcelPayloadType,
   keyExchangeParcelType,
-  KeyExchangeV1Parcel,
-  keyExchangeV1ParcelType,
+  KeyExchangeV3Parcel,
+  keyExchangeV3ParcelType,
   Protection,
   VerificationStep,
   VerifiedParcel,
@@ -16,6 +17,8 @@ const openPgpUtilsAsync = () => import("@/utils/openpgp-utils");
 const jwkThumbprintAsync  = () => import("jwk-thumbprint");
 const uint8ArrayToStringAsync = () => import('binconv/dist/src/uint8ArrayToString').then(p => p.uint8ArrayToString);
 const stringToUint8ArrayAsync = () => import('binconv/dist/src/stringToUint8Array').then(p => p.stringToUint8Array);
+const uint8ArrayToBase64Async = () => import('binconv/dist/src/uint8ArrayToBase64').then(p => p.uint8ArrayToBase64);
+const base64ToUint8ArrayAsync = () => import('binconv/dist/src/base64ToUint8Array').then(p => p.base64ToUint8Array);
 const urlJoinAsync = () => import('url-join').then(p => p.default);
 
 async function keyExchangePath(type: 'sender' | 'receiver', secretPath: string): Promise<string> {
@@ -69,25 +72,37 @@ type KeyExchangeResult =
   {type: "error", errorCode: KeyExchangeErrorCode} |
   {type: "canceled"};
 
-export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver', secretPath: string, canceledPromise: Promise<void>): Promise<KeyExchangeResult> {
-  const KEY_EXCHANGE_VERSION = 2;
+export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver', secretPath: string, ecdsaP384SigningKeyPair: CryptoKeyPair, canceledPromise: Promise<void>): Promise<KeyExchangeResult> {
+  const KEY_EXCHANGE_VERSION = 3;
   // 256 is max value for deriveBits()
   const KEY_BITS = 256;
   // Create ECDH key pair
-  const keyPair: CryptoKeyPair = await window.crypto.subtle.generateKey(
+  const encryptKeyPair: CryptoKeyPair = await window.crypto.subtle.generateKey(
     { name: 'ECDH', namedCurve: 'P-256'},
     false,
     ['deriveKey', 'deriveBits']
   );
   // Get public key as JWK
   // NOTE: kty should be 'EC' because it's ECDH key
-  const publicKeyJwk = await crypto.subtle.exportKey(
+  const publicEncryptJwk = await crypto.subtle.exportKey(
     'jwk',
-    keyPair.publicKey
+    encryptKeyPair.publicKey
   ) as JsonWebKey & {kty: 'EC'};
-  const keyExchangeParcel: KeyExchangeV1Parcel = {
+  const payloadJson: keyExchangeParcelPayloadType = {
+    publicEncryptJwk,
+  };
+  const payload = JSON.stringify(payloadJson);
+  const signature = await window.crypto.subtle.sign(
+    { name: 'ECDSA', hash: { name: "SHA-384" } },
+    ecdsaP384SigningKeyPair.privateKey,
+    new TextEncoder().encode(payload),
+  );
+  const publicSigningJwk = await crypto.subtle.exportKey('jwk', ecdsaP384SigningKeyPair.publicKey);
+  const keyExchangeParcel: KeyExchangeV3Parcel = {
     version: KEY_EXCHANGE_VERSION,
-    encryptPublicJwk: publicKeyJwk,
+    publicSigningJwk,
+    payload,
+    signature: (await uint8ArrayToBase64Async())(new Uint8Array(signature)),
   };
   const urlJoin = await urlJoinAsync();
   const myPath = await keyExchangePath(type, secretPath);
@@ -132,32 +147,54 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
   if (peerRes.status !== 200) {
     return {type: "error", errorCode: 'receive_failed'};
   }
-  const peerPublicKeyExchangeEither: Validation<KeyExchangeParcel> = keyExchangeParcelType.decode(JSON.parse(await peerRes.text()));
-  if (peerPublicKeyExchangeEither._tag === 'Left') {
+  const peerKeyExchangeEither: Validation<KeyExchangeParcel> = keyExchangeParcelType.decode(JSON.parse(await peerRes.text()));
+  if (peerKeyExchangeEither._tag === 'Left') {
     return {type: "error", errorCode: 'invalid_parcel_format'};
   }
-  const peerPublicKeyExchange = peerPublicKeyExchangeEither.right;
-  if (KEY_EXCHANGE_VERSION !== peerPublicKeyExchange.version) {
+  const peerKeyExchange = peerKeyExchangeEither.right;
+  if (KEY_EXCHANGE_VERSION !== peerKeyExchange.version) {
     return {type: "error", errorCode: 'different_key_exchange_version'};
   }
-  const peerPublicKeyExchangeV1Either = keyExchangeV1ParcelType.decode(peerPublicKeyExchange);
-  if (peerPublicKeyExchangeV1Either._tag === 'Left') {
+  const peerExchangeV3Either = keyExchangeV3ParcelType.decode(peerKeyExchange);
+  if (peerExchangeV3Either._tag === 'Left') {
     return {type: "error", errorCode: 'invalid_v1_parcel_format'};
   }
-  const peerPublicKeyExchangeV1 = peerPublicKeyExchangeV1Either.right;
-  const peerPublicKey = await crypto.subtle.importKey(
+  const peerKeyExchangeV3 = peerExchangeV3Either.right;
+  const peerPublicSigningKey: CryptoKey = await crypto.subtle.importKey(
     'jwk',
-    peerPublicKeyExchangeV1.encryptPublicJwk,
+    peerKeyExchangeV3.publicSigningJwk,
+    { name: 'ECDSA', hash: { name: "SHA-384" } },
+    false,
+    ["verify"],
+  );
+  const payloadVerified: boolean = await window.crypto.subtle.verify(
+    { name: 'ECDSA', hash: { name: "SHA-384" } },
+    peerPublicSigningKey,
+    (await base64ToUint8ArrayAsync())(peerKeyExchangeV3.signature),
+    new TextEncoder().encode(peerKeyExchangeV3.payload),
+  );
+  if (!payloadVerified) {
+    // TODO: create new error code and use it here
+    return {type: "error", errorCode: 'invalid_v1_parcel_format'};
+  }
+  const peerKeyExchangePayloadEither = keyExchangeParcelPayloadType.decode(JSON.parse(peerKeyExchangeV3.payload));
+  if (peerKeyExchangePayloadEither._tag === 'Left') {
+    return {type: "error", errorCode: 'invalid_v1_parcel_format'};
+  }
+  const peerKeyExchangePayload = peerKeyExchangePayloadEither.right;
+  const peerPublicEncryptKey = await crypto.subtle.importKey(
+    'jwk',
+    peerKeyExchangePayload.publicEncryptJwk,
     {name: 'ECDH', namedCurve: 'P-256'},
     false,
     []
   );
   const keyBits: ArrayBuffer = await crypto.subtle.deriveBits(
-    { name: 'ECDH', public: peerPublicKey },
-    keyPair.privateKey,
+    { name: 'ECDH', public: peerPublicEncryptKey },
+    encryptKeyPair.privateKey,
     KEY_BITS,
   );
-  const verificationCode = await generateVerificationCode(publicKeyJwk, peerPublicKeyExchangeV1.encryptPublicJwk);
+  const verificationCode = await generateVerificationCode(publicSigningJwk, peerKeyExchangeV3.publicSigningJwk);
   return {
     type: 'key',
     key: new Uint8Array(keyBits),
@@ -178,7 +215,7 @@ type KeyExchangeAndReceiveVerifiedError =
   { code: 'key_exchange_error', keyExchangeErrorCode: KeyExchangeErrorCode } |
   { code: 'sender_not_verified' };
 
-export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPath: string, protection: Protection, setVerificationStep: (step: VerificationStep) => void, canceledPromise: Promise<void>):
+export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPath: string, protection: Protection, signingKeyPair: CryptoKeyPair, setVerificationStep: (step: VerificationStep) => void, canceledPromise: Promise<void>):
   Promise<
     {type: 'key', key: string | undefined} |
     {type: 'key', key: Uint8Array, verificationCode: string} |
@@ -198,7 +235,7 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
       };
     case 'passwordless': {
       // Key exchange
-      const keyExchangeRes = await keyExchange(serverUrl, 'receiver', secretPath, canceledPromise);
+      const keyExchangeRes = await keyExchange(serverUrl, 'receiver', secretPath, signingKeyPair, canceledPromise);
       if (keyExchangeRes.type === 'canceled') {
         return { type: "canceled" };
       }
