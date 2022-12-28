@@ -22,8 +22,11 @@ export const ja: Strings = {
   drop_a_file_here_or_browse: 'ファイルをドラッグするか<span class=\'filepond--label-action\'>開く</span>',
   protect_with_password: 'パスワードで保護',
   passwordless_protection: 'パスワードレス',
+  passwordless_verify_and_send: '確認して送信',
   password: 'パスワード',
   password_is_required: 'パスワードを入力してください',
+  more_options: 'その他のオプション',
+  hide_options: 'オプション非表示',
   view: '見る',
   download: 'ダウンロード',
   error_file_not_selected: 'エラー: ファイルが選択されていません',
@@ -31,7 +34,7 @@ export const ja: Strings = {
   upload: 'アップロード',
   waiting_for_receiver: '受信者を待機中...',
   verification_code: '確認コード',
-  verify_and_send: '確認完了',
+  passwordless_verified: '確認完了',
   key_exchange_error: (errorCode: KeyExchangeErrorCode): string => {
     switch (errorCode) {
       case "send_failed":

@@ -36,13 +36,15 @@ function findElements(driver: WebDriver) {
   return {
     fileInput: async () => driver.findElement(webdriver.By.css("[data-testid=file_input] input[type=file]")),
     secretPathInput: async () => driver.findElement(webdriver.By.css("[data-testid=secret_path_input]")),
+    passwordlessSendAndVerifySwitch: async () => driver.findElement(webdriver.By.css("[data-testid=passwordless_send_and_verify_switch]")),
     sendButton: async () => driver.findElement(webdriver.By.css("[data-testid=send_button]")),
     getMenuButton: async () => driver.findElement(webdriver.By.css("[data-testid=get_menu_button]")),
     downloadButton: async () => driver.findElement(webdriver.By.css("[data-testid=download_button]")),
     viewButton: async () => driver.findElement(webdriver.By.css("[data-testid=view_button]")),
     image0InView: async () => driver.findElement(webdriver.By.xpath("//*[@data-testid='expand_panel_0']//*[@data-testid='image' and contains(@src, 'blob:')]")),
     passwordlessSwitch: async () => driver.findElement(webdriver.By.css("[data-testid=passwordless_switch]")),
-    verifySendButton0: async () => driver.findElement(webdriver.By.css("[data-testid=expand_panel_0] [data-testid=verify_and_send_button]")),
+    passwordlessVerifiedButton0: async () => driver.findElement(webdriver.By.css("[data-testid=expand_panel_0] [data-testid=passwordless_verified_button]")),
+    moreOptionsButton: async () => driver.findElement(webdriver.By.css("[data-testid=more_options_button]")),
     passwordSwitch: async () => driver.findElement(webdriver.By.css("[data-testid=password_switch]")),
     passwordInput: async () => driver.findElement(webdriver.By.css("[data-testid=password_input]")),
   } as const;
@@ -77,6 +79,8 @@ describe('Piping UI', () => {
       defer(() => fs.rmSync(transferFilePath));
       await (await elements.fileInput()).sendKeys(path.join(sharePathInDocker, "mydata.dat"));
       await (await elements.secretPathInput()).sendKeys(secretPath);
+      // NOTE: e.click() causes "Element <input id="..." type="checkbox"> is not clickable at point because another element <div class="..."> obscures it"
+      await nativeClick(driver, await elements.passwordlessSwitch());
       await new Promise(resolve => setTimeout(resolve, 1000));
       await (await elements.sendButton()).click();
     }
@@ -89,6 +93,8 @@ describe('Piping UI', () => {
 
       await (await elements.getMenuButton()).click();
       await (await elements.secretPathInput()).sendKeys(secretPath);
+      // NOTE: e.click() causes "Element <input id="..." type="checkbox"> is not clickable at point because another element <div class="..."> obscures it"
+      await nativeClick(driver, await elements.passwordlessSwitch());
       await new Promise(resolve => setTimeout(resolve, 1000));
       await (await elements.downloadButton()).click();
 
@@ -117,6 +123,8 @@ describe('Piping UI', () => {
       defer(() => fs.rmSync(transferFilePath));
       await (await elements.fileInput()).sendKeys(path.join(sharePathInDocker, "myimg.png"));
       await (await elements.secretPathInput()).sendKeys(secretPath);
+      // NOTE: e.click() causes "Element <input id="..." type="checkbox"> is not clickable at point because another element <div class="..."> obscures it"
+      await nativeClick(driver, await elements.passwordlessSwitch());
       await new Promise(resolve => setTimeout(resolve, 1000));
       await (await elements.sendButton()).click();
     }
@@ -129,6 +137,8 @@ describe('Piping UI', () => {
 
       await (await elements.getMenuButton()).click();
       await (await elements.secretPathInput()).sendKeys(secretPath);
+      // NOTE: e.click() causes "Element <input id="..." type="checkbox"> is not clickable at point because another element <div class="..."> obscures it"
+      await nativeClick(driver, await elements.passwordlessSwitch());
       await new Promise(resolve => setTimeout(resolve, 1000));
       await (await elements.viewButton()).click();
 
@@ -158,6 +168,7 @@ describe('Piping UI', () => {
       defer(() => fs.rmSync(transferFilePath));
       await (await elements.fileInput()).sendKeys(path.join(sharePathInDocker, "mydata.dat"));
       await (await elements.secretPathInput()).sendKeys(secretPath);
+      await (await elements.moreOptionsButton()).click();
       // NOTE: passwordElement.click() causes "Element <input id="..." type="checkbox"> is not clickable at point because another element <div class="..."> obscures it"
       await nativeClick(driver, (await elements.passwordSwitch()));
       await (await elements.passwordInput()).sendKeys(filePassword);
@@ -173,6 +184,7 @@ describe('Piping UI', () => {
 
       await (await elements.getMenuButton()).click();
       await (await elements.secretPathInput()).sendKeys(secretPath);
+      await (await elements.moreOptionsButton()).click();
       // NOTE: passwordElement.click() causes "Element <input id="..." type="checkbox"> is not clickable at point because another element <div class="..."> obscures it"
       await nativeClick(driver, await elements.passwordSwitch());
       await (await elements.passwordInput()).sendKeys(filePassword);
@@ -206,6 +218,7 @@ describe('Piping UI', () => {
       defer(() => fs.rmSync(transferFilePath));
       await (await elements.fileInput()).sendKeys(path.join(sharePathInDocker, "myimg.png"));
       await (await elements.secretPathInput()).sendKeys(secretPath);
+      await (await elements.moreOptionsButton()).click();
       // NOTE: passwordElement.click() causes "Element <input id="..." type="checkbox"> is not clickable at point because another element <div class="..."> obscures it"
       await nativeClick(driver, (await elements.passwordSwitch()));
       await (await elements.passwordInput()).sendKeys(filePassword);
@@ -221,6 +234,7 @@ describe('Piping UI', () => {
 
       await (await elements.getMenuButton()).click();
       await (await elements.secretPathInput()).sendKeys(secretPath);
+      await (await elements.moreOptionsButton()).click();
       // NOTE: passwordElement.click() causes "Element <input id="..." type="checkbox"> is not clickable at point because another element <div class="..."> obscures it"
       await nativeClick(driver, await elements.passwordSwitch());
       await (await elements.passwordInput()).sendKeys(filePassword);
@@ -252,7 +266,7 @@ describe('Piping UI', () => {
     await (await senderElements.fileInput()).sendKeys(path.join(sharePathInDocker, "mydata.dat"));
     await (await senderElements.secretPathInput()).sendKeys(secretPath);
     // NOTE: e.click() causes "Element <input id="..." type="checkbox"> is not clickable at point because another element <div class="..."> obscures it"
-    await nativeClick(senderDriver, (await senderElements.passwordlessSwitch()));
+    await nativeClick(senderDriver, await senderElements.passwordlessSendAndVerifySwitch());
     await new Promise(resolve => setTimeout(resolve, 1000));
     await (await senderElements.sendButton()).click();
 
@@ -263,13 +277,11 @@ describe('Piping UI', () => {
 
     await (await receiverElements.getMenuButton()).click();
     await (await receiverElements.secretPathInput()).sendKeys(secretPath);
-    // NOTE: e.click() causes "Element <input id="..." type="checkbox"> is not clickable at point because another element <div class="..."> obscures it"
-    await nativeClick(receiverDriver, await receiverElements.passwordlessSwitch());
     await new Promise(resolve => setTimeout(resolve, 1000));
     await (await receiverElements.downloadButton()).click();
 
     await new Promise(resolve => setTimeout(resolve, 2000));
-    await (await senderElements.verifySendButton0()).click();
+    await (await senderElements.passwordlessVerifiedButton0()).click();
 
     const downloadedFilePath = path.join(downloadPath, secretPath);
     await waitForDownload(downloadedFilePath);
@@ -296,7 +308,7 @@ describe('Piping UI', () => {
     await (await senderElements.fileInput()).sendKeys(path.join(sharePathInDocker, "myimg.png"));
     await (await senderElements.secretPathInput()).sendKeys(secretPath);
     // NOTE: e.click() causes "Element <input id="..." type="checkbox"> is not clickable at point because another element <div class="..."> obscures it"
-    await nativeClick(senderDriver, (await senderElements.passwordlessSwitch()));
+    await nativeClick(senderDriver, await senderElements.passwordlessSendAndVerifySwitch());
     await new Promise(resolve => setTimeout(resolve, 1000));
     await (await senderElements.sendButton()).click();
 
@@ -307,13 +319,11 @@ describe('Piping UI', () => {
 
     await (await receiverElements.getMenuButton()).click();
     await (await receiverElements.secretPathInput()).sendKeys(secretPath);
-    // NOTE: e.click() causes "Element <input id="..." type="checkbox"> is not clickable at point because another element <div class="..."> obscures it"
-    await nativeClick(receiverDriver, await receiverElements.passwordlessSwitch());
     await new Promise(resolve => setTimeout(resolve, 1000));
     await (await receiverElements.viewButton()).click();
 
     await new Promise(resolve => setTimeout(resolve, 2000));
-    await (await senderElements.verifySendButton0()).click();
+    await (await senderElements.passwordlessVerifiedButton0()).click();
 
     const imageBlobUrl = await (await waitFor(() => receiverElements.image0InView())).getAttribute("src");
     const shownFileContent = await getBufferByBlobUrl(receiverDriver, imageBlobUrl);

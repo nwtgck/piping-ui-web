@@ -22,12 +22,12 @@
         <v-layout>
           <v-flex xs6>
             <v-btn :color="canceled ? 'grey' : 'success'"
-                   :disabled="canceled"
+                   :disabled="composedProps.protection.alwaysSendVerify || canceled"
                    @click="verify(true)"
                    block
-                   data-testid="verify_and_send_button">
+                   data-testid="passwordless_verified_button">
               <v-icon left dark>{{ icons.mdiCheck }}</v-icon>
-              {{ strings['verify_and_send'] }}
+              {{ strings['passwordless_verified'] }}
             </v-btn>
           </v-flex>
           <v-flex xs6>
@@ -249,6 +249,9 @@ onMounted(async () => {
       }
       const {key, verificationCode} = keyExchangeRes;
       verificationStep.value = {type: 'verification_code_arrived', verificationCode, key};
+      if (props.composedProps.protection.alwaysSendVerify) {
+        await verify(true);
+      }
       break;
     }
   }

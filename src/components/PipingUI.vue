@@ -106,17 +106,26 @@
             <v-switch :input-value="protectionType === 'passwordless'"
                       @change="onEnablePasswordlessProtection"
                       inset
-                      color="blue"
-                      class="ma-0 pa-0"
-                      data-testid="passwordless_switch">
+                      data-testid="passwordless_switch"
+                      style="margin-right: 2.5rem;">
               <template v-slot:label>
                 <v-icon class="icon-and-text-margin" :color="protectionType === 'passwordless' ? 'blue' : ''">{{ icons.mdiShieldHalfFull }}</v-icon>
                 {{ strings?.['passwordless_protection'] }}
               </template>
             </v-switch>
+
+            <v-switch v-if="sendOrGet === 'send' && protectionType === 'passwordless'"
+                      v-model="passwordlessSendAndVerify"
+                      inset
+                      data-testid="passwordless_send_and_verify_switch">
+              <template v-slot:label>
+                <v-icon class="icon-and-text-margin" :color="passwordlessSendAndVerify ? 'blue' : ''">{{ icons.mdiShieldCheck }}</v-icon>
+                {{ strings?.['passwordless_verify_and_send'] }}
+              </template>
+            </v-switch>
           </v-row>
 
-          <v-row align="center" class="ma-0" style="padding-top: 0.5em;">
+          <v-row v-if='showsMoreOptions' align="center" class="ma-0" style="padding-top: 0.5em;">
             <v-switch :input-value="protectionType === 'password'"
                       @change="onEnablePasswordProtection"
                       inset
@@ -141,6 +150,13 @@
                           data-testid="password_input" />
           </v-row>
         </v-col>
+
+        <v-btn @click="showsMoreOptions = !showsMoreOptions" depressed plain style="margin-bottom: 1rem; text-transform: none" data-testid="more_options_button">
+          <v-icon left dark>
+            {{ showsMoreOptions ? icons.mdiCollapseAll : icons.mdiExpandAll }}
+          </v-icon>
+          {{ showsMoreOptions ? strings?.['hide_options'] : strings?.['more_options'] }}
+        </v-btn>
 
         <div style="margin-top: 1.2em;">
           <v-btn v-if="sendOrGet === 'send'"
@@ -217,7 +233,7 @@ import {type DataDownloaderProps} from "@/components/DataDownloader.vue";
 // NOTE: Use `const FilePond = () => import('vue-filepond').then(vueFilePond => vueFilePond.default())` and <file-pond> in template causes "[Vue warn]: Failed to mount component: template or render function not defined."
 const FilePondWrapper = () => import("@/components/FilePondWrapper.vue");
 import * as t from 'io-ts';
-import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiClose, mdiEye, mdiEyeOff, mdiKey, mdiShieldHalfFull, mdiText} from "@mdi/js";
+import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiClose, mdiEye, mdiEyeOff, mdiKey, mdiShieldHalfFull, mdiText, mdiShieldCheck, mdiExpandAll, mdiCollapseAll} from "@mdi/js";
 
 import {keys} from "@/local-storage-keys";
 import {strings} from "@/strings/strings";
@@ -275,9 +291,11 @@ const inputText = ref<string>((() => {
 const files = ref<FilePondFile[]>([]);
 const serverUrlHistory = ref<string[]>([]);
 const secretPathHistory = ref<string[]>([]);
-const protectionType = ref<Protection["type"]>('raw');
+const protectionType = ref<Protection["type"]>('passwordless');
 const password = ref<string>('');
 const showsPassword = ref<boolean>(false);
+const passwordlessSendAndVerify = ref<boolean>(false);
+const showsMoreOptions = ref<boolean>(false);
 
 // Random strings for suggested secret paths
 const randomStrs = ref<string[]>([
@@ -314,6 +332,9 @@ const icons = {
   mdiKey,
   mdiShieldHalfFull,
   mdiText,
+  mdiShieldCheck,
+  mdiExpandAll,
+  mdiCollapseAll,
 };
 
 // FIXME: Should be removed
@@ -364,7 +385,7 @@ const protection = computed<Protection>(() => {
   switch (protectionType.value) {
     case 'raw':
     case 'passwordless':
-      return {type: protectionType.value};
+      return {type: protectionType.value, alwaysSendVerify: !passwordlessSendAndVerify.value};
     case 'password':
       return {type: protectionType.value, password: password.value};
   }

@@ -11,6 +11,7 @@ type PasswordProtection = {
 // Password-inputless protection
 type PasswordlessProtection = {
   type: 'passwordless',
+  alwaysSendVerify: boolean,
 };
 
 const rsaOtherPrimesInfoType = t.partial({
