@@ -151,7 +151,7 @@
           </v-row>
         </v-col>
 
-        <v-btn @click="showsMoreOptions = !showsMoreOptions" depressed style="margin-bottom: 1rem; text-transform: none">
+        <v-btn @click="showsMoreOptions = !showsMoreOptions" depressed style="margin-bottom: 1rem; text-transform: none" data-testid="more_options_button">
           <v-icon left dark>
             {{ showsMoreOptions ? icons.mdiCollapseAll : icons.mdiExpandAll }}
           </v-icon>
