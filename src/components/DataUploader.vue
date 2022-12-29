@@ -69,7 +69,7 @@
           <span>{{ `${progressSetting.loadedBytes}${ progressSetting.totalBytes === undefined ? "" : ` of ${progressSetting.totalBytes}` }` }}</span>
         </v-tooltip>
         <!-- Upload progress bar -->
-        <v-progress-linear :value="progressPercentage" :color="canceled ? 'grey' : undefined"/>
+        <v-progress-linear :value="progressPercentage" :color="canceled ? 'grey' : undefined" :indeterminate="!canceled && progressSetting.totalBytes === undefined"/>
       </div>
 
       <v-simple-table class="text-left">
@@ -456,6 +456,7 @@ function getReadableStreamWithProgress(baseStream: ReadableStream<Uint8Array>, b
       const res = await reader.read();
       if (res.done) {
         ctrl.close();
+        progressSetting.value.totalBytes = progressSetting.value.loadedBytes;
         return;
       }
       progressSetting.value.loadedBytes += res.value.byteLength;
