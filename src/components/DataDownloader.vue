@@ -64,6 +64,7 @@ import {canTransferReadableStream} from "@/utils/canTransferReadableStream";
 import {makePromise} from "@/utils/makePromise";
 import {useErrorMessage} from "@/useErrorMessage";
 import {strings} from "@/strings/strings";
+import {ecdsaP384SigningKeyPairPromise} from "@/signing-key";
 
 const FileSaverAsync = () => import('file-saver').then(p => p.default);
 const swDownloadAsync = () => import("@/sw-download");
@@ -114,6 +115,7 @@ onMounted(async () => {
       props.composedProps.serverUrl,
       props.composedProps.secretPath,
       props.composedProps.protection,
+      await ecdsaP384SigningKeyPairPromise.value,
       (step: VerificationStep) => {
         verificationStep.value = step;
       },
@@ -164,14 +166,14 @@ onMounted(async () => {
 
     let encryptedStream: ReadableStream<Uint8Array>;
     // Passwordless transfer always uses Piping UI Robust
-    if (props.composedProps.protection.type === "passwordless") {
+    if (keyExchangeRes.protectionType === "passwordless") {
       const abortController = new AbortController();
       canceledPromise.then(() => {
         abortController.abort();
       });
       encryptedStream = pipingUiRobust.receiveReadableStream(
         props.composedProps.serverUrl,
-        encodeURI(props.composedProps.secretPath),
+        keyExchangeRes.mainPath,
         { abortSignal: abortController.signal },
       );
     } else {
@@ -203,7 +205,7 @@ onMounted(async () => {
   let readableStream: ReadableStream;
   let contentLengthStr: string | undefined = undefined;
   // Passwordless transfer always uses Piping UI Robust
-  if (props.composedProps.protection.type === "passwordless") {
+  if (keyExchangeRes.protectionType === "passwordless") {
     const abortController = new AbortController();
     canceledPromise.then(() => {
       abortController.abort();
@@ -211,7 +213,7 @@ onMounted(async () => {
     // TODO: notify when canceled because Piping UI Robust on sender side keeps sending
     readableStream = pipingUiRobust.receiveReadableStream(
       props.composedProps.serverUrl,
-      encodeURI(props.composedProps.secretPath),
+      keyExchangeRes.mainPath,
       { abortSignal: abortController.signal },
     );
   } else {

@@ -42,11 +42,13 @@ export const ja: Strings = {
       case "receive_failed":
         return '受信に失敗しました。転送パスを変更すると受信できる可能性があります。';
       case "invalid_parcel_format":
-        return 'パーセルのフォーマットが不正です。';
+        return '鍵交換のフォーマットが不正です。';
       case "different_key_exchange_version":
         return '鍵交換のバージョンが異なります。このアプリを更新するか通信相手のアプリを更新してください。';
-      case "invalid_v1_parcel_format":
-        return "V1のパーセルとして不正なフォーマットです。"
+      case "payload_not_verified":
+        return "鍵交換のペイロードが改竄された可能性があります。";
+      case "invalid_v3_parcel_format":
+        return "V3のパーセルとして不正なフォーマットです。";
     }
   },
   sender_not_verified: '送信者が拒否しました',
