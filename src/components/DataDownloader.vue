@@ -166,10 +166,7 @@ onMounted(async () => {
 
     let encryptedStream: ReadableStream<Uint8Array>;
     // Passwordless transfer always uses Piping UI Robust
-    if (props.composedProps.protection.type === "passwordless") {
-      if (!("mainPath" in keyExchangeRes)) {
-        throw new Error(`invalid condition. mainPath should be contained in ${JSON.stringify(keyExchangeRes)}`);
-      }
+    if (keyExchangeRes.protectionType === "passwordless") {
       const abortController = new AbortController();
       canceledPromise.then(() => {
         abortController.abort();
@@ -208,10 +205,7 @@ onMounted(async () => {
   let readableStream: ReadableStream;
   let contentLengthStr: string | undefined = undefined;
   // Passwordless transfer always uses Piping UI Robust
-  if (props.composedProps.protection.type === "passwordless") {
-    if (!("mainPath" in keyExchangeRes)) {
-      throw new Error(`invalid condition. mainPath should be contained in ${JSON.stringify(keyExchangeRes)}`);
-    }
+  if (keyExchangeRes.protectionType === "passwordless") {
     const abortController = new AbortController();
     canceledPromise.then(() => {
       abortController.abort();

@@ -340,10 +340,7 @@ onMounted(async () => {
   const {key} = keyExchangeRes;
 
   let rawStream: ReadableStream<Uint8Array>;
-  if (props.composedProps.protection.type === "passwordless") {
-    if (!("mainPath" in keyExchangeRes)) {
-      throw new Error(`invalid condition. mainPath should be contained in ${JSON.stringify(keyExchangeRes)}`);
-    }
+  if (keyExchangeRes.protectionType === "passwordless") {
     const abortController = new AbortController();
     canceledPromise.then(() => {
       abortController.abort();

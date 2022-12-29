@@ -227,8 +227,9 @@ type KeyExchangeAndReceiveVerifiedError =
 
 export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPath: string, protection: Protection, signingKeyPair: CryptoKeyPair, setVerificationStep: (step: VerificationStep) => void, canceledPromise: Promise<void>):
   Promise<
-    {type: 'key', key: string | undefined} |
-    {type: 'key', key: Uint8Array, mainPath: string, verificationCode: string} |
+    {type: 'key', protectionType: 'raw', key: undefined } |
+    {type: 'key', protectionType: 'password', key: string} |
+    {type: 'key', protectionType: 'passwordless', key: Uint8Array, mainPath: string, verificationCode: string} |
     {type: 'error', error: KeyExchangeAndReceiveVerifiedError } |
     {type: 'canceled' }
   > {
@@ -236,11 +237,13 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
     case 'raw':
       return {
         type: 'key',
+        protectionType: 'raw',
         key: undefined,
       };
     case 'password':
       return {
         type: 'key',
+        protectionType: 'password',
         key: protection.password,
       };
     case 'passwordless': {
@@ -305,6 +308,7 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
       return {
         type: 'key',
         key,
+        protectionType: 'passwordless',
         mainPath,
         verificationCode,
       };
