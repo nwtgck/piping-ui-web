@@ -243,21 +243,13 @@ import buildConstants from "@/build-constants";
 import {baseAndExt} from "@/utils/baseAndExt";
 import {recordsServerUrlHistory} from "@/settings/recordsServerUrlHistory";
 import {recordsSecretPathHistory} from "@/settings/recordsSecretPathHistory";
+import {loadLocalStorageWithValidation} from "@/utils/loadLocalStorageWithValidation";
+import {secretPathHistory} from "@/settings/secretPathHistory";
 
 const defaultServerUrls: ReadonlyArray<string> = buildConstants.pipingServerUrls;
 
 function normalizeUrl(url: string): string {
   return new URL(url).href;
-}
-
-// Load from local storage with validation
-function loadLocalStorage<T>(typeC: t.Type<T>, key: string): T | undefined {
-  const item: string | null = window.localStorage.getItem(key);
-  if (item !== null) {
-    const either = typeC.decode(JSON.parse(item));
-    if (either._tag === 'Left') return undefined;
-    return either.right;
-  }
 }
 
 const chars = {
@@ -292,7 +284,6 @@ const inputText = ref<string>((() => {
 })());
 const files = ref<FilePondFile[]>([]);
 const serverUrlHistory = ref<string[]>([]);
-const secretPathHistory = ref<string[]>([]);
 const protectionType = ref<Protection["type"]>('passwordless');
 const password = ref<string>('');
 const showsPassword = ref<boolean>(false);
@@ -430,7 +421,7 @@ onMounted(() => {
   });
 
   // Load server URL history from local storage
-  const savedServerUrlHistory: string[] | undefined = loadLocalStorage(t.array(t.string), keys.serverUrlHistory);
+  const savedServerUrlHistory: string[] | undefined = loadLocalStorageWithValidation(t.array(t.string), keys.serverUrlHistory);
   // If none
   if (savedServerUrlHistory === undefined) {
     // Set default
@@ -438,12 +429,6 @@ onMounted(() => {
   } else {
     // Load from storage
     serverUrlHistory.value = savedServerUrlHistory;
-  }
-
-  // Load server URL history from local storage
-  const savedSecretPathHistory: string[] | undefined = loadLocalStorage(t.array(t.string), keys.secretPathHistory);
-  if (savedSecretPathHistory !== undefined) {
-    secretPathHistory.value = savedSecretPathHistory;
   }
 
   preloadForUserExperience();
@@ -532,20 +517,20 @@ async function send() {
   if (recordsSecretPathHistory.value) {
     // Add secret path
     addSecretPath();
-    // Save to local storage
-    window.localStorage.setItem(keys.secretPathHistory, JSON.stringify(secretPathHistory.value));
   }
 }
 
 // Add secret path: latest-used path is the top
 function addSecretPath(): void {
+  const tmpHistory = secretPathHistory.value.slice();
   // Remove element
-  const idx = secretPathHistory.value.indexOf(secretPath.value);
+  const idx = tmpHistory.indexOf(secretPath.value);
   if (idx !== -1) {
-    secretPathHistory.value.splice(idx, 1);
+    tmpHistory.splice(idx, 1);
   }
   // Enrol secret path
-  secretPathHistory.value.unshift(secretPath.value);
+  tmpHistory.unshift(secretPath.value);
+  secretPathHistory.value = tmpHistory;
 }
 
 // NOTE: Some file types are displayed inline
@@ -646,8 +631,6 @@ function deleteServerUrl(url: string): void {
 function deleteSecretPath(path: string): void {
   // Remove path
   secretPathHistory.value = secretPathHistory.value.filter(p => p !== path);
-  // Save to local storage
-  window.localStorage.setItem(keys.secretPathHistory, JSON.stringify(secretPathHistory.value));
 }
 </script>
 
