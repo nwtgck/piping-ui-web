@@ -2,7 +2,7 @@ import JSZip from "jszip";
 import {baseAndExt} from "@/utils/baseAndExt";
 import {type ActualFileObject} from "filepond";
 
-export async function zipFilesAsBlob(files: ActualFileObject[]): Promise<Blob> {
+export async function zipFilesAsBlob(files: readonly File[]): Promise<Blob> {
   const zip = new JSZip();
   // NOTE: Should not be null because it is new folder
   const directory = zip.folder('files')!;

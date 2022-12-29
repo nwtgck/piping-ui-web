@@ -36,3 +36,9 @@ export default Vue.extend({
   }
 });
 </script>
+
+<style>
+.filepond--root .filepond--drop-label {
+  min-height: 6rem;
+}
+</style>

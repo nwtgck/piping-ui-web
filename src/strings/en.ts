@@ -28,7 +28,7 @@ export const en = {
   hide_options: 'Hide options',
   view: 'View',
   download: 'Download',
-  error_file_not_selected: 'Error: File not selected',
+  error_input_file_or_text: 'Error: Input files or text',
   error_secret_path_not_specified: 'Error: Secret path not specified',
   upload: 'Upload',
   waiting_for_receiver: 'Waiting for receiver...',

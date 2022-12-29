@@ -29,7 +29,7 @@ export const ja: Strings = {
   hide_options: 'オプション非表示',
   view: '見る',
   download: 'ダウンロード',
-  error_file_not_selected: 'エラー: ファイルが選択されていません',
+  error_input_file_or_text: 'エラー: ファイルを選択するかテキストを入力してください',
   error_secret_path_not_specified: 'エラー: 転送パスが指定されていません',
   upload: 'アップロード',
   waiting_for_receiver: '受信者を待機中...',

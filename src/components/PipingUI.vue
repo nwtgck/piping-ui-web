@@ -16,27 +16,19 @@
           </v-btn-toggle>
         </div>
 
-        <div v-show="sendOrGet === 'send'">
-          <div :class="`d-flex justify-end`">
-            <v-switch
-                    inset
-                    v-model="isTextMode">
-              <template v-slot:label>
-                <v-icon class="icon-and-text-margin">{{ mdiText }}</v-icon>
-                {{ strings?.['text_mode'] }}
-              </template>
-            </v-switch>
-          </div>
-          <file-pond-wrapper v-if="!isTextMode"
-                             v-model="files"
+        <div v-show="sendOrGet === 'send'" style="margin-top: 1.2rem;">
+          <file-pond-wrapper v-if="true"
+                             v-model="inputFiles"
                              :label-idle="filePondLabelIdle"
                              data-testid="file_input"
           />
-          <v-textarea v-if="isTextMode"
+          <v-textarea v-if="true"
                       :label="strings?.['text_placeholder']"
                       v-model="inputText"
                       clearable
                       :clear-icon="mdiClose"
+                      rows="2"
+                      auto-grow
                       outlined
           ></v-textarea>
         </div>
@@ -158,12 +150,13 @@
           {{ showsMoreOptions ? strings?.['hide_options'] : strings?.['more_options'] }}
         </v-btn>
 
-        <div style="margin-top: 1.2em;">
+        <div>
           <v-btn v-if="sendOrGet === 'send'"
                  color="primary"
                  v-on:click="send()"
                  block
-                 data-testid="send_button">
+                 data-testid="send_button"
+                 style="height: 3.5rem;">
             {{ strings?.['send'] }}
             <v-icon right dark>{{ mdiUpload }}</v-icon>
           </v-btn>
@@ -173,7 +166,8 @@
                      dark
                      @click="view()"
                      block
-                     data-testid="view_button">
+                     data-testid="view_button"
+                     style="height: 3.5rem;">
                 {{ strings?.['view'] }}
                 <v-icon right dark>{{ mdiFileFind }}</v-icon>
               </v-btn>
@@ -183,7 +177,8 @@
                      @click="get()"
                      dark
                      block
-                     data-testid="download_button">
+                     data-testid="download_button"
+                     style="height: 3.5rem;">
                 {{ strings?.['download'] }}
                 <v-icon right dark>{{ mdiDownload }}</v-icon>
               </v-btn>
@@ -233,14 +228,13 @@ import {type DataDownloaderProps} from "@/components/DataDownloader.vue";
 // NOTE: Use `const FilePond = () => import('vue-filepond').then(vueFilePond => vueFilePond.default())` and <file-pond> in template causes "[Vue warn]: Failed to mount component: template or render function not defined."
 const FilePondWrapper = () => import("@/components/FilePondWrapper.vue");
 import * as t from 'io-ts';
-import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiClose, mdiEye, mdiEyeOff, mdiKey, mdiShieldHalfFull, mdiText, mdiShieldCheck, mdiExpandAll, mdiCollapseAll} from "@mdi/js";
+import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiClose, mdiEye, mdiEyeOff, mdiKey, mdiShieldHalfFull, mdiShieldCheck, mdiExpandAll, mdiCollapseAll} from "@mdi/js";
 
 import {keys} from "@/local-storage-keys";
 import {strings} from "@/strings/strings";
-import {type FilePondFile, type ActualFileObject} from "filepond";
+import {type FilePondFile} from "filepond";
 import {type Protection} from "@/datatypes";
 import buildConstants from "@/build-constants";
-import {baseAndExt} from "@/utils/baseAndExt";
 import {recordsServerUrlHistory} from "@/settings/recordsServerUrlHistory";
 import {recordsSecretPathHistory} from "@/settings/recordsSecretPathHistory";
 import {loadLocalStorageWithValidation} from "@/utils/loadLocalStorageWithValidation";
@@ -277,12 +271,11 @@ const sendOrGet = ref<'send' | 'get'>('send');
 const serverUrl = ref<string>(defaultServerUrls[0]);
 const initialSecretPath = randomStr(4, chars.numbers);
 const secretPath = ref<string>(initialSecretPath);
-const isTextMode = ref<boolean>(getShareTargetText() !== null);
 const inputText = ref<string>((() => {
   const shareTargetText = getShareTargetText();
   return shareTargetText === null ? '' :  shareTargetText;
 })());
-const files = ref<FilePondFile[]>([]);
+const inputFiles = ref<FilePondFile[]>([]);
 const serverUrlHistory = ref<string[]>([]);
 const protectionType = ref<Protection["type"]>('passwordless');
 const password = ref<string>('');
@@ -347,7 +340,7 @@ const filePondLabelIdle = computed<string | undefined>(() => {
     return undefined;
   }
   // If files are nothing
-  if (files.value.length === 0) {
+  if (inputFiles.value.length === 0) {
     // Hint with file icon
     return `<img src='img/file-icon.svg' style='width: 2em'><br>${strings.value['drop_a_file_here_or_browse']}`;
   } else {
@@ -378,7 +371,7 @@ function updateRandomStrs() {
 
 const suggestedSecretPaths = computed<string[]>(() => {
   const candidates: string[] = (() => {
-    if ((!isTextMode.value && files.value.length === 0) || (isTextMode.value && inputText.value === '')) {
+    if (inputFiles.value.length === 0 && inputText.value === '') {
       // NOTE: This is for simplicity of UI
       //       Not show suggested secret path on initial status
       return [];
@@ -468,9 +461,9 @@ async function send() {
   }
   applyLatestServerUrlAndSecretPath();
 
-  if (!isTextMode.value && files.value.length === 0) {
+  if (inputText.value === '' && inputFiles.value.length === 0) {
     // Show error message
-    showSnackbar(strings.value['error_file_not_selected']);
+    showSnackbar(strings.value['error_input_file_or_text']);
     return;
   }
   // If secret path is empty
@@ -487,7 +480,16 @@ async function send() {
     return;
   }
 
-  const body: ActualFileObject[] | string = isTextMode.value ? inputText.value : files.value.map(f => f.file);
+  const files: File[] = inputFiles.value.map(f => new File([f.file], f.file.name, f.file));
+  const body: File[] | string = (() => {
+    if (inputFiles.value.length === 0) {
+      return inputText.value;
+    }
+    if (inputText.value !== '') {
+      return [new File([inputText.value], "input.txt", { type: 'text/plain' }), ...files];
+    }
+    return files;
+  })();
 
   // Increment upload counter
   uploadCount.value++;

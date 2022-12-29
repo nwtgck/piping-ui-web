@@ -106,12 +106,11 @@
 
 </template>
 <script lang="ts">
-import {type ActualFileObject} from "filepond";
 import {type Protection} from "@/datatypes";
 
 export type DataUploaderProps = {
   uploadNo: number,
-  data: ActualFileObject[] | string,
+  data: File[] | string,
   serverUrl: string,
   secretPath: string,
   protection: Protection,
@@ -312,7 +311,7 @@ async function verify(verified: boolean) {
 }
 
 async function makePlainBody() {
-  const data: ActualFileObject[] | string = props.composedProps.data;
+  const data: File[] | string = props.composedProps.data;
   // Text
   if (typeof data === "string") {
     return new Blob([data]);
@@ -321,7 +320,7 @@ async function makePlainBody() {
     return data[0];
     // Multiple files
   } else {
-    const files: ActualFileObject[] = data;
+    const files: File[] = data;
     isCompressing.value = true;
     // Zip files
     const zipBlob: Blob = await zipFilesAsBlob(files);
