@@ -87,7 +87,7 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
   ) as JsonWebKey & {kty: 'EC'};
   const payloadJson: keyExchangeParcelPayloadType = {
     publicEncryptJwk,
-    pathFactor: uint8ArrayToHexString(new Uint8Array(await crypto.subtle.digest('SHA-256', crypto.getRandomValues(new Uint8Array(32))))),
+    mainPathFactor: uint8ArrayToHexString(new Uint8Array(await crypto.subtle.digest('SHA-256', crypto.getRandomValues(new Uint8Array(32))))),
   };
   const payload = JSON.stringify(payloadJson);
   const signature = await window.crypto.subtle.sign(
@@ -190,7 +190,7 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
     encryptKeyPair.privateKey,
     KEY_BITS,
   );
-  const mainPath = await generateMainPath(payloadJson.pathFactor, peerKeyExchangePayload.pathFactor);
+  const mainPath = await generateMainPath(payloadJson.mainPathFactor, peerKeyExchangePayload.mainPathFactor);
   const verificationCode = await generateVerificationCode(publicSigningJwk, peerKeyExchangeV3.publicSigningJwk);
   return {
     type: 'key',
@@ -200,8 +200,8 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
   };
 }
 
-async function generateMainPath(pathFactor1: string, pathFactor2: string) {
-  const factors = [pathFactor1, pathFactor2];
+async function generateMainPath(mainPathFactor1: string, mainPathFactor2: string) {
+  const factors = [mainPathFactor1, mainPathFactor2];
   const sha256: ArrayBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(factors.sort().join('-')));
   return uint8ArrayToBase64(new Uint8Array(sha256).slice(0, 16)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
 }

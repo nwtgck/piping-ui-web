@@ -62,7 +62,7 @@ export const keyExchangeParcelPayloadType = t.type({
   // Public encryption JWK
   publicEncryptJwk: ecJsonWebKeyType,
   // For mitigating path collision
-  pathFactor: t.string,
+  mainPathFactor: t.string,
 });
 export type keyExchangeParcelPayloadType = t.TypeOf<typeof keyExchangeParcelPayloadType>;
 
