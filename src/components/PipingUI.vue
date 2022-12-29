@@ -263,6 +263,7 @@ function loadLocalStorage<T>(typeC: t.Type<T>, key: string): T | undefined {
 const chars = {
   nonConfusing: ["a", "b", "c", "d", "e", "f", "h", "i", "j", "k", "m", "n", "p", "r", "s", "t", "u", "v", "w", "x", "y", "z", "2", "3", "4", "5", "6", "7", "8"],
   alphanum: ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+  numbers: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
 };
 
 function randomStr(len: number, chars: ReadonlyArray<string>){
@@ -282,7 +283,8 @@ const secret_path_ref = ref<Vue>();
 const sendOrGet = ref<'send' | 'get'>('send');
 
 const serverUrl = ref<string>(defaultServerUrls[0]);
-const secretPath = ref<string>("");
+const initialSecretPath = randomStr(4, chars.numbers);
+const secretPath = ref<string>(initialSecretPath);
 const isTextMode = ref<boolean>(getShareTargetText() !== null);
 const inputText = ref<string>((() => {
   const shareTargetText = getShareTargetText();
@@ -376,7 +378,11 @@ const protection = computed<Protection>(() => {
 });
 
 function updateRandomStrs() {
-  randomStrs.value[0] = randomStr(3, chars.nonConfusing);
+  randomStrs.value = [
+    initialSecretPath,
+    randomStr(5, chars.numbers),
+    randomStr(6, chars.numbers),
+  ];
 }
 
 const suggestedSecretPaths = computed<string[]>(() => {
@@ -385,29 +391,8 @@ const suggestedSecretPaths = computed<string[]>(() => {
       // NOTE: This is for simplicity of UI
       //       Not show suggested secret path on initial status
       return [];
-    } else if (isTextMode.value) {
-      return [...randomStrs.value.map(s => `${s}.txt`), ...randomStrs.value];
-    } else if (files.value.length === 1) {
-      const fileName = files.value[0].filename;
-      const {ext} = baseAndExt(fileName);
-      return [
-        fileName,
-        ...randomStrs.value.map(s => `${s}${ext}`),
-        ...randomStrs.value,
-      ];
-    } else if(files.value.length > 1) {
-      if(secretPath.value.endsWith('.zip')) {
-        return [];
-      } else {
-        return [
-          ...(secretPath.value === '' ? [] : [`${secretPath.value}.zip`]),
-          ...randomStrs.value.map(s => `${s}.zip`),
-          ...randomStrs.value,
-        ];
-      }
-    } else {
-      return randomStrs.value;
     }
+    return randomStrs.value;
   })();
 
   return candidates.filter(c => secretPath.value !== c);
