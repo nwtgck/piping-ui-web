@@ -1,8 +1,7 @@
 import JSZip from "jszip";
 import {baseAndExt} from "@/utils/baseAndExt";
-import {type ActualFileObject} from "filepond";
 
-export async function zipFilesAsBlob(files: readonly File[]): Promise<Blob> {
+export async function zipFilesAsReadableStream(files: readonly File[]): Promise<ReadableStream<Uint8Array>> {
   const zip = new JSZip();
   // NOTE: Should not be null because it is new folder
   const directory = zip.folder('files')!;
@@ -20,5 +19,15 @@ export async function zipFilesAsBlob(files: readonly File[]): Promise<Blob> {
     // Add file
     directory.file(name, file);
   }
-  return directory.generateAsync({type: "blob"});
+
+  return new ReadableStream<Uint8Array>({
+    start(ctrl) {
+      // (base: https://github.com/Stuk/jszip/issues/345#issuecomment-242940379)
+      directory.generateInternalStream({type: "uint8array"})
+        .on('data', data => ctrl.enqueue(data))
+        .on('error', err => ctrl.error(err))
+        .on('end', () => ctrl.close())
+        .resume();
+    },
+  });
 }

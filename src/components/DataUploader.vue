@@ -63,10 +63,10 @@
         <v-tooltip bottom>
           <template v-slot:activator="{ on }">
             <div style="text-align: center" v-on="on">
-              {{ readableBytesString(progressSetting.loadedBytes, 1) }} of {{ readableBytesString(progressSetting.totalBytes, 1) }}
+              {{ `${readableBytesString(progressSetting.loadedBytes, 1)}${ progressSetting.totalBytes === undefined ? "" : ` of ${readableBytesString(progressSetting.totalBytes, 1)}` }` }}
             </div>
           </template>
-          <span>{{ progressSetting.loadedBytes }} of {{ progressSetting.totalBytes }}</span>
+          <span>{{ `${progressSetting.loadedBytes}${ progressSetting.totalBytes === undefined ? "" : ` of ${progressSetting.totalBytes}` }` }}</span>
         </v-tooltip>
         <!-- Upload progress bar -->
         <v-progress-linear :value="progressPercentage" :color="canceled ? 'grey' : undefined"/>
@@ -119,11 +119,9 @@ export type DataUploaderProps = {
 
 <script setup lang="ts">
 /* eslint-disable */
-import Vue, {computed, onMounted, ref, watch} from "vue";
+import Vue, {computed, onMounted, ref} from "vue";
 import urlJoin from 'url-join';
-import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
-import {blobToReadableStream} from 'binconv/dist/src/blobToReadableStream';
-
+import {blobToReadableStream} from "binconv/dist/src/blobToReadableStream";
 import * as openPgpUtils from '@/utils/openpgp-utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
 import * as pipingUiRobust from "@/piping-ui-robust";
@@ -132,7 +130,7 @@ import type {VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import * as pipingUiAuth from "@/piping-ui-auth";
 import {readableBytesString} from "@/utils/readableBytesString";
-import {zipFilesAsBlob} from "@/utils/zipFilesAsBlob";
+import {zipFilesAsReadableStream} from "@/utils/zipFilesAsReadableStream";
 import {supportsFetchUploadStreaming} from "@/utils/supportsFetchUploadStreaming";
 import {makePromise} from "@/utils/makePromise";
 import {forceDisableStreamingUpload} from "@/settings/forceDisableStreamingUpload";
@@ -278,7 +276,7 @@ async function verify(verified: boolean) {
   pipingUiAuthVerificationCode.value = verificationCode;
 
   // If verified, send
-  const plainBody: Blob = await makePlainBody();
+  const plainBody = await makePlainBody();
 
   // Check whether fetch() upload streaming is supported
   const supportsUploadStreaming = await supportsFetchUploadStreaming(props.composedProps.serverUrl);
@@ -286,9 +284,10 @@ async function verify(verified: boolean) {
   console.log("force disable streaming upload: ", forceDisableStreamingUpload.value);
 
   // Convert plain body to ReadableStream
-  const plainStream = blobToReadableStream(plainBody);
+  const plainBodyStream: ReadableStream<Uint8Array> = plainBody.type === "zip" ? plainBody.data : blobToReadableStream(plainBody.data);
+  const plainBodySize: number | undefined = plainBody.type === "zip" ? undefined : plainBody.data.size;
   // Attach progress
-  const plainStreamWithProgress = getReadableStreamWithProgress(plainStream, plainBody.size);
+  const plainStreamWithProgress = getReadableStreamWithProgress(plainBodyStream, plainBodySize);
   // Encrypt
   const encryptedStream = await openPgpUtils.encrypt(plainStreamWithProgress, key);
 
@@ -310,30 +309,41 @@ async function verify(verified: boolean) {
   return;
 }
 
-async function makePlainBody() {
+async function makePlainBody(): Promise<{ type: 'not-zip', data: Blob } | { type: "zip", data: ReadableStream<Uint8Array> }> {
   const data: File[] | string = props.composedProps.data;
   // Text
   if (typeof data === "string") {
-    return new Blob([data]);
+    return { type: 'not-zip', data: new Blob([data]) };
     // One file
-  } else if (data.length === 1) {
-    return data[0];
-    // Multiple files
-  } else {
-    const files: File[] = data;
-    isCompressing.value = true;
-    // Zip files
-    const zipBlob: Blob = await zipFilesAsBlob(files);
-    isCompressing.value = false;
-    return zipBlob;
   }
+  if (data.length === 1) {
+    return { type: 'not-zip', data: data[0] };
+  }
+  // Multiple files
+  const files: File[] = data;
+  // Zip files
+  return {
+    type: 'zip',
+    data: await zipFilesAsReadableStream(files)
+  };
 }
 
 async function send(password: string | Uint8Array | undefined) {
-  const plainBody: Blob = await makePlainBody();
+  const plainBody = await makePlainBody();
   // If password protection is disabled
   if (password === undefined) {
-    uploadByXhr(plainBody, plainBody.size);
+    const plainBlob: Blob = await (async () => {
+      if (plainBody.type === "zip") {
+        // TODO: not convert ReadableStream to Blob
+        const stream = plainBody.data;
+        isCompressing.value = true;
+        const blob = await new Response(stream).blob();
+        isCompressing.value = false;
+        return blob;
+      }
+      return plainBody.data;
+    })();
+    uploadByXhr(plainBlob, plainBlob.size);
     return
   }
   // Check whether fetch() upload streaming is supported
@@ -341,22 +351,22 @@ async function send(password: string | Uint8Array | undefined) {
   console.log("streaming upload support: ", supportsUploadStreaming);
   console.log("force disable streaming upload: ", forceDisableStreamingUpload.value);
 
+  // Convert plain body blob to ReadableStream
+  const plainBodyStream: ReadableStream<Uint8Array> = plainBody.type === "zip" ? plainBody.data : new Response(plainBody.data).body!;
+
   // fetch() upload streaming is not supported
   if (forceDisableStreamingUpload.value || !supportsUploadStreaming) {
     isNonStreamingEncrypting.value = true;
-    // Convert plain body blob to Uint8Array
-    const plainBodyArray: Uint8Array = await blobToUint8Array(plainBody);
     // Get encrypted
-    const encrypted: Uint8Array = await openPgpUtils.encrypt(plainBodyArray, password);
+    const encryptedStream: ReadableStream<Uint8Array> = await openPgpUtils.encrypt(plainBodyStream, password);
+    const encryptedBlob: Blob = await new Response(encryptedStream).blob();
     isNonStreamingEncrypting.value = false;
-    uploadByXhr(encrypted, encrypted.byteLength);
+    uploadByXhr(encryptedBlob, encryptedBlob.size);
     return;
   }
-
-  // Convert plain body to ReadableStream
-  const plainStream = blobToReadableStream(plainBody);
+  const plainBodySize: number | undefined = plainBody.type === "zip" ? undefined : plainBody.data.size;
   // Attach progress
-  const plainStreamWithProgress = getReadableStreamWithProgress(plainStream, plainBody.size);
+  const plainStreamWithProgress = getReadableStreamWithProgress(plainBodyStream, plainBodySize);
   // Encrypt
   const encryptedStream = await openPgpUtils.encrypt(plainStreamWithProgress, password);
   const abortController = new AbortController();
@@ -425,7 +435,7 @@ function uploadByXhr(body: Blob | Uint8Array, bodyLength: number) {
   progressSetting.value.totalBytes = bodyLength;
 }
 
-function getReadableStreamWithProgress(baseStream: ReadableStream<Uint8Array>, baseLength: number): ReadableStream<Uint8Array> {
+function getReadableStreamWithProgress(baseStream: ReadableStream<Uint8Array>, baseLength: number | undefined): ReadableStream<Uint8Array> {
   const reader = baseStream.getReader();
   // Initialize progress bar
   progressSetting.value.loadedBytes = 0;

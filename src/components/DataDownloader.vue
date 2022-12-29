@@ -65,6 +65,7 @@ import {makePromise} from "@/utils/makePromise";
 import {useErrorMessage} from "@/useErrorMessage";
 import {strings} from "@/strings/strings";
 import {ecdsaP384SigningKeyPairPromise} from "@/signing-key";
+import {firstAtLeastBlobFromReadableStream} from "@/utils/firstAtLeastBlobFromReadableStream";
 
 const FileSaverAsync = () => import('file-saver').then(p => p.default);
 const swDownloadAsync = () => import("@/sw-download");
@@ -237,7 +238,9 @@ onMounted(async () => {
     }
   }
   const [readableStreamForDownload, readableStreamForFileType] = readableStream.tee();
-  const fileTypeResult = await fileType.fromStream(readableStreamForFileType);
+  // NOTE: Using fileType.fromStream() blocks download when specifying multiple large files in DataUploader.vue. (zip detection may read large bytes)
+  // NOTE: 4100 was used in FileType.minimumBytes in file-type until 13.1.2
+  const fileTypeResult = await fileType.fromBlob(await firstAtLeastBlobFromReadableStream(readableStreamForFileType, 4100));
   let fileName = props.composedProps.secretPath;
   if (fileTypeResult !== undefined && !fileName.match(/.+\..+/)) {
     fileName = `${fileName}.${fileTypeResult.ext}`;
