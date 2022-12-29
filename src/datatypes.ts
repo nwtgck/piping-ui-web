@@ -19,7 +19,7 @@ const rsaOtherPrimesInfoType = t.partial({
   r: t.string,
   t: t.string,
 });
-const jsonWebKeyType = t.partial({
+export const jsonWebKeyType = t.partial({
   alg: t.string,
   crv: t.string,
   d: t.string,
@@ -38,41 +38,9 @@ const jsonWebKeyType = t.partial({
   x: t.string,
   y: t.string,
 });
-const ecJsonWebKeyType = t.intersection([
+export const ecJsonWebKeyType = t.intersection([
   t.type({
     kty: t.literal('EC'),
   }),
   jsonWebKeyType,
 ]);
-
-export const keyExchangeParcelType = t.type({
-  version: t.number,
-});
-export type KeyExchangeParcel = t.TypeOf<typeof keyExchangeParcelType>;
-
-export const keyExchangeV3ParcelType = t.type({
-  version: t.literal(3),
-  publicSigningJwk: jsonWebKeyType,
-  payload: t.string,
-  signature: t.string,
-});
-export type KeyExchangeV3Parcel = t.TypeOf<typeof keyExchangeV3ParcelType>;
-
-export const keyExchangeParcelPayloadType = t.type({
-  // Public encryption JWK
-  publicEncryptJwk: ecJsonWebKeyType,
-  // For mitigating path collision
-  mainPathFactor: t.string,
-});
-export type keyExchangeParcelPayloadType = t.TypeOf<typeof keyExchangeParcelPayloadType>;
-
-export const verifiedParcelType = t.type({
-  verified: t.boolean,
-});
-export type VerifiedParcel = t.TypeOf<typeof verifiedParcelType>
-
-export type VerificationStep =
-  {type: 'initial'} |
-  {type: 'error'} |
-  {type: 'verification_code_arrived', mainPath: string, verificationCode: string, key: Uint8Array} |
-  {type: 'verified', verified: boolean};

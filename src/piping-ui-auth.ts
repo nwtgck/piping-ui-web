@@ -1,14 +1,4 @@
-import {
-  KeyExchangeParcel,
-  keyExchangeParcelPayloadType,
-  keyExchangeParcelType,
-  KeyExchangeV3Parcel,
-  keyExchangeV3ParcelType,
-  Protection,
-  VerificationStep,
-  VerifiedParcel,
-  verifiedParcelType
-} from "@/datatypes";
+import {ecJsonWebKeyType, jsonWebKeyType, type Protection} from "@/datatypes";
 import type {Validation} from "io-ts";
 import {sha256} from "@/utils/sha256";
 import * as openPgpUtils from "@/utils/openpgp-utils";
@@ -19,7 +9,49 @@ import {uint8ArrayToString} from 'binconv/dist/src/uint8ArrayToString';
 import {base64ToUint8Array} from 'binconv/dist/src/base64ToUint8Array';
 import {uint8ArrayToHexString} from 'binconv/dist/src/uint8ArrayToHexString';
 import urlJoin from "url-join";
+import * as t from 'io-ts';
 
+export const keyExchangeParcelType = t.type({
+  version: t.number,
+});
+export type KeyExchangeParcel = t.TypeOf<typeof keyExchangeParcelType>;
+
+export const keyExchangeV3ParcelType = t.type({
+  version: t.literal(3),
+  publicSigningJwk: jsonWebKeyType,
+  payload: t.string,
+  signature: t.string,
+});
+export type KeyExchangeV3Parcel = t.TypeOf<typeof keyExchangeV3ParcelType>;
+
+export const keyExchangeParcelPayloadType = t.type({
+  // Public encryption JWK
+  publicEncryptJwk: ecJsonWebKeyType,
+  // For mitigating path collision
+  mainPathFactor: t.string,
+});
+export type keyExchangeParcelPayloadType = t.TypeOf<typeof keyExchangeParcelPayloadType>;
+
+export const verifiedParcelType = t.type({
+  verified: t.boolean,
+  extension: t.union([t.unknown, t.undefined]),
+});
+export type VerifiedParcel = t.TypeOf<typeof verifiedParcelType>
+
+export type VerificationStep =
+  {type: 'initial'} |
+  {type: 'error'} |
+  {type: 'verification_code_arrived', mainPath: string, verificationCode: string, key: Uint8Array} |
+  {type: 'verified', verified: boolean};
+
+const verifiedExtensionType = t.union([
+  t.type({
+    version: t.literal(1),
+    mimeType: t.string,
+    fileExtension: t.string,
+  }),
+  t.undefined,
+]);
 
 async function keyExchangePath(type: 'sender' | 'receiver', secretPath: string): Promise<string> {
   return await sha256(`${secretPath}/key_exchange/${type}`);
@@ -29,9 +61,10 @@ async function verifiedPath(mainPath: string): Promise<string> {
   return await sha256(`${mainPath}/verified`);
 }
 
-export async function verify(serverUrl: string, mainPath: string, key: Uint8Array, verified: boolean, canceledPromise: Promise<void>) {
+export async function verify(serverUrl: string, mainPath: string, key: Uint8Array, verified: boolean, parcelExtension: t.TypeOf<typeof verifiedExtensionType>, canceledPromise: Promise<void>) {
   const verifiedParcel: VerifiedParcel = {
     verified,
+    extension: parcelExtension,
   };
   const encryptedVerifiedParcel = await openPgpUtils.encrypt(
     stringToUint8Array(JSON.stringify(verifiedParcel)),
@@ -222,7 +255,7 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
   Promise<
     {type: 'key', protectionType: 'raw', key: undefined } |
     {type: 'key', protectionType: 'password', key: string} |
-    {type: 'key', protectionType: 'passwordless', key: Uint8Array, mainPath: string, verificationCode: string} |
+    {type: 'key', protectionType: 'passwordless', key: Uint8Array, mainPath: string, verificationCode: string, fileType: { mimeType: string, fileExtension: string } | undefined } |
     {type: 'error', error: KeyExchangeAndReceiveVerifiedError } |
     {type: 'canceled' }
   > {
@@ -287,12 +320,19 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
           error: { code: 'key_exchange_error', keyExchangeErrorCode: 'invalid_parcel_format'},
         };
       }
-      const {verified} = verifiedParcelEither.right;
+      const {verified, extension} = verifiedParcelEither.right;
       setVerificationStep({type: 'verified', verified});
       if (!verified) {
         return {
           type: "error",
           error: { code: 'sender_not_verified' },
+        };
+      }
+      const verifiedExtensionEither = verifiedExtensionType.decode(extension);
+      if (verifiedExtensionEither._tag === "Left") {
+        return {
+          type: "error",
+          error: { code: 'key_exchange_error', keyExchangeErrorCode: 'invalid_parcel_format'},
         };
       }
       return {
@@ -301,6 +341,7 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
         protectionType: 'passwordless',
         mainPath,
         verificationCode,
+        fileType: verifiedExtensionEither.right,
       };
     }
   }

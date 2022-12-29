@@ -137,6 +137,7 @@ import {forceDisableStreamingUpload} from "@/settings/forceDisableStreamingUploa
 import {useErrorMessage} from "@/useErrorMessage";
 import {strings} from "@/strings/strings";
 import {ecdsaP384SigningKeyPairPromise} from "@/signing-key";
+import * as fileType from 'file-type/browser';
 
 const props = defineProps<{ composedProps: DataUploaderProps }>();
 
@@ -215,6 +216,35 @@ const isCancelable = computed<boolean>(() =>
   isReadyToUpload && !isDoneUpload.value && !hasError.value && !canceled.value && verificationStep.value.type !== "verification_code_arrived"
 );
 
+const makePlainBodyPromise: Promise<
+  { mimeType: undefined, fileExtension: undefined, data: Blob, zipping: false } |
+  { mimeType: string, fileExtension: string, data: Blob, zipping: false } |
+  { mimeType: "application/zip", fileExtension: "zip", data: ReadableStream<Uint8Array>, zipping: true }
+> = (async () => {
+  const data: File[] | string = props.composedProps.data;
+  // Text
+  if (typeof data === "string") {
+    return { mimeType: 'text/plain', fileExtension: "txt", data: new Blob([data]), zipping: false };
+  }
+  // One file
+  if (data.length === 1) {
+    const d = data[0];
+    const fileTypeResult = await fileType.fromBlob(d);
+    if (fileTypeResult === undefined) {
+      return { mimeType: undefined, fileExtension: undefined, data: d, zipping: false };
+    }
+    return { mimeType: fileTypeResult.mime, fileExtension: fileTypeResult.ext, data: d, zipping: false };
+  }
+  // Multiple files
+  const files: File[] = data;
+  return {
+    mimeType: "application/zip",
+    fileExtension: "zip",
+    // Zip files
+    data: await zipFilesAsReadableStream(files),
+    zipping: true,
+  };
+})();
 
 const rootElement = ref<Vue>();
 
@@ -267,16 +297,16 @@ async function verify(verified: boolean) {
   const {key, mainPath, verificationCode} = verificationStep.value;
   verificationStep.value = {type: 'verified', verified};
 
-  await pipingUiAuth.verify(props.composedProps.serverUrl, mainPath, key, verified, canceledPromise);
+  const plainBody = await makePlainBodyPromise;
+  const parcelExtension = plainBody.mimeType === undefined ? undefined : { version: 1, mimeType: plainBody.mimeType, fileExtension: plainBody.fileExtension } as const;
+  await pipingUiAuth.verify(props.composedProps.serverUrl, mainPath, key, verified, parcelExtension, canceledPromise);
 
   if (!verified) {
     return;
   }
+  // If verified, send
 
   pipingUiAuthVerificationCode.value = verificationCode;
-
-  // If verified, send
-  const plainBody = await makePlainBody();
 
   // Check whether fetch() upload streaming is supported
   const supportsUploadStreaming = await supportsFetchUploadStreaming(props.composedProps.serverUrl);
@@ -284,8 +314,8 @@ async function verify(verified: boolean) {
   console.log("force disable streaming upload: ", forceDisableStreamingUpload.value);
 
   // Convert plain body to ReadableStream
-  const plainBodyStream: ReadableStream<Uint8Array> = plainBody.type === "zip" ? plainBody.data : blobToReadableStream(plainBody.data);
-  const plainBodySize: number | undefined = plainBody.type === "zip" ? undefined : plainBody.data.size;
+  const plainBodyStream: ReadableStream<Uint8Array> = plainBody.data instanceof Blob ? blobToReadableStream(plainBody.data): plainBody.data;
+  const plainBodySize: number | undefined = plainBody.data instanceof Blob ? plainBody.data.size : undefined;
   // Attach progress
   const plainStreamWithProgress = getReadableStreamWithProgress(plainBodyStream, plainBodySize);
   // Encrypt
@@ -309,32 +339,13 @@ async function verify(verified: boolean) {
   return;
 }
 
-async function makePlainBody(): Promise<{ type: 'not-zip', data: Blob } | { type: "zip", data: ReadableStream<Uint8Array> }> {
-  const data: File[] | string = props.composedProps.data;
-  // Text
-  if (typeof data === "string") {
-    return { type: 'not-zip', data: new Blob([data]) };
-    // One file
-  }
-  if (data.length === 1) {
-    return { type: 'not-zip', data: data[0] };
-  }
-  // Multiple files
-  const files: File[] = data;
-  // Zip files
-  return {
-    type: 'zip',
-    data: await zipFilesAsReadableStream(files)
-  };
-}
-
 async function send(password: string | Uint8Array | undefined) {
-  const plainBody = await makePlainBody();
+  const plainBody = await makePlainBodyPromise;
   // If password protection is disabled
   if (password === undefined) {
     const plainBlob: Blob = await (async () => {
-      if (plainBody.type === "zip") {
-        // TODO: not convert ReadableStream to Blob
+      if (plainBody.zipping) {
+        // TODO: not convert ReadableStream to Blob and remove plainBody.zipping when not convert
         const stream = plainBody.data;
         isCompressing.value = true;
         const blob = await new Response(stream).blob();
@@ -352,7 +363,7 @@ async function send(password: string | Uint8Array | undefined) {
   console.log("force disable streaming upload: ", forceDisableStreamingUpload.value);
 
   // Convert plain body blob to ReadableStream
-  const plainBodyStream: ReadableStream<Uint8Array> = plainBody.type === "zip" ? plainBody.data : new Response(plainBody.data).body!;
+  const plainBodyStream: ReadableStream<Uint8Array> = plainBody.data instanceof Blob ? new Response(plainBody.data).body! : plainBody.data;
 
   // fetch() upload streaming is not supported
   if (forceDisableStreamingUpload.value || !supportsUploadStreaming) {
@@ -364,7 +375,7 @@ async function send(password: string | Uint8Array | undefined) {
     uploadByXhr(encryptedBlob, encryptedBlob.size);
     return;
   }
-  const plainBodySize: number | undefined = plainBody.type === "zip" ? undefined : plainBody.data.size;
+  const plainBodySize: number | undefined = plainBody.data instanceof Blob ? plainBody.data.size : undefined;
   // Attach progress
   const plainStreamWithProgress = getReadableStreamWithProgress(plainBodyStream, plainBodySize);
   // Encrypt
