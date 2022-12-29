@@ -41,11 +41,13 @@ export const en = {
       case "receive_failed":
         return 'Failed to receive. Changing the secret path may avoid the problem.';
       case "invalid_parcel_format":
-        return 'Parcel format is invalid.';
+        return 'Key exchange format is invalid.';
       case "different_key_exchange_version":
         return 'Key exchange versions are different. Please update your app or peer\'s app.'
-      case "invalid_v1_parcel_format":
-        return "Parcel is an invalid V1 parcel";
+      case "payload_not_verified":
+        return "Key exchange payload could have been tampered";
+      case "invalid_v3_parcel_format":
+        return "Parcel is an invalid V3 parcel";
     }
   },
   sender_not_verified: 'Sender not verified',

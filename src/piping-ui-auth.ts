@@ -63,7 +63,7 @@ export async function verify(serverUrl: string, mainPath: string, key: Uint8Arra
   }
 }
 
-export type KeyExchangeErrorCode = 'send_failed' | 'receive_failed' | 'invalid_parcel_format' | 'invalid_v1_parcel_format' | 'different_key_exchange_version';
+export type KeyExchangeErrorCode = 'send_failed' | 'receive_failed' | 'invalid_parcel_format' | 'payload_not_verified' | 'invalid_v3_parcel_format' | 'different_key_exchange_version';
 type KeyExchangeResult =
   {type: "key", key: Uint8Array, mainPath: string, verificationCode: string} |
   {type: "error", errorCode: KeyExchangeErrorCode} |
@@ -154,7 +154,7 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
   }
   const peerExchangeV3Either = keyExchangeV3ParcelType.decode(peerKeyExchange);
   if (peerExchangeV3Either._tag === 'Left') {
-    return {type: "error", errorCode: 'invalid_v1_parcel_format'};
+    return {type: "error", errorCode: 'invalid_v3_parcel_format'};
   }
   const peerKeyExchangeV3 = peerExchangeV3Either.right;
   const peerPublicSigningKey: CryptoKey = await crypto.subtle.importKey(
@@ -171,12 +171,11 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
     new TextEncoder().encode(peerKeyExchangeV3.payload),
   );
   if (!payloadVerified) {
-    // TODO: create new error code and use it here
-    return {type: "error", errorCode: 'invalid_v1_parcel_format'};
+    return {type: "error", errorCode: 'payload_not_verified'};
   }
   const peerKeyExchangePayloadEither = keyExchangeParcelPayloadType.decode(JSON.parse(peerKeyExchangeV3.payload));
   if (peerKeyExchangePayloadEither._tag === 'Left') {
-    return {type: "error", errorCode: 'invalid_v1_parcel_format'};
+    return {type: "error", errorCode: 'invalid_v3_parcel_format'};
   }
   const peerKeyExchangePayload = peerKeyExchangePayloadEither.right;
   const peerPublicEncryptKey = await crypto.subtle.importKey(
