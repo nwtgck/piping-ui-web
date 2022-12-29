@@ -11,16 +11,15 @@ import {
 } from "@/datatypes";
 import type {Validation} from "io-ts";
 import {sha256} from "@/utils/sha256";
+import * as openPgpUtils from "@/utils/openpgp-utils";
+import {jwkThumbprintByEncoding} from "jwk-thumbprint";
+import {stringToUint8Array} from 'binconv/dist/src/stringToUint8Array';
+import {uint8ArrayToBase64} from 'binconv/dist/src/uint8ArrayToBase64';
+import {uint8ArrayToString} from 'binconv/dist/src/uint8ArrayToString';
+import {base64ToUint8Array} from 'binconv/dist/src/base64ToUint8Array';
+import {uint8ArrayToHexString} from 'binconv/dist/src/uint8ArrayToHexString';
+import urlJoin from "url-join";
 
-const openPgpUtilsAsync = () => import("@/utils/openpgp-utils");
-
-const jwkThumbprintAsync  = () => import("jwk-thumbprint");
-const uint8ArrayToStringAsync = () => import('binconv/dist/src/uint8ArrayToString').then(p => p.uint8ArrayToString);
-const stringToUint8ArrayAsync = () => import('binconv/dist/src/stringToUint8Array').then(p => p.stringToUint8Array);
-const uint8ArrayToBase64Async = () => import('binconv/dist/src/uint8ArrayToBase64').then(p => p.uint8ArrayToBase64);
-const base64ToUint8ArrayAsync = () => import('binconv/dist/src/base64ToUint8Array').then(p => p.base64ToUint8Array);
-const uint8ArrayToHexStringAsync = () => import('binconv/dist/src/uint8ArrayToHexString').then(p => p.uint8ArrayToHexString);
-const urlJoinAsync = () => import('url-join').then(p => p.default);
 
 async function keyExchangePath(type: 'sender' | 'receiver', secretPath: string): Promise<string> {
   return await sha256(`${secretPath}/key_exchange/${type}`);
@@ -31,9 +30,6 @@ async function verifiedPath(mainPath: string): Promise<string> {
 }
 
 export async function verify(serverUrl: string, mainPath: string, key: Uint8Array, verified: boolean, canceledPromise: Promise<void>) {
-  const openPgpUtils = await openPgpUtilsAsync();
-  const urlJoin = await urlJoinAsync();
-  const stringToUint8Array = await stringToUint8ArrayAsync();
   const verifiedParcel: VerifiedParcel = {
     verified,
   };
@@ -91,7 +87,7 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
   ) as JsonWebKey & {kty: 'EC'};
   const payloadJson: keyExchangeParcelPayloadType = {
     publicEncryptJwk,
-    pathFactor: (await uint8ArrayToHexStringAsync())(new Uint8Array(await crypto.subtle.digest('SHA-256', crypto.getRandomValues(new Uint8Array(32))))),
+    pathFactor: uint8ArrayToHexString(new Uint8Array(await crypto.subtle.digest('SHA-256', crypto.getRandomValues(new Uint8Array(32))))),
   };
   const payload = JSON.stringify(payloadJson);
   const signature = await window.crypto.subtle.sign(
@@ -104,9 +100,8 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
     version: KEY_EXCHANGE_VERSION,
     publicSigningJwk,
     payload,
-    signature: (await uint8ArrayToBase64Async())(new Uint8Array(signature)),
+    signature: uint8ArrayToBase64(new Uint8Array(signature)),
   };
-  const urlJoin = await urlJoinAsync();
   const myPath = await keyExchangePath(type, secretPath);
   const peerPath = await keyExchangePath(type === 'sender' ? 'receiver' : 'sender', secretPath);
   const abortController = new AbortController();
@@ -172,7 +167,7 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
   const payloadVerified: boolean = await window.crypto.subtle.verify(
     { name: 'ECDSA', hash: { name: "SHA-384" } },
     peerPublicSigningKey,
-    (await base64ToUint8ArrayAsync())(peerKeyExchangeV3.signature),
+    base64ToUint8Array(peerKeyExchangeV3.signature),
     new TextEncoder().encode(peerKeyExchangeV3.payload),
   );
   if (!payloadVerified) {
@@ -209,11 +204,10 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
 async function generateMainPath(pathFactor1: string, pathFactor2: string) {
   const factors = [pathFactor1, pathFactor2];
   const sha256: ArrayBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(factors.sort().join('-')));
-  return (await uint8ArrayToBase64Async())(new Uint8Array(sha256).slice(0, 16)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+  return uint8ArrayToBase64(new Uint8Array(sha256).slice(0, 16)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
 }
 
 async function generateVerificationCode(publicJwk1: JsonWebKey, publicJwk2: JsonWebKey) {
-  const {jwkThumbprintByEncoding} = await jwkThumbprintAsync();
   const hashes = [
     jwkThumbprintByEncoding(publicJwk1, 'SHA-256', 'hex'),
     jwkThumbprintByEncoding(publicJwk2, 'SHA-256', 'hex'),
@@ -261,8 +255,6 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
       }
       const {key, mainPath, verificationCode} = keyExchangeRes;
       setVerificationStep({type: 'verification_code_arrived', mainPath, verificationCode, key});
-      const uint8ArrayToString = await uint8ArrayToStringAsync();
-      const urlJoin = await urlJoinAsync();
       const path = urlJoin(serverUrl, await verifiedPath(mainPath));
       const abortController = new AbortController();
       canceledPromise.then(() => {
@@ -286,9 +278,8 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
         }
         await new Promise(resolve => setTimeout(resolve, 2000));
       }
-      const utils = await openPgpUtilsAsync();
       // Decrypt body
-      const decryptedBody: Uint8Array = await utils.decrypt(encryptedVerified, key);
+      const decryptedBody: Uint8Array = await openPgpUtils.decrypt(encryptedVerified, key);
       // Parse
       const verifiedParcelEither: Validation<VerifiedParcel> = verifiedParcelType.decode(JSON.parse(uint8ArrayToString(decryptedBody)));
       if (verifiedParcelEither._tag === "Left") {
