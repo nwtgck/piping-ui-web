@@ -178,7 +178,7 @@ const FileSaverAsync = () => import('file-saver').then(p => p.default);
 const clipboardCopyAsync = () => import("clipboard-copy").then(p => p.default);
 import * as fileType from 'file-type/browser';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
-import {uint8ArrayToBlob} from 'binconv/dist/src/uint8ArrayToBlob';
+import {readableStreamToBlob} from "binconv";
 import {blobToReadableStream} from 'binconv/dist/src/blobToReadableStream';
 import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle, mdiEye, mdiEyeOff, mdiKey, mdiFeatureSearchOutline} from "@mdi/js";
 import * as pipingUiRobust from "@/piping-ui-robust";
@@ -373,21 +373,47 @@ onMounted(async () => {
       return;
     }
     const contentLengthStr = res.headers.get("Content-Length");
-    if (contentLengthStr !== null) {
+    // NOTE: Content-Length is encrypted byte size if password is defined
+    if (contentLengthStr !== null && password.value === undefined) {
       progressSetting.value.totalBytes = parseInt(contentLengthStr, 10);
     }
     rawStream = res.body!;
   }
 
-  const {stream: rawStreamWithProgress, cancel: cancelRawStreamWithProgress} = getReadableStreamWithProgress(rawStream, (n) => {
-    progressSetting.value.loadedBytes += n;
-  });
   try {
-    canceledPromise.then(() => {
-      cancelRawStreamWithProgress();
+    let rawOrDecryptedStream: ReadableStream<Uint8Array>;
+    if (key === undefined) {
+      [rawOrDecryptedStream, rawStream] = rawStream.tee();
+    } else {
+      const [streamForDecrypting, backupStream] = rawStream.tee();
+      rawStream = backupStream;
+      // Decrypt the response body
+      rawOrDecryptedStream = await openPgpUtils.decryptStream(streamForDecrypting, key);
+    }
+    const {stream: rawOrDecryptedStreamWithProgress, cancel: cancelRawOrDecryptedStreamWithProgress} = getReadableStreamWithProgress(rawOrDecryptedStream, (n) => {
+      progressSetting.value.loadedBytes += n;
     });
+    canceledPromise.then(() => {
+      cancelRawOrDecryptedStreamWithProgress();
+    });
+    blob = await new Response(rawOrDecryptedStreamWithProgress).blob();
+    if (canceled.value) {
+      return;
+    }
+    progressSetting.value.totalBytes = blob.size;
+    updateErrorMessage(undefined);
+  } catch (err) {
+    if (err instanceof Error && err.message.includes("decryption failed")) {
+      updateErrorMessage(() => strings.value?.['password_might_be_wrong']);
+      enablePasswordReinput.value = true;
+    } else {
+      updateErrorMessage(() => strings.value?.['data_viewer_body_read_error']({ error: err }));
+    }
+  }
+  try {
     // Get raw response body
-    rawBlob = await new Response(rawStreamWithProgress).blob();
+    rawBlob = await new Response(rawStream).blob();
+    isDoneDownload.value = true;
   } catch (err) {
     updateErrorMessage(() => strings.value?.['data_viewer_body_read_error']({ error: err }));
     return;
@@ -395,9 +421,8 @@ onMounted(async () => {
   if (canceled.value) {
     return;
   }
-  isDoneDownload.value = true;
-  // Decrypt and view blob if possible
-  await decryptIfNeedAndViewBlob(key);
+  // View blob if possible
+  await viewBlob();
 });
 
 async function viewBlob() {
@@ -438,29 +463,27 @@ async function decryptIfNeedAndViewBlob(password: string | Uint8Array | undefine
   blob = await (async () => {
     if (password === undefined) {
       return rawBlob;
-    } else {
-      // Get response body
-      const resBody = await blobToUint8Array(rawBlob);
-      try {
-        isDecrypting.value = true;
-        // Decrypt the response body
-        const plain = await openPgpUtils.decrypt(resBody, password);
-        enablePasswordReinput.value = false;
-        updateErrorMessage(undefined);
-        return uint8ArrayToBlob(plain);
-      } catch (err) {
-        enablePasswordReinput.value = true;
-        updateErrorMessage(() => strings.value?.['password_might_be_wrong']);
-        console.log('Decrypt error:', err);
-        return new Blob();
-      } finally {
-        isDecrypting.value = false;
-      }
+    }
+    try {
+      isDecrypting.value = true;
+      // Decrypt the response body
+      const plainStream: ReadableStream<Uint8Array> = await openPgpUtils.decryptStream(new Response(rawBlob).body!, password);
+      const plain: Blob = await readableStreamToBlob(plainStream);
+      enablePasswordReinput.value = false;
+      updateErrorMessage(() => undefined);
+      return plain;
+    } catch (err) {
+      enablePasswordReinput.value = true;
+      updateErrorMessage(() => strings.value?.['password_might_be_wrong']);
+      console.log('Decrypt error:', err);
+      return new Blob();
+    } finally {
+      isDecrypting.value = false;
     }
   })();
 
   // View blob if possible
-  viewBlob();
+  await viewBlob();
 }
 
 function viewRaw() {
