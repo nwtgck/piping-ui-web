@@ -1,5 +1,5 @@
 import {VERSION} from "@/version";
-import {type KeyExchangeErrorCode} from "@/piping-ui-auth";
+import {type KeyExchangeError} from "@/piping-ui-auth";
 import {type Strings} from "@/strings/en";
 
 const urlJoinAsync = () => import('url-join').then(p => p.default);
@@ -35,8 +35,8 @@ export const ja: Strings = {
   waiting_for_receiver: '受信者を待機中...',
   verification_code: '確認コード',
   passwordless_verified: '確認完了',
-  key_exchange_error: (errorCode: KeyExchangeErrorCode): string => {
-    switch (errorCode) {
+  key_exchange_error: (keyExchangeError: KeyExchangeError): string => {
+    switch (keyExchangeError.code) {
       case "send_failed":
         return '送信に失敗しました。転送パスを変更すると送信できる可能性があります。';
       case "receive_failed":

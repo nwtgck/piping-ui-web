@@ -96,10 +96,17 @@ export async function verify(serverUrl: string, mainPath: string, key: Uint8Arra
   }
 }
 
-export type KeyExchangeErrorCode = 'send_failed' | 'receive_failed' | 'invalid_parcel_format' | 'payload_not_verified' | 'invalid_v3_parcel_format' | 'different_key_exchange_version';
+export type KeyExchangeError =
+  { code: 'send_failed' } |
+  { code: 'receive_failed' } |
+  { code: 'invalid_parcel_format' } |
+  { code: 'payload_not_verified' } |
+  { code: 'invalid_v3_parcel_format' } |
+  { code: 'different_key_exchange_version' };
+
 type KeyExchangeResult =
   {type: "key", key: Uint8Array, mainPath: string, verificationCode: string} |
-  {type: "error", errorCode: KeyExchangeErrorCode} |
+  {type: "error", keyExchangeError: KeyExchangeError} |
   {type: "canceled"};
 
 export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver', secretPath: string, ecdsaP384SigningKeyPair: CryptoKeyPair, canceledPromise: Promise<void>): Promise<KeyExchangeResult> {
@@ -157,10 +164,10 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
     if (e.name === 'AbortError') {
       return {type: "canceled"};
     }
-    return {type: "error", errorCode: 'send_failed'};
+    return {type: "error", keyExchangeError: {code: 'send_failed'}};
   }
   if (postRes.status !== 200) {
-    return {type: "error", errorCode: 'send_failed'};
+    return {type: "error", keyExchangeError: {code: 'send_failed'}};
   }
   let peerRes: Response;
   try {
@@ -172,22 +179,22 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
     if (e.name === 'AbortError') {
       return {type: "canceled"};
     }
-    return {type: "error", errorCode: 'receive_failed'};
+    return {type: "error", keyExchangeError: {code: 'receive_failed'}};
   }
   if (peerRes.status !== 200) {
-    return {type: "error", errorCode: 'receive_failed'};
+    return {type: "error", keyExchangeError: {code: 'receive_failed'}};
   }
   const peerKeyExchangeEither: Validation<KeyExchangeParcel> = keyExchangeParcelType.decode(JSON.parse(await peerRes.text()));
   if (peerKeyExchangeEither._tag === 'Left') {
-    return {type: "error", errorCode: 'invalid_parcel_format'};
+    return {type: "error", keyExchangeError: { code: 'invalid_parcel_format' }};
   }
   const peerKeyExchange = peerKeyExchangeEither.right;
   if (KEY_EXCHANGE_VERSION !== peerKeyExchange.version) {
-    return {type: "error", errorCode: 'different_key_exchange_version'};
+    return {type: "error", keyExchangeError: {code: 'different_key_exchange_version'}};
   }
   const peerExchangeV3Either = keyExchangeV3ParcelType.decode(peerKeyExchange);
   if (peerExchangeV3Either._tag === 'Left') {
-    return {type: "error", errorCode: 'invalid_v3_parcel_format'};
+    return {type: "error", keyExchangeError: {code: 'invalid_v3_parcel_format'}};
   }
   const peerKeyExchangeV3 = peerExchangeV3Either.right;
   const peerPublicSigningKey: CryptoKey = await crypto.subtle.importKey(
@@ -204,11 +211,11 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
     new TextEncoder().encode(peerKeyExchangeV3.payload),
   );
   if (!payloadVerified) {
-    return {type: "error", errorCode: 'payload_not_verified'};
+    return {type: "error", keyExchangeError: {code: 'payload_not_verified'}};
   }
   const peerKeyExchangePayloadEither = keyExchangeParcelPayloadType.decode(JSON.parse(peerKeyExchangeV3.payload));
   if (peerKeyExchangePayloadEither._tag === 'Left') {
-    return {type: "error", errorCode: 'invalid_v3_parcel_format'};
+    return {type: "error", keyExchangeError: {code: 'invalid_v3_parcel_format'}};
   }
   const peerKeyExchangePayload = peerKeyExchangePayloadEither.right;
   const peerPublicEncryptKey = await crypto.subtle.importKey(
@@ -248,7 +255,7 @@ async function generateVerificationCode(publicJwk1: JsonWebKey, publicJwk2: Json
 }
 
 type KeyExchangeAndReceiveVerifiedError =
-  { code: 'key_exchange_error', keyExchangeErrorCode: KeyExchangeErrorCode } |
+  { code: 'key_exchange_error', keyExchangeError: KeyExchangeError } |
   { code: 'sender_not_verified' };
 
 export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPath: string, protection: Protection, signingKeyPair: CryptoKeyPair, setVerificationStep: (step: VerificationStep) => void, canceledPromise: Promise<void>):
@@ -282,7 +289,7 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
         setVerificationStep({type: 'error'});
         return {
           type: "error",
-          error: { code: 'key_exchange_error', keyExchangeErrorCode: keyExchangeRes.errorCode },
+          error: { code: 'key_exchange_error', keyExchangeError: keyExchangeRes.keyExchangeError },
         };
       }
       const {key, mainPath, verificationCode} = keyExchangeRes;
@@ -317,7 +324,7 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
       if (verifiedParcelEither._tag === "Left") {
         return {
           type: "error",
-          error: { code: 'key_exchange_error', keyExchangeErrorCode: 'invalid_parcel_format'},
+          error: { code: 'key_exchange_error', keyExchangeError: { code: 'invalid_parcel_format' }},
         };
       }
       const {verified, extension} = verifiedParcelEither.right;
@@ -332,7 +339,7 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
       if (verifiedExtensionEither._tag === "Left") {
         return {
           type: "error",
-          error: { code: 'key_exchange_error', keyExchangeErrorCode: 'invalid_parcel_format'},
+          error: { code: 'key_exchange_error', keyExchangeError: { code: 'invalid_parcel_format' }},
         };
       }
       return {

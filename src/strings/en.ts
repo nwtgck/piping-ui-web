@@ -1,5 +1,5 @@
 import {VERSION} from "@/version";
-import {type KeyExchangeErrorCode} from "@/piping-ui-auth";
+import {type KeyExchangeError} from "@/piping-ui-auth";
 
 const urlJoinAsync = () => import('url-join').then(p => p.default);
 const sanitizeHtmlAllowingATagAsync = () => import('@/utils/sanitizeHtmlAllowingATag').then(p => p.sanitizeHtmlAllowingATag);
@@ -34,8 +34,8 @@ export const en = {
   waiting_for_receiver: 'Waiting for receiver...',
   verification_code: 'Verification code',
   passwordless_verified: 'Verified',
-  key_exchange_error: (errorCode: KeyExchangeErrorCode): string => {
-    switch (errorCode) {
+  key_exchange_error: (keyExchangeError: KeyExchangeError): string => {
+    switch (keyExchangeError.code) {
       case "send_failed":
         return 'Failed to send. Changing the secret path may avoid the problem.';
       case "receive_failed":
