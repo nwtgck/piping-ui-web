@@ -372,6 +372,7 @@ async function send(password: string | Uint8Array | undefined) {
     const encryptedStream: ReadableStream<Uint8Array> = await openPgpUtils.encrypt(plainBodyStream, password);
     const encryptedBlob: Blob = await new Response(encryptedStream).blob();
     isNonStreamingEncrypting.value = false;
+    // FIXME: progress shows encrypted loaded bytes but it should show plain loaded bytes.
     uploadByXhr(encryptedBlob, encryptedBlob.size);
     return;
   }
