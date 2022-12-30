@@ -275,6 +275,12 @@ const inputText = ref<string>((() => {
   const shareTargetText = getShareTargetText();
   return shareTargetText === null ? '' :  shareTargetText;
 })());
+watch(inputText, () => {
+  // NOTE: inputText can be null after cleared
+  if (inputText.value === null) {
+    inputText.value = '';
+  }
+});
 const inputFiles = ref<FilePondFile[]>([]);
 const serverUrlHistory = ref<string[]>([]);
 const protectionType = ref<Protection["type"]>('passwordless');
