@@ -17,13 +17,12 @@
         </div>
 
         <div v-show="sendOrGet === 'send'" style="margin-top: 1.2rem;">
-          <file-pond-wrapper v-if="true"
-                             v-model="inputFiles"
+          <file-pond-wrapper v-model="inputFiles"
                              :label-idle="filePondLabelIdle"
                              data-testid="file_input"
+                             @hook:mounted="onFilePondMounted()"
           />
-          <v-textarea v-if="true"
-                      :label="strings?.['text_placeholder']"
+          <v-textarea :label="strings?.['text_placeholder']"
                       v-model="inputText"
                       clearable
                       :clear-icon="mdiClose"
@@ -429,9 +428,11 @@ onMounted(() => {
     // Load from storage
     serverUrlHistory.value = savedServerUrlHistory;
   }
-
-  preloadForUserExperience();
 });
+
+function onFilePondMounted() {
+  preloadForUserExperience();
+}
 
 function preloadForUserExperience() {
   DataUploader();
