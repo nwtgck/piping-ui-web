@@ -1,5 +1,5 @@
 import {VERSION} from "@/version";
-import {type KeyExchangeError} from "@/piping-ui-auth";
+import {KEY_EXCHANGE_VERSION, type KeyExchangeError} from "@/piping-ui-auth";
 
 const urlJoinAsync = () => import('url-join').then(p => p.default);
 const sanitizeHtmlAllowingATagAsync = () => import('@/utils/sanitizeHtmlAllowingATag').then(p => p.sanitizeHtmlAllowingATag);
@@ -43,7 +43,7 @@ export const en = {
       case "invalid_parcel_format":
         return 'Key exchange format is invalid.';
       case "key_exchange_version_mismatch":
-        return 'Key exchange versions are different. Please update your app or peer\'s app.'
+        return `${ KEY_EXCHANGE_VERSION < keyExchangeError.peerVersion ? "Please update your app." : "Please update peer's app." } Key exchange versions are different.`;
       case "payload_not_verified":
         return "Key exchange payload could have been tampered";
       case "invalid_v3_parcel_format":

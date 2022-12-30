@@ -102,15 +102,16 @@ export type KeyExchangeError =
   { code: 'invalid_parcel_format' } |
   { code: 'payload_not_verified' } |
   { code: 'invalid_v3_parcel_format' } |
-  { code: 'key_exchange_version_mismatch' };
+  { code: 'key_exchange_version_mismatch', peerVersion: number };
 
 type KeyExchangeResult =
   {type: "key", key: Uint8Array, mainPath: string, verificationCode: string} |
   {type: "error", keyExchangeError: KeyExchangeError} |
   {type: "canceled"};
 
+export const KEY_EXCHANGE_VERSION = 3;
+
 export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver', secretPath: string, ecdsaP384SigningKeyPair: CryptoKeyPair, canceledPromise: Promise<void>): Promise<KeyExchangeResult> {
-  const KEY_EXCHANGE_VERSION = 3;
   // 256 is max value for deriveBits()
   const KEY_BITS = 256;
   // Create ECDH key pair
@@ -190,7 +191,7 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
   }
   const peerKeyExchange = peerKeyExchangeEither.right;
   if (KEY_EXCHANGE_VERSION !== peerKeyExchange.version) {
-    return {type: "error", keyExchangeError: {code: 'key_exchange_version_mismatch'}};
+    return {type: "error", keyExchangeError: {code: 'key_exchange_version_mismatch', peerVersion: peerKeyExchange.version}};
   }
   const peerExchangeV3Either = keyExchangeV3ParcelType.decode(peerKeyExchange);
   if (peerExchangeV3Either._tag === 'Left') {

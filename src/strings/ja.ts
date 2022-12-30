@@ -1,5 +1,5 @@
 import {VERSION} from "@/version";
-import {type KeyExchangeError} from "@/piping-ui-auth";
+import {KEY_EXCHANGE_VERSION, type KeyExchangeError} from "@/piping-ui-auth";
 import {type Strings} from "@/strings/en";
 
 const urlJoinAsync = () => import('url-join').then(p => p.default);
@@ -44,7 +44,7 @@ export const ja: Strings = {
       case "invalid_parcel_format":
         return '鍵交換のフォーマットが不正です。';
       case "key_exchange_version_mismatch":
-        return '鍵交換のバージョンが異なります。このアプリを更新するか通信相手のアプリを更新してください。';
+        return `${ KEY_EXCHANGE_VERSION < keyExchangeError.peerVersion ? "このアプリを更新してください。" : "通信相手のアプリを更新してください。" }鍵交換のバージョンが異なります。`;
       case "payload_not_verified":
         return "鍵交換のペイロードが改竄された可能性があります。";
       case "invalid_v3_parcel_format":
