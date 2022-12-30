@@ -322,7 +322,7 @@ onMounted(async () => {
   if (keyExchangeRes.type === "error") {
     switch (keyExchangeRes.error.code) {
       case "key_exchange_error": {
-        const errorCode = keyExchangeRes.error.keyExchangeErrorCode;
+        const errorCode = keyExchangeRes.error.keyExchangeError;
         updateErrorMessage(() => strings.value?.["key_exchange_error"](errorCode));
         break;
       }

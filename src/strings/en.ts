@@ -1,5 +1,5 @@
 import {VERSION} from "@/version";
-import {type KeyExchangeErrorCode} from "@/piping-ui-auth";
+import {KEY_EXCHANGE_VERSION, type KeyExchangeError} from "@/piping-ui-auth";
 
 const urlJoinAsync = () => import('url-join').then(p => p.default);
 const sanitizeHtmlAllowingATagAsync = () => import('@/utils/sanitizeHtmlAllowingATag').then(p => p.sanitizeHtmlAllowingATag);
@@ -34,16 +34,16 @@ export const en = {
   waiting_for_receiver: 'Waiting for receiver...',
   verification_code: 'Verification code',
   passwordless_verified: 'Verified',
-  key_exchange_error: (errorCode: KeyExchangeErrorCode): string => {
-    switch (errorCode) {
+  key_exchange_error: (keyExchangeError: KeyExchangeError): string => {
+    switch (keyExchangeError.code) {
       case "send_failed":
         return 'Failed to send. Changing the secret path may avoid the problem.';
       case "receive_failed":
         return 'Failed to receive. Changing the secret path may avoid the problem.';
       case "invalid_parcel_format":
         return 'Key exchange format is invalid.';
-      case "different_key_exchange_version":
-        return 'Key exchange versions are different. Please update your app or peer\'s app.'
+      case "key_exchange_version_mismatch":
+        return `${ KEY_EXCHANGE_VERSION < keyExchangeError.peerVersion ? "Please update your app." : "Please update peer's app." } Key exchange versions are different.`;
       case "payload_not_verified":
         return "Key exchange payload could have been tampered";
       case "invalid_v3_parcel_format":

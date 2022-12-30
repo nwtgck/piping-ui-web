@@ -1,5 +1,5 @@
 import {VERSION} from "@/version";
-import {type KeyExchangeErrorCode} from "@/piping-ui-auth";
+import {KEY_EXCHANGE_VERSION, type KeyExchangeError} from "@/piping-ui-auth";
 import {type Strings} from "@/strings/en";
 
 const urlJoinAsync = () => import('url-join').then(p => p.default);
@@ -35,16 +35,16 @@ export const ja: Strings = {
   waiting_for_receiver: '受信者を待機中...',
   verification_code: '確認コード',
   passwordless_verified: '確認完了',
-  key_exchange_error: (errorCode: KeyExchangeErrorCode): string => {
-    switch (errorCode) {
+  key_exchange_error: (keyExchangeError: KeyExchangeError): string => {
+    switch (keyExchangeError.code) {
       case "send_failed":
         return '送信に失敗しました。転送パスを変更すると送信できる可能性があります。';
       case "receive_failed":
         return '受信に失敗しました。転送パスを変更すると受信できる可能性があります。';
       case "invalid_parcel_format":
         return '鍵交換のフォーマットが不正です。';
-      case "different_key_exchange_version":
-        return '鍵交換のバージョンが異なります。このアプリを更新するか通信相手のアプリを更新してください。';
+      case "key_exchange_version_mismatch":
+        return `${ KEY_EXCHANGE_VERSION < keyExchangeError.peerVersion ? "このアプリを更新してください。" : "通信相手のアプリを更新してください。" }鍵交換のバージョンが異なります。`;
       case "payload_not_verified":
         return "鍵交換のペイロードが改竄された可能性があります。";
       case "invalid_v3_parcel_format":

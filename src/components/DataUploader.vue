@@ -277,7 +277,7 @@ onMounted(async () => {
       }
       if (keyExchangeRes.type === 'error') {
         verificationStep.value = {type: 'error'};
-        updateErrorMessage(() => strings.value?.['key_exchange_error'](keyExchangeRes.errorCode));
+        updateErrorMessage(() => strings.value?.['key_exchange_error'](keyExchangeRes.keyExchangeError));
         return;
       }
       const {key, mainPath, verificationCode} = keyExchangeRes;
