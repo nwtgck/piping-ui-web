@@ -32,9 +32,19 @@
         {{ errorMessage }}
       </v-alert>
 
+      <v-dialog v-model="openRetryDownload" persistent max-width="290">
+        <v-card>
+          <v-card-title class="text-h5">{{ strings['retry_download_dialog_title'] }}</v-card-title>
+          <v-card-text>{{ strings['browser_may_have_blocked_download'] }}</v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="primary" text @click="openRetryDownload = false">{{ strings['retry_download_dialog_no'] }}</v-btn>
+            <v-btn color="primary" text @click="retryDownload()">{{ strings['retry_download_dialog_yes'] }}</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </v-expansion-panel-content>
   </v-expansion-panel>
-
 </template>
 
 <script lang="ts">
@@ -104,6 +114,8 @@ const downloadPath = computed<string>(() => {
 });
 const rootElement = ref<Vue>();
 const pipingUiAuthVerificationCode = ref<string | undefined>();
+const openRetryDownload = ref<boolean>(false);
+const retryDownload = ref<() => void>(() => {});
 
 // NOTE: Automatically download when mounted
 onMounted(async () => {
@@ -266,12 +278,21 @@ onMounted(async () => {
   // Enroll download ReadableStream and get sw-download ID
   const {swDownloadId} = await enrollDownload(headers, readableStreamForDownload);
   // Download via Service Worker
-  const aTag = document.createElement('a');
   // NOTE: '/sw-download/v2' can be received by Service Worker in src/sw.js
   // NOTE: URL fragment is passed to Service Worker but not passed to Web server
-  aTag.href = `/sw-download/v2#?id=${swDownloadId}`;
-  aTag.target = "_blank";
-  aTag.click();
+  const downloadUrl = `/sw-download/v2#?id=${swDownloadId}`;
+  retryDownload.value = () => {
+    const win = window.open(downloadUrl, "_blank");
+    console.log("retried window.open()?.closed =", win?.closed);
+    openRetryDownload.value = false;
+    retryDownload.value = () => {};
+  };
+  const win = window.open(downloadUrl, "_blank");
+  console.log("window.open()?.closed =", win?.closed);
+  // NOTE: Desktop and iOS Safari 16.1 blocks by default
+  if(win === null || win.closed || win.closed === undefined) {
+    openRetryDownload.value = true;
+  }
   // Without this, memory leak occurs. It consumes as much memory as the received file size.
   // Memory still leaks when using `npm run serve`. Build and serve to confirm.
   await readableStreamForFileType.cancel();
