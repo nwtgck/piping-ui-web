@@ -31,6 +31,9 @@ export const en = {
   server_url: 'Server URL',
   secret_path: 'Secret path',
   secret_path_placeholder: 'e.g. mypath374',
+  make_half_width(notHalfWidth: string) {
+    return `Make "${notHalfWidth}" half-width`;
+  },
   drop_a_file_here_or_browse: 'Drop a file here or <span class=\'filepond--label-action\'>Browse</span>',
   protect_with_password: 'Protect with password',
   passwordless_protection: 'Passwordless',

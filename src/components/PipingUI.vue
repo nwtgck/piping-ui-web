@@ -78,18 +78,28 @@
           </template>
         </v-combobox>
 
-        <!-- Secret path suggestion  -->
-        <div v-if="sendOrGet === 'send' && suggestedSecretPaths.length !== 0" style="text-align: right; margin-bottom: 1.5em;">
-          <v-chip v-for="suggestedSecretPath in suggestedSecretPaths"
-                  :key="suggestedSecretPath"
-                  @click="secretPath = suggestedSecretPath"
-                  class="ma-0 readable-font"
-                  label
-                  outlined
-                  style="font-size: 1em;"
-          >
-            {{ suggestedSecretPath }}
-          </v-chip>
+        <div style="text-align: right; margin-bottom: 1.5em;">
+          <template v-if="sendOrGet === 'send' && suggestedSecretPaths.length !== 0" >
+            <!-- Secret path suggestion  -->
+            <v-chip v-for="suggestedSecretPath in suggestedSecretPaths"
+                    :key="suggestedSecretPath"
+                    @click="secretPath = suggestedSecretPath"
+                    class="ma-0 readable-font"
+                    label
+                    outlined
+                    style="font-size: 1em;"
+            >
+              {{ suggestedSecretPath }}
+            </v-chip>
+          </template>
+          <v-btn v-if="shouldBeRemoved.latestSecretPath !== halfWidthLatestSecretPath"
+                 @click="secretPath = halfWidthLatestSecretPath"
+                 color="warning"
+                 outlined
+                 style="margin-left: 1rem; text-transform: none">
+            <v-icon left>{{ mdiAlert }}</v-icon>
+            {{ strings?.['make_half_width'](shouldBeRemoved.latestSecretPath) }}
+          </v-btn>
         </div>
 
         <v-col class="pa-0">
@@ -227,7 +237,7 @@ import {type DataDownloaderProps} from "@/components/DataDownloader.vue";
 // NOTE: Use `const FilePond = () => import('vue-filepond').then(vueFilePond => vueFilePond.default())` and <file-pond> in template causes "[Vue warn]: Failed to mount component: template or render function not defined."
 const FilePondWrapper = () => import("@/components/FilePondWrapper.vue");
 import * as t from 'io-ts';
-import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiClose, mdiEye, mdiEyeOff, mdiKey, mdiShieldHalfFull, mdiShieldCheck, mdiExpandAll, mdiCollapseAll} from "@mdi/js";
+import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiClose, mdiEye, mdiEyeOff, mdiKey, mdiShieldHalfFull, mdiShieldCheck, mdiExpandAll, mdiCollapseAll, mdiAlert} from "@mdi/js";
 
 import {keys} from "@/local-storage-keys";
 import {strings} from "@/strings/strings";
@@ -318,6 +328,9 @@ const shouldBeRemoved = ref({
   latestServerUrl: serverUrl.value,
   latestSecretPath: secretPath.value,
 });
+const halfWidthLatestSecretPath = computed(() =>
+  shouldBeRemoved.value.latestSecretPath.replace(/[！-～]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+)
 
 // FIXME: Should be removed
 // NOTE: This is for update by clicking listed auto-complete

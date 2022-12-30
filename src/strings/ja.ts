@@ -31,6 +31,9 @@ export const ja: Strings = {
   server_url: 'サーバー',
   secret_path: '転送パス',
   secret_path_placeholder: '例: mypath374, あいう123',
+  make_half_width(notHalfWidth: string) {
+    return `"${notHalfWidth}" を半角にする`;
+  },
   drop_a_file_here_or_browse: 'ファイルをドラッグするか<span class=\'filepond--label-action\'>開く</span>',
   protect_with_password: 'パスワードで保護',
   passwordless_protection: 'パスワードレス',
