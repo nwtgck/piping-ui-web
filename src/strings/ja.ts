@@ -43,7 +43,7 @@ export const ja: Strings = {
         return '受信に失敗しました。転送パスを変更すると受信できる可能性があります。';
       case "invalid_parcel_format":
         return '鍵交換のフォーマットが不正です。';
-      case "different_key_exchange_version":
+      case "key_exchange_version_mismatch":
         return '鍵交換のバージョンが異なります。このアプリを更新するか通信相手のアプリを更新してください。';
       case "payload_not_verified":
         return "鍵交換のペイロードが改竄された可能性があります。";

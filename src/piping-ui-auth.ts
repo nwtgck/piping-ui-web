@@ -102,7 +102,7 @@ export type KeyExchangeError =
   { code: 'invalid_parcel_format' } |
   { code: 'payload_not_verified' } |
   { code: 'invalid_v3_parcel_format' } |
-  { code: 'different_key_exchange_version' };
+  { code: 'key_exchange_version_mismatch' };
 
 type KeyExchangeResult =
   {type: "key", key: Uint8Array, mainPath: string, verificationCode: string} |
@@ -190,7 +190,7 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
   }
   const peerKeyExchange = peerKeyExchangeEither.right;
   if (KEY_EXCHANGE_VERSION !== peerKeyExchange.version) {
-    return {type: "error", keyExchangeError: {code: 'different_key_exchange_version'}};
+    return {type: "error", keyExchangeError: {code: 'key_exchange_version_mismatch'}};
   }
   const peerExchangeV3Either = keyExchangeV3ParcelType.decode(peerKeyExchange);
   if (peerExchangeV3Either._tag === 'Left') {
