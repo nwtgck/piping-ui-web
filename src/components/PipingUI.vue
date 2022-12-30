@@ -156,7 +156,7 @@
                  block
                  data-testid="send_button"
                  style="height: 3.5rem;">
-            {{ strings?.['send'] }}
+            {{ strings?.['send_button']({ nFiles: inputFiles.length, textIsBlank: inputText === '' }) }}
             <v-icon right dark>{{ mdiUpload }}</v-icon>
           </v-btn>
           <v-layout v-if="sendOrGet === 'get'">

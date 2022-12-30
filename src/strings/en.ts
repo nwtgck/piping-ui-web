@@ -12,6 +12,19 @@ export const en = {
   open_source_licenses: 'Open source licenses',
   close: "Close",
   send: 'Send',
+  send_button({nFiles, textIsBlank}: {nFiles: number, textIsBlank: boolean}) {
+    if (nFiles === 0 && textIsBlank) {
+      return "Send";
+    }
+    const fileText = `file${nFiles === 1 ? "" : "s"}`;
+    if (textIsBlank) {
+      return `Send ( ${fileText} )`;
+    }
+    if (nFiles === 0) {
+      return `Send ( text )`;
+    }
+    return `Send ( ${fileText} + text )`;
+  },
   get: 'Get',
   text_mode: 'Text mode',
   text_placeholder: 'Text',

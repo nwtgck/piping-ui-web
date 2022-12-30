@@ -13,6 +13,18 @@ export const ja: Strings = {
   open_source_licenses: 'オープンソース ライセンス',
   close: "閉じる",
   send: '送信',
+  send_button({nFiles, textIsBlank}: {nFiles: number, textIsBlank: boolean}) {
+    if (nFiles === 0 && textIsBlank) {
+      return "送信";
+    }
+    if (textIsBlank) {
+      return `送信 ( ファイル )`;
+    }
+    if (nFiles === 0) {
+      return `送信 ( テキスト )`;
+    }
+    return `送信 ( ファイル + テキスト )`;
+  },
   get: '受信',
   text_mode: 'テキスト',
   text_placeholder: 'テキスト',
