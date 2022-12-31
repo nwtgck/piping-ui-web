@@ -340,7 +340,7 @@ watch([download_button, swDownloadId], () => {
   // NOTE: Human's real a-tag click is much more stable download especially for Safari
   // NOTE: Service Worker does not work when "download" attribute attached in Chrome 108 and Safari 16
   a.href = getSwDownloadUrl(swDownloadId.value);
-  // a.target = "_blank";
+  a.target = "_blank";
 });
 
 // FIXME: Should be removed
