@@ -282,8 +282,9 @@ onMounted(async () => {
   // NOTE: URL fragment is passed to Service Worker but not passed to Web server
   const downloadUrl = `/sw-download/v2#?id=${swDownloadId}`;
   retryDownload.value = () => {
-    const win = window.open(downloadUrl, "_blank");
-    console.log("retried window.open()?.closed =", win?.closed);
+    const a = document.createElement("a");
+    a.download = downloadUrl;
+    a.click();
     openRetryDownload.value = false;
     retryDownload.value = () => {};
   };
