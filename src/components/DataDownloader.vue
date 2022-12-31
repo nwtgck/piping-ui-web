@@ -291,6 +291,7 @@ onMounted(async () => {
       // Use real click, not element.click()
       const a = retry_download_button.value!.$el as HTMLAnchorElement;
       a.href = downloadUrl;
+      // NOTE: Service Worker does not work when "download" attribute attached in Chrome 108 and Safari 16
       // a.download = fileName;
     });
   // }

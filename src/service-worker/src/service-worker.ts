@@ -133,7 +133,7 @@ sw.addEventListener('fetch', (event: FetchEvent) => {
     idToSwDownload.delete(id);
     const headers = new Headers(swDownload.headers);
     event.respondWith(
-      new Promise(resolve => setTimeout(resolve,  10 * 1000))
+      new Promise(resolve => setTimeout(resolve,  30 * 1000))
         .then(() => {
           return new Response(swDownload.readableStream, {
             headers,
