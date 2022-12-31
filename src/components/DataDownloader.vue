@@ -38,8 +38,9 @@
           <v-card-text>{{ strings['browser_may_have_blocked_download'] }}</v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="primary" text @click="openRetryDownload = false">{{ strings['retry_download_dialog_no'] }}</v-btn>
-            <v-btn ref="retry_download_button" tag="a" color="primary" text>{{ strings['retry_download_dialog_yes'] }}</v-btn>
+            <v-btn color="primary" outlined @click="openRetryDownload = false">{{ strings['retry_download_dialog_no'] }}</v-btn>
+            <!-- NOTE: tag="a" is important. This element will be injected href and download attributes. -->
+            <v-btn ref="retry_download_button" tag="a" @click="openRetryDownload = false" color="primary" outlined>{{ strings['retry_download_dialog_yes'] }}</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -61,7 +62,7 @@ export type DataDownloaderProps = {
 <script setup lang="ts">
 /* eslint-disable */
 
-import Vue, {ref, computed, onMounted} from "vue";
+import Vue, {ref, computed, onMounted, nextTick} from "vue";
 import urlJoin from 'url-join';
 import {mdiAlert, mdiChevronDown} from "@mdi/js";
 import * as pipingUiUtils from "@/piping-ui-utils";
@@ -294,9 +295,13 @@ onMounted(async () => {
   // NOTE: Desktop and iOS Safari 16.1 blocks by default
   if(win === null || win.closed || win.closed === undefined) {
     openRetryDownload.value = true;
-    const a = retry_download_button.value?.$el as HTMLAnchorElement;
-    a.href = downloadUrl;
-    a.download = fileName;
+    nextTick(() => {
+      console.log("retry_download_button.value?", retry_download_button.value);
+      const a = retry_download_button.value?.$el as HTMLAnchorElement;
+      console.log("a", a);
+      a.href = downloadUrl;
+      a.download = fileName;
+    });
   }
   // Without this, memory leak occurs. It consumes as much memory as the received file size.
   // Memory still leaks when using `npm run serve`. Build and serve to confirm.
