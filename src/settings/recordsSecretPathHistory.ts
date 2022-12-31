@@ -3,7 +3,7 @@ import {keys} from "@/local-storage-keys";
 
 export const recordsSecretPathHistory = computed<boolean>({
   get() {
-    const s = window.localStorage.getItem((keys.recordsSecretPathHistory)) ?? "true";
+    const s = window.localStorage.getItem((keys.recordsSecretPathHistory)) ?? "false";
     return s === "true";
   },
   set(b: boolean) {

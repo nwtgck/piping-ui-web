@@ -1,6 +1,6 @@
 {
   "name": "piping-ui",
-  "version": "0.12.1",
+  "version": "0.13.0",
   "private": true,
   "author": "Ryo Ota <nwtgck@nwtgck.org> (https://github.com/nwtgck)",
   "scripts": {
@@ -23,7 +23,7 @@
     "@mattiasbuelens/web-streams-adapter": "^0.1.0",
     "binconv": "^0.2.0",
     "clipboard-copy": "^4.0.1",
-    "core-js": "^3.27.0",
+    "core-js": "^3.27.1",
     "file-saver": "^2.0.5",
     "file-type": "^16.5.3",
     "filepond": "^4.30.4",
@@ -52,8 +52,8 @@
     "@types/sanitize-html": "^2.6.2",
     "@types/smoothscroll-polyfill": "^0.3.1",
     "@types/url-join": "^4.0.0",
-    "@typescript-eslint/eslint-plugin": "^5.47.0",
-    "@typescript-eslint/parser": "^5.47.0",
+    "@typescript-eslint/eslint-plugin": "^5.47.1",
+    "@typescript-eslint/parser": "^5.47.1",
     "@vue/cli-plugin-babel": "^5.0.8",
     "@vue/cli-plugin-eslint": "^5.0.8",
     "@vue/cli-plugin-typescript": "^5.0.8",

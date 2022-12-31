@@ -19,6 +19,10 @@
           <td>{{ strings['download_url'] }}</td>
           <td>{{ downloadPath }}</td>
         </tr>
+        <tr v-if="pipingUiAuthVerificationCode !== undefined" class="text-left">
+          <td>{{ strings['verification_code'] }}</td>
+          <td>{{ pipingUiAuthVerificationCode }}</td>
+        </tr>
         </tbody>
       </v-simple-table>
 
@@ -28,9 +32,19 @@
         {{ errorMessage }}
       </v-alert>
 
+      <v-dialog v-model="openRetryDownload" persistent max-width="290">
+        <v-card>
+          <v-card-title class="text-h5">{{ strings['retry_download_dialog_title'] }}</v-card-title>
+          <v-card-text>{{ strings['browser_may_have_blocked_download'] }}</v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="primary" text @click="openRetryDownload = false">{{ strings['retry_download_dialog_no'] }}</v-btn>
+            <v-btn color="primary" text @click="retryDownload()">{{ strings['retry_download_dialog_yes'] }}</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </v-expansion-panel-content>
   </v-expansion-panel>
-
 </template>
 
 <script lang="ts">
@@ -60,6 +74,8 @@ import {canTransferReadableStream} from "@/utils/canTransferReadableStream";
 import {makePromise} from "@/utils/makePromise";
 import {useErrorMessage} from "@/useErrorMessage";
 import {strings} from "@/strings/strings";
+import {ecdsaP384SigningKeyPairPromise} from "@/signing-key";
+import {firstAtLeastBlobFromReadableStream} from "@/utils/firstAtLeastBlobFromReadableStream";
 
 const FileSaverAsync = () => import('file-saver').then(p => p.default);
 const swDownloadAsync = () => import("@/sw-download");
@@ -97,6 +113,9 @@ const downloadPath = computed<string>(() => {
   return urlJoin(props.composedProps.serverUrl, encodeURI(props.composedProps.secretPath));
 });
 const rootElement = ref<Vue>();
+const pipingUiAuthVerificationCode = ref<string | undefined>();
+const openRetryDownload = ref<boolean>(false);
+const retryDownload = ref<() => void>(() => {});
 
 // NOTE: Automatically download when mounted
 onMounted(async () => {
@@ -109,6 +128,7 @@ onMounted(async () => {
       props.composedProps.serverUrl,
       props.composedProps.secretPath,
       props.composedProps.protection,
+      await ecdsaP384SigningKeyPairPromise.value,
       (step: VerificationStep) => {
         verificationStep.value = step;
       },
@@ -123,7 +143,7 @@ onMounted(async () => {
   if (keyExchangeRes.type === "error") {
     switch (keyExchangeRes.error.code) {
       case "key_exchange_error": {
-        const errorCode = keyExchangeRes.error.keyExchangeErrorCode;
+        const errorCode = keyExchangeRes.error.keyExchangeError;
         updateErrorMessage(() => strings.value?.["key_exchange_error"](errorCode));
         break;
       }
@@ -133,6 +153,11 @@ onMounted(async () => {
     }
     return;
   }
+
+  if ("verificationCode" in keyExchangeRes) {
+    pipingUiAuthVerificationCode.value = keyExchangeRes.verificationCode;
+  }
+
   const {key} = keyExchangeRes;
 
   const swDownload = await swDownloadAsync();
@@ -154,14 +179,14 @@ onMounted(async () => {
 
     let encryptedStream: ReadableStream<Uint8Array>;
     // Passwordless transfer always uses Piping UI Robust
-    if (props.composedProps.protection.type === "passwordless") {
+    if (keyExchangeRes.protectionType === "passwordless") {
       const abortController = new AbortController();
       canceledPromise.then(() => {
         abortController.abort();
       });
       encryptedStream = pipingUiRobust.receiveReadableStream(
         props.composedProps.serverUrl,
-        encodeURI(props.composedProps.secretPath),
+        keyExchangeRes.mainPath,
         { abortSignal: abortController.signal },
       );
     } else {
@@ -193,7 +218,7 @@ onMounted(async () => {
   let readableStream: ReadableStream;
   let contentLengthStr: string | undefined = undefined;
   // Passwordless transfer always uses Piping UI Robust
-  if (props.composedProps.protection.type === "passwordless") {
+  if (keyExchangeRes.protectionType === "passwordless") {
     const abortController = new AbortController();
     canceledPromise.then(() => {
       abortController.abort();
@@ -201,7 +226,7 @@ onMounted(async () => {
     // TODO: notify when canceled because Piping UI Robust on sender side keeps sending
     readableStream = pipingUiRobust.receiveReadableStream(
       props.composedProps.serverUrl,
-      encodeURI(props.composedProps.secretPath),
+      keyExchangeRes.mainPath,
       { abortSignal: abortController.signal },
     );
   } else {
@@ -225,10 +250,21 @@ onMounted(async () => {
     }
   }
   const [readableStreamForDownload, readableStreamForFileType] = readableStream.tee();
-  const fileTypeResult = await fileType.fromStream(readableStreamForFileType);
+  const mimeTypeAndFileExtension: { mimeType: string, fileExtension: string } | undefined = await (async () => {
+    if (keyExchangeRes.protectionType === "passwordless") {
+      return keyExchangeRes.fileType;
+    }
+    // NOTE: Using fileType.fromStream() blocks download when specifying multiple large files in DataUploader.vue. (zip detection may read large bytes)
+    // NOTE: 4100 was used in FileType.minimumBytes in file-type until 13.1.2
+    const fileTypeResult = await fileType.fromBlob(await firstAtLeastBlobFromReadableStream(readableStreamForFileType, 4100));
+    if (fileTypeResult === undefined) {
+      return undefined;
+    }
+    return { mimeType: fileTypeResult.mime, fileExtension: fileTypeResult.ext };
+  })();
   let fileName = props.composedProps.secretPath;
-  if (fileTypeResult !== undefined && !fileName.match(/.+\..+/)) {
-    fileName = `${fileName}.${fileTypeResult.ext}`;
+  if (mimeTypeAndFileExtension !== undefined && !fileName.match(/.+\..+/)) {
+    fileName = `${fileName}.${mimeTypeAndFileExtension.fileExtension}`;
   }
   // (from: https://github.com/jimmywarting/StreamSaver.js/blob/314e64b8984484a3e8d39822c9b86a345eb36454/sw.js#L120-L122)
   // Make filename RFC5987 compatible
@@ -236,18 +272,27 @@ onMounted(async () => {
   const headers: [string, string][] = [
     ...( contentLengthStr === undefined ? [] : [ [ "Content-Length", contentLengthStr ] ] satisfies [[string, string]] ),
     // Without "Content-Type", Safari in iOS 15 adds ".html" to the downloading file
-    ...( fileTypeResult === undefined ? [] : [ [ "Content-Type", fileTypeResult.mime ] ] satisfies [[string, string]] ),
+    ...( mimeTypeAndFileExtension === undefined ? [] : [ [ "Content-Type", mimeTypeAndFileExtension.mimeType ] ] satisfies [[string, string]] ),
     ['Content-Disposition', "attachment; filename*=UTF-8''" + escapedFileName],
   ];
   // Enroll download ReadableStream and get sw-download ID
   const {swDownloadId} = await enrollDownload(headers, readableStreamForDownload);
   // Download via Service Worker
-  const aTag = document.createElement('a');
   // NOTE: '/sw-download/v2' can be received by Service Worker in src/sw.js
   // NOTE: URL fragment is passed to Service Worker but not passed to Web server
-  aTag.href = `/sw-download/v2#?id=${swDownloadId}`;
-  aTag.target = "_blank";
-  aTag.click();
+  const downloadUrl = `/sw-download/v2#?id=${swDownloadId}`;
+  retryDownload.value = () => {
+    const win = window.open(downloadUrl, "_blank");
+    console.log("retried window.open()?.closed =", win?.closed);
+    openRetryDownload.value = false;
+    retryDownload.value = () => {};
+  };
+  const win = window.open(downloadUrl, "_blank");
+  console.log("window.open()?.closed =", win?.closed);
+  // NOTE: Desktop and iOS Safari 16.1 blocks by default
+  if(win === null || win.closed || win.closed === undefined) {
+    openRetryDownload.value = true;
+  }
   // Without this, memory leak occurs. It consumes as much memory as the received file size.
   // Memory still leaks when using `npm run serve`. Build and serve to confirm.
   await readableStreamForFileType.cancel();

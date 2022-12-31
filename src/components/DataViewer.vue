@@ -52,6 +52,10 @@
           <td>{{ strings['download_url'] }}</td>
           <td>{{ downloadPath }}</td>
         </tr>
+        <tr v-if="pipingUiAuthVerificationCode !== undefined" class="text-left">
+          <td>{{ strings['verification_code'] }}</td>
+          <td>{{ pipingUiAuthVerificationCode }}</td>
+        </tr>
         </tbody>
       </v-simple-table>
 
@@ -68,7 +72,7 @@
                         v-model="password"
                         :type="showsPassword ? 'text' : 'password'"
                         :label="strings['password']"
-                        :append-icon="showsPassword ? icons.mdiEye : icons.mdiEyeOff"
+                        :append-icon="showsPassword ? mdiEye : mdiEyeOff"
                         @click:append="showsPassword = !showsPassword"
                         single-line
                         style="margin-left: 0.5em;"
@@ -78,13 +82,13 @@
           <v-btn color="primary"
                  text
                  @click="decryptIfNeedAndViewBlob(password)">
-            <v-icon >{{ icons.mdiKey }}</v-icon>
+            <v-icon >{{ mdiKey }}</v-icon>
             {{ strings['unlock'] }}
           </v-btn>
           <v-btn color="primary"
                  text
                  @click="viewRaw()">
-            <v-icon >{{ icons.mdiFeatureSearchOutline }}</v-icon>
+            <v-icon >{{ mdiFeatureSearchOutline }}</v-icon>
             {{ strings['view_raw'] }}
           </v-btn>
         </div>
@@ -129,7 +133,7 @@
                outlined
                class="ma-2 justify-end"
                @click="cancel()">
-          <v-icon >{{ icons.mdiCloseCircle }}</v-icon>
+          <v-icon >{{ mdiCloseCircle }}</v-icon>
           {{ strings['cancel'] }}
         </v-btn>
       </div>
@@ -140,7 +144,7 @@
              block
              @click="save()"
              style="margin-top: 1em;">
-        <v-icon >{{ icons.mdiContentSave }}</v-icon>
+        <v-icon >{{ mdiContentSave }}</v-icon>
         {{ strings['save'] }}
       </v-btn>
 
@@ -174,7 +178,7 @@ const FileSaverAsync = () => import('file-saver').then(p => p.default);
 const clipboardCopyAsync = () => import("clipboard-copy").then(p => p.default);
 import * as fileType from 'file-type/browser';
 import {blobToUint8Array} from 'binconv/dist/src/blobToUint8Array';
-import {uint8ArrayToBlob} from 'binconv/dist/src/uint8ArrayToBlob';
+import {readableStreamToBlob} from "binconv";
 import {blobToReadableStream} from 'binconv/dist/src/blobToReadableStream';
 import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle, mdiEye, mdiEyeOff, mdiKey, mdiFeatureSearchOutline} from "@mdi/js";
 import * as pipingUiRobust from "@/piping-ui-robust";
@@ -193,6 +197,7 @@ import {makePromise} from "@/utils/makePromise";
 import {useErrorMessage} from "@/useErrorMessage";
 import {getReadableStreamWithProgress} from "@/utils/getReadableStreamWithProgress";
 import {strings} from "@/strings/strings";
+import {ecdsaP384SigningKeyPairPromise} from "@/signing-key";
 
 // eslint-disable-next-line no-undef
 const props = defineProps<{ composedProps: DataViewerProps }>();
@@ -221,16 +226,7 @@ let rawBlob = new Blob();
 let blob = new Blob();
 const showsCopied = ref(false);
 const isDecrypting = ref(false);
-
-
-const icons = {
-  mdiContentSave,
-  mdiCloseCircle,
-  mdiEye,
-  mdiEyeOff,
-  mdiKey,
-  mdiFeatureSearchOutline,
-};
+const pipingUiAuthVerificationCode = ref<string | undefined>();
 
 const progressPercentage = computed<number | null>(() => {
   if (isDoneDownload.value) {
@@ -311,6 +307,7 @@ onMounted(async () => {
     props.composedProps.serverUrl,
     props.composedProps.secretPath,
     props.composedProps.protection,
+    await ecdsaP384SigningKeyPairPromise.value,
     (step: VerificationStep) => {
       verificationStep.value = step;
     },
@@ -325,7 +322,7 @@ onMounted(async () => {
   if (keyExchangeRes.type === "error") {
     switch (keyExchangeRes.error.code) {
       case "key_exchange_error": {
-        const errorCode = keyExchangeRes.error.keyExchangeErrorCode;
+        const errorCode = keyExchangeRes.error.keyExchangeError;
         updateErrorMessage(() => strings.value?.["key_exchange_error"](errorCode));
         break;
       }
@@ -335,16 +332,21 @@ onMounted(async () => {
     }
     return;
   }
+
+  if ("verificationCode" in keyExchangeRes) {
+    pipingUiAuthVerificationCode.value = keyExchangeRes.verificationCode;
+  }
+
   const {key} = keyExchangeRes;
 
   let rawStream: ReadableStream<Uint8Array>;
-  if (props.composedProps.protection.type === "passwordless") {
+  if (keyExchangeRes.protectionType === "passwordless") {
     const abortController = new AbortController();
     canceledPromise.then(() => {
       abortController.abort();
     });
     // Passwordless transfer always uses Piping UI Robust
-    rawStream = pipingUiRobust.receiveReadableStream(props.composedProps.serverUrl, props.composedProps.secretPath, {
+    rawStream = pipingUiRobust.receiveReadableStream(props.composedProps.serverUrl, keyExchangeRes.mainPath, {
       abortSignal: abortController.signal,
     });
   } else {
@@ -371,21 +373,47 @@ onMounted(async () => {
       return;
     }
     const contentLengthStr = res.headers.get("Content-Length");
-    if (contentLengthStr !== null) {
+    // NOTE: Content-Length is encrypted byte size if password is defined
+    if (contentLengthStr !== null && password.value === undefined) {
       progressSetting.value.totalBytes = parseInt(contentLengthStr, 10);
     }
     rawStream = res.body!;
   }
 
-  const {stream: rawStreamWithProgress, cancel: cancelRawStreamWithProgress} = getReadableStreamWithProgress(rawStream, (n) => {
-    progressSetting.value.loadedBytes += n;
-  });
   try {
-    canceledPromise.then(() => {
-      cancelRawStreamWithProgress();
+    let rawOrDecryptedStream: ReadableStream<Uint8Array>;
+    if (key === undefined) {
+      [rawOrDecryptedStream, rawStream] = rawStream.tee();
+    } else {
+      const [streamForDecrypting, backupStream] = rawStream.tee();
+      rawStream = backupStream;
+      // Decrypt the response body
+      rawOrDecryptedStream = await openPgpUtils.decryptStream(streamForDecrypting, key);
+    }
+    const {stream: rawOrDecryptedStreamWithProgress, cancel: cancelRawOrDecryptedStreamWithProgress} = getReadableStreamWithProgress(rawOrDecryptedStream, (n) => {
+      progressSetting.value.loadedBytes += n;
     });
+    canceledPromise.then(() => {
+      cancelRawOrDecryptedStreamWithProgress();
+    });
+    blob = await new Response(rawOrDecryptedStreamWithProgress).blob();
+    if (canceled.value) {
+      return;
+    }
+    progressSetting.value.totalBytes = blob.size;
+    updateErrorMessage(undefined);
+  } catch (err) {
+    if (err instanceof Error && err.message.includes("decryption failed")) {
+      updateErrorMessage(() => strings.value?.['password_might_be_wrong']);
+      enablePasswordReinput.value = true;
+    } else {
+      updateErrorMessage(() => strings.value?.['data_viewer_body_read_error']({ error: err }));
+    }
+  }
+  try {
     // Get raw response body
-    rawBlob = await new Response(rawStreamWithProgress).blob();
+    rawBlob = await new Response(rawStream).blob();
+    isDoneDownload.value = true;
   } catch (err) {
     updateErrorMessage(() => strings.value?.['data_viewer_body_read_error']({ error: err }));
     return;
@@ -393,9 +421,8 @@ onMounted(async () => {
   if (canceled.value) {
     return;
   }
-  isDoneDownload.value = true;
-  // Decrypt and view blob if possible
-  await decryptIfNeedAndViewBlob(key);
+  // View blob if possible
+  await viewBlob();
 });
 
 async function viewBlob() {
@@ -436,29 +463,27 @@ async function decryptIfNeedAndViewBlob(password: string | Uint8Array | undefine
   blob = await (async () => {
     if (password === undefined) {
       return rawBlob;
-    } else {
-      // Get response body
-      const resBody = await blobToUint8Array(rawBlob);
-      try {
-        isDecrypting.value = true;
-        // Decrypt the response body
-        const plain = await openPgpUtils.decrypt(resBody, password);
-        enablePasswordReinput.value = false;
-        updateErrorMessage(undefined);
-        return uint8ArrayToBlob(plain);
-      } catch (err) {
-        enablePasswordReinput.value = true;
-        updateErrorMessage(() => strings.value?.['password_might_be_wrong']);
-        console.log('Decrypt error:', err);
-        return new Blob();
-      } finally {
-        isDecrypting.value = false;
-      }
+    }
+    try {
+      isDecrypting.value = true;
+      // Decrypt the response body
+      const plainStream: ReadableStream<Uint8Array> = await openPgpUtils.decryptStream(new Response(rawBlob).body!, password);
+      const plain: Blob = await readableStreamToBlob(plainStream);
+      enablePasswordReinput.value = false;
+      updateErrorMessage(() => undefined);
+      return plain;
+    } catch (err) {
+      enablePasswordReinput.value = true;
+      updateErrorMessage(() => strings.value?.['password_might_be_wrong']);
+      console.log('Decrypt error:', err);
+      return new Blob();
+    } finally {
+      isDecrypting.value = false;
     }
   })();
 
   // View blob if possible
-  viewBlob();
+  await viewBlob();
 }
 
 function viewRaw() {

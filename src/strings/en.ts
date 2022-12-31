@@ -1,5 +1,5 @@
 import {VERSION} from "@/version";
-import {type KeyExchangeErrorCode} from "@/piping-ui-auth";
+import {KEY_EXCHANGE_VERSION, type KeyExchangeError} from "@/piping-ui-auth";
 
 const urlJoinAsync = () => import('url-join').then(p => p.default);
 const sanitizeHtmlAllowingATagAsync = () => import('@/utils/sanitizeHtmlAllowingATag').then(p => p.sanitizeHtmlAllowingATag);
@@ -12,37 +12,58 @@ export const en = {
   open_source_licenses: 'Open source licenses',
   close: "Close",
   send: 'Send',
+  send_button({nFiles, textIsBlank}: {nFiles: number, textIsBlank: boolean}) {
+    if (nFiles === 0 && textIsBlank) {
+      return "Send";
+    }
+    const fileText = `file${nFiles === 1 ? "" : "s"}`;
+    if (textIsBlank) {
+      return `Send ( ${fileText} )`;
+    }
+    if (nFiles === 0) {
+      return `Send ( text )`;
+    }
+    return `Send ( ${fileText} + text )`;
+  },
   get: 'Get',
   text_mode: 'Text mode',
   text_placeholder: 'Text',
   server_url: 'Server URL',
   secret_path: 'Secret path',
   secret_path_placeholder: 'e.g. mypath374',
+  make_half_width(notHalfWidth: string) {
+    return `Make "${notHalfWidth}" half-width`;
+  },
   drop_a_file_here_or_browse: 'Drop a file here or <span class=\'filepond--label-action\'>Browse</span>',
   protect_with_password: 'Protect with password',
   passwordless_protection: 'Passwordless',
+  passwordless_verify_and_send: 'Verify and send',
   password: 'Password',
   password_is_required: 'Password is required',
+  more_options: 'More options',
+  hide_options: 'Hide options',
   view: 'View',
   download: 'Download',
-  error_file_not_selected: 'Error: File not selected',
+  error_input_file_or_text: 'Error: Input files or text',
   error_secret_path_not_specified: 'Error: Secret path not specified',
   upload: 'Upload',
   waiting_for_receiver: 'Waiting for receiver...',
   verification_code: 'Verification code',
-  verify_and_send: 'Verify & Send',
-  key_exchange_error: (errorCode: KeyExchangeErrorCode): string => {
-    switch (errorCode) {
+  passwordless_verified: 'Verified',
+  key_exchange_error: (keyExchangeError: KeyExchangeError): string => {
+    switch (keyExchangeError.code) {
       case "send_failed":
         return 'Failed to send. Changing the secret path may avoid the problem.';
       case "receive_failed":
         return 'Failed to receive. Changing the secret path may avoid the problem.';
       case "invalid_parcel_format":
-        return 'Parcel format is invalid.';
-      case "different_key_exchange_version":
-        return 'Key exchange versions are different. Please update your app or peer\'s app.'
-      case "invalid_v1_parcel_format":
-        return "Parcel is an invalid V1 parcel";
+        return 'Key exchange format is invalid.';
+      case "key_exchange_version_mismatch":
+        return `${ KEY_EXCHANGE_VERSION < keyExchangeError.peerVersion ? "Please update your app." : "Please update peer's app." } Key exchange versions are different.`;
+      case "payload_not_verified":
+        return "Key exchange payload could have been tampered";
+      case "invalid_v3_parcel_format":
+        return "Parcel is an invalid V3 parcel";
     }
   },
   sender_not_verified: 'Sender not verified',
@@ -61,6 +82,10 @@ export const en = {
   download_url: 'Download URL',
   waiting_for_sender: 'Waiting for sender...',
   decrypting: 'Decrypting...',
+  retry_download_dialog_title: 'Retry download?',
+  browser_may_have_blocked_download: 'The browser may have blocked the download.',
+  retry_download_dialog_yes: 'Download',
+  retry_download_dialog_no: 'No',
   copied: 'Copied',
   password_might_be_wrong: 'The password might be wrong',
   reinput_password: 'Reinput password',

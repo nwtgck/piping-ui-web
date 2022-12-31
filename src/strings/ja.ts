@@ -1,5 +1,5 @@
 import {VERSION} from "@/version";
-import {type KeyExchangeErrorCode} from "@/piping-ui-auth";
+import {KEY_EXCHANGE_VERSION, type KeyExchangeError} from "@/piping-ui-auth";
 import {type Strings} from "@/strings/en";
 
 const urlJoinAsync = () => import('url-join').then(p => p.default);
@@ -13,37 +13,57 @@ export const ja: Strings = {
   open_source_licenses: 'オープンソース ライセンス',
   close: "閉じる",
   send: '送信',
+  send_button({nFiles, textIsBlank}: {nFiles: number, textIsBlank: boolean}) {
+    if (nFiles === 0 && textIsBlank) {
+      return "送信";
+    }
+    if (textIsBlank) {
+      return `送信 ( ファイル )`;
+    }
+    if (nFiles === 0) {
+      return `送信 ( テキスト )`;
+    }
+    return `送信 ( ファイル + テキスト )`;
+  },
   get: '受信',
   text_mode: 'テキスト',
   text_placeholder: 'テキスト',
   server_url: 'サーバー',
   secret_path: '転送パス',
   secret_path_placeholder: '例: mypath374, あいう123',
+  make_half_width(notHalfWidth: string) {
+    return `"${notHalfWidth}" を半角にする`;
+  },
   drop_a_file_here_or_browse: 'ファイルをドラッグするか<span class=\'filepond--label-action\'>開く</span>',
   protect_with_password: 'パスワードで保護',
   passwordless_protection: 'パスワードレス',
+  passwordless_verify_and_send: '確認して送信',
   password: 'パスワード',
   password_is_required: 'パスワードを入力してください',
+  more_options: 'その他のオプション',
+  hide_options: 'オプション非表示',
   view: '見る',
   download: 'ダウンロード',
-  error_file_not_selected: 'エラー: ファイルが選択されていません',
+  error_input_file_or_text: 'エラー: ファイルを選択するかテキストを入力してください',
   error_secret_path_not_specified: 'エラー: 転送パスが指定されていません',
   upload: 'アップロード',
   waiting_for_receiver: '受信者を待機中...',
   verification_code: '確認コード',
-  verify_and_send: '確認完了',
-  key_exchange_error: (errorCode: KeyExchangeErrorCode): string => {
-    switch (errorCode) {
+  passwordless_verified: '確認完了',
+  key_exchange_error: (keyExchangeError: KeyExchangeError): string => {
+    switch (keyExchangeError.code) {
       case "send_failed":
         return '送信に失敗しました。転送パスを変更すると送信できる可能性があります。';
       case "receive_failed":
         return '受信に失敗しました。転送パスを変更すると受信できる可能性があります。';
       case "invalid_parcel_format":
-        return 'パーセルのフォーマットが不正です。';
-      case "different_key_exchange_version":
-        return '鍵交換のバージョンが異なります。このアプリを更新するか通信相手のアプリを更新してください。';
-      case "invalid_v1_parcel_format":
-        return "V1のパーセルとして不正なフォーマットです。"
+        return '鍵交換のフォーマットが不正です。';
+      case "key_exchange_version_mismatch":
+        return `${ KEY_EXCHANGE_VERSION < keyExchangeError.peerVersion ? "このアプリを更新してください。" : "通信相手のアプリを更新してください。" }鍵交換のバージョンが異なります。`;
+      case "payload_not_verified":
+        return "鍵交換のペイロードが改竄された可能性があります。";
+      case "invalid_v3_parcel_format":
+        return "V3のパーセルとして不正なフォーマットです。";
     }
   },
   sender_not_verified: '送信者が拒否しました',
@@ -62,6 +82,10 @@ export const ja: Strings = {
   decrypting: '復号中...',
   download_url: 'ダウンロードURL',
   waiting_for_sender: '送信者を待機中...',
+  retry_download_dialog_title: 'ダウンロードを再試行しますか？',
+  browser_may_have_blocked_download: 'ブラウザがダウンロードをブロックした可能性があります。',
+  retry_download_dialog_yes: 'ダウンロード',
+  retry_download_dialog_no: 'いいえ',
   copied: 'コピーされました',
   password_might_be_wrong: 'パスワードが間違っている可能性があります',
   reinput_password: 'パスワードを再入力',

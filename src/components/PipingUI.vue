@@ -7,36 +7,27 @@
           <v-btn-toggle v-model="sendOrGet" mandatory>
             <v-btn text value="send" data-testid="send_menu_button">
               {{ strings?.['send'] }}
-              <v-icon right dark>{{ icons.mdiUpload }}</v-icon>
+              <v-icon right dark>{{ mdiUpload }}</v-icon>
             </v-btn>
             <v-btn text value="get" data-testid="get_menu_button">
               {{ strings?.['get'] }}
-              <v-icon right dark>{{ icons.mdiDownload }}</v-icon>
+              <v-icon right dark>{{ mdiDownload }}</v-icon>
             </v-btn>
           </v-btn-toggle>
         </div>
 
-        <div v-show="sendOrGet === 'send'">
-          <div :class="`d-flex justify-end`">
-            <v-switch
-                    inset
-                    v-model="isTextMode">
-              <template v-slot:label>
-                <v-icon class="icon-and-text-margin">{{ icons.mdiText }}</v-icon>
-                {{ strings?.['text_mode'] }}
-              </template>
-            </v-switch>
-          </div>
-          <file-pond-wrapper v-if="!isTextMode"
-                             v-model="files"
+        <div v-show="sendOrGet === 'send'" style="margin-top: 1.2rem;">
+          <file-pond-wrapper v-model="inputFiles"
                              :label-idle="filePondLabelIdle"
                              data-testid="file_input"
+                             @hook:mounted="onFilePondMounted()"
           />
-          <v-textarea v-if="isTextMode"
-                      :label="strings?.['text_placeholder']"
+          <v-textarea :label="strings?.['text_placeholder']"
                       v-model="inputText"
                       clearable
-                      :clear-icon="icons.mdiClose"
+                      :clear-icon="mdiClose"
+                      rows="2"
+                      auto-grow
                       outlined
           ></v-textarea>
         </div>
@@ -48,7 +39,7 @@
                     @blur="attachProtocolToUrl()"
                     ref="server_url_ref"
                     clearable
-                    :clear-icon="icons.mdiClose"
+                    :clear-icon="mdiClose"
                     style="margin-bottom: 0.8em;"
                     class="readable-font"
                     data-testid="server_url_input">
@@ -59,7 +50,7 @@
               <v-btn icon
                      @click.stop.prevent="deleteServerUrl(item)"
               >
-                <v-icon>{{ icons.mdiDelete }}</v-icon>
+                <v-icon>{{ mdiDelete }}</v-icon>
               </v-btn>
             </v-list-item-action>
           </template>
@@ -71,7 +62,7 @@
                     ref="secret_path_ref"
                     class="ma-0 pa-0 readable-font"
                     clearable
-                    :clear-icon="icons.mdiClose"
+                    :clear-icon="mdiClose"
                     data-testid="secret_path_input"
         >
           <template v-slot:item="{ index, item }">
@@ -81,24 +72,34 @@
               <v-btn icon
                      @click.stop.prevent="deleteSecretPath(item)"
               >
-                <v-icon>{{ icons.mdiDelete }}</v-icon>
+                <v-icon>{{ mdiDelete }}</v-icon>
               </v-btn>
             </v-list-item-action>
           </template>
         </v-combobox>
 
-        <!-- Secret path suggestion  -->
-        <div v-if="sendOrGet === 'send' && suggestedSecretPaths.length !== 0" style="text-align: right; margin-bottom: 1.5em;">
-          <v-chip v-for="suggestedSecretPath in suggestedSecretPaths"
-                  :key="suggestedSecretPath"
-                  @click="secretPath = suggestedSecretPath"
-                  class="ma-0 readable-font"
-                  label
-                  outlined
-                  style="font-size: 1em;"
-          >
-            {{ suggestedSecretPath }}
-          </v-chip>
+        <div style="text-align: right; margin-bottom: 1.5em;">
+          <template v-if="sendOrGet === 'send' && suggestedSecretPaths.length !== 0" >
+            <!-- Secret path suggestion  -->
+            <v-chip v-for="suggestedSecretPath in suggestedSecretPaths"
+                    :key="suggestedSecretPath"
+                    @click="secretPath = suggestedSecretPath"
+                    class="ma-0 readable-font"
+                    label
+                    outlined
+                    style="font-size: 1em;"
+            >
+              {{ suggestedSecretPath }}
+            </v-chip>
+          </template>
+          <v-btn v-if="shouldBeRemoved.latestSecretPath !== halfWidthLatestSecretPath"
+                 @click="secretPath = halfWidthLatestSecretPath"
+                 color="warning"
+                 outlined
+                 style="margin-left: 1rem; text-transform: none">
+            <v-icon left>{{ mdiAlert }}</v-icon>
+            {{ strings?.['make_half_width'](shouldBeRemoved.latestSecretPath) }}
+          </v-btn>
         </div>
 
         <v-col class="pa-0">
@@ -106,17 +107,26 @@
             <v-switch :input-value="protectionType === 'passwordless'"
                       @change="onEnablePasswordlessProtection"
                       inset
-                      color="blue"
-                      class="ma-0 pa-0"
-                      data-testid="passwordless_switch">
+                      data-testid="passwordless_switch"
+                      style="margin-right: 2.5rem;">
               <template v-slot:label>
-                <v-icon class="icon-and-text-margin" :color="protectionType === 'passwordless' ? 'blue' : ''">{{ icons.mdiShieldHalfFull }}</v-icon>
+                <v-icon class="icon-and-text-margin" :color="protectionType === 'passwordless' ? 'blue' : ''">{{ mdiShieldHalfFull }}</v-icon>
                 {{ strings?.['passwordless_protection'] }}
+              </template>
+            </v-switch>
+
+            <v-switch v-if="sendOrGet === 'send' && protectionType === 'passwordless'"
+                      v-model="passwordlessSendAndVerify"
+                      inset
+                      data-testid="passwordless_send_and_verify_switch">
+              <template v-slot:label>
+                <v-icon class="icon-and-text-margin" :color="passwordlessSendAndVerify ? 'blue' : ''">{{ mdiShieldCheck }}</v-icon>
+                {{ strings?.['passwordless_verify_and_send'] }}
               </template>
             </v-switch>
           </v-row>
 
-          <v-row align="center" class="ma-0" style="padding-top: 0.5em;">
+          <v-row v-if='showsMoreOptions' align="center" class="ma-0" style="padding-top: 0.5em;">
             <v-switch :input-value="protectionType === 'password'"
                       @change="onEnablePasswordProtection"
                       inset
@@ -124,7 +134,7 @@
                       class="ma-0 pa-0"
                       data-testid="password_switch">
               <template v-slot:label>
-                <v-icon class="icon-and-text-margin" :color="protectionType === 'password' ? 'blue' : ''">{{ icons.mdiKey }}</v-icon>
+                <v-icon class="icon-and-text-margin" :color="protectionType === 'password' ? 'blue' : ''">{{ mdiKey }}</v-icon>
                 {{ protectionType === 'password' ? '' : strings?.['protect_with_password'] }}
               </template>
             </v-switch>
@@ -133,7 +143,7 @@
                           v-model="password"
                           :type="showsPassword ? 'text' : 'password'"
                           :label="strings?.['password']"
-                          :append-icon="showsPassword ? icons.mdiEye : icons.mdiEyeOff"
+                          :append-icon="showsPassword ? mdiEye : mdiEyeOff"
                           @click:append="showsPassword = !showsPassword"
                           single-line
                           class="pa-0"
@@ -142,14 +152,22 @@
           </v-row>
         </v-col>
 
-        <div style="margin-top: 1.2em;">
+        <v-btn @click="showsMoreOptions = !showsMoreOptions" depressed plain style="margin-bottom: 1rem; text-transform: none" data-testid="more_options_button">
+          <v-icon left dark>
+            {{ showsMoreOptions ? mdiCollapseAll : mdiExpandAll }}
+          </v-icon>
+          {{ showsMoreOptions ? strings?.['hide_options'] : strings?.['more_options'] }}
+        </v-btn>
+
+        <div>
           <v-btn v-if="sendOrGet === 'send'"
                  color="primary"
                  v-on:click="send()"
                  block
-                 data-testid="send_button">
-            {{ strings?.['send'] }}
-            <v-icon right dark>{{ icons.mdiUpload }}</v-icon>
+                 data-testid="send_button"
+                 style="height: 3.5rem;">
+            {{ strings?.['send_button']({ nFiles: inputFiles.length, textIsBlank: inputText === '' }) }}
+            <v-icon right dark>{{ mdiUpload }}</v-icon>
           </v-btn>
           <v-layout v-if="sendOrGet === 'get'">
             <v-flex xs6>
@@ -157,9 +175,10 @@
                      dark
                      @click="view()"
                      block
-                     data-testid="view_button">
+                     data-testid="view_button"
+                     style="height: 3.5rem;">
                 {{ strings?.['view'] }}
-                <v-icon right dark>{{ icons.mdiFileFind }}</v-icon>
+                <v-icon right dark>{{ mdiFileFind }}</v-icon>
               </v-btn>
             </v-flex>
             <v-flex xs6>
@@ -167,9 +186,10 @@
                      @click="get()"
                      dark
                      block
-                     data-testid="download_button">
+                     data-testid="download_button"
+                     style="height: 3.5rem;">
                 {{ strings?.['download'] }}
-                <v-icon right dark>{{ icons.mdiDownload }}</v-icon>
+                <v-icon right dark>{{ mdiDownload }}</v-icon>
               </v-btn>
             </v-flex>
           </v-layout>
@@ -199,7 +219,7 @@
       {{ snackbarMessage }}
       <v-btn text
              @click="showsSnackbar = false">
-        <v-icon>{{ icons.mdiClose }}</v-icon>
+        <v-icon>{{ mdiClose }}</v-icon>
       </v-btn>
     </v-snackbar>
   </v-layout>
@@ -217,16 +237,17 @@ import {type DataDownloaderProps} from "@/components/DataDownloader.vue";
 // NOTE: Use `const FilePond = () => import('vue-filepond').then(vueFilePond => vueFilePond.default())` and <file-pond> in template causes "[Vue warn]: Failed to mount component: template or render function not defined."
 const FilePondWrapper = () => import("@/components/FilePondWrapper.vue");
 import * as t from 'io-ts';
-import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiClose, mdiEye, mdiEyeOff, mdiKey, mdiShieldHalfFull, mdiText} from "@mdi/js";
+import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiClose, mdiEye, mdiEyeOff, mdiKey, mdiShieldHalfFull, mdiShieldCheck, mdiExpandAll, mdiCollapseAll, mdiAlert} from "@mdi/js";
 
 import {keys} from "@/local-storage-keys";
 import {strings} from "@/strings/strings";
-import {type FilePondFile, type ActualFileObject} from "filepond";
+import {type FilePondFile} from "filepond";
 import {type Protection} from "@/datatypes";
 import buildConstants from "@/build-constants";
-import {baseAndExt} from "@/utils/baseAndExt";
 import {recordsServerUrlHistory} from "@/settings/recordsServerUrlHistory";
 import {recordsSecretPathHistory} from "@/settings/recordsSecretPathHistory";
+import {loadLocalStorageWithValidation} from "@/utils/loadLocalStorageWithValidation";
+import {secretPathHistory} from "@/settings/secretPathHistory";
 
 const defaultServerUrls: ReadonlyArray<string> = buildConstants.pipingServerUrls;
 
@@ -234,19 +255,10 @@ function normalizeUrl(url: string): string {
   return new URL(url).href;
 }
 
-// Load from local storage with validation
-function loadLocalStorage<T>(typeC: t.Type<T>, key: string): T | undefined {
-  const item: string | null = window.localStorage.getItem(key);
-  if (item !== null) {
-    const either = typeC.decode(JSON.parse(item));
-    if (either._tag === 'Left') return undefined;
-    return either.right;
-  }
-}
-
 const chars = {
   nonConfusing: ["a", "b", "c", "d", "e", "f", "h", "i", "j", "k", "m", "n", "p", "r", "s", "t", "u", "v", "w", "x", "y", "z", "2", "3", "4", "5", "6", "7", "8"],
   alphanum: ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+  numbers: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
 };
 
 function randomStr(len: number, chars: ReadonlyArray<string>){
@@ -266,18 +278,25 @@ const secret_path_ref = ref<Vue>();
 const sendOrGet = ref<'send' | 'get'>('send');
 
 const serverUrl = ref<string>(defaultServerUrls[0]);
-const secretPath = ref<string>("");
-const isTextMode = ref<boolean>(getShareTargetText() !== null);
+const initialSecretPath = randomStr(4, chars.numbers);
+const secretPath = ref<string>(initialSecretPath);
 const inputText = ref<string>((() => {
   const shareTargetText = getShareTargetText();
   return shareTargetText === null ? '' :  shareTargetText;
 })());
-const files = ref<FilePondFile[]>([]);
+watch(inputText, () => {
+  // NOTE: inputText can be null after cleared
+  if (inputText.value === null) {
+    inputText.value = '';
+  }
+});
+const inputFiles = ref<FilePondFile[]>([]);
 const serverUrlHistory = ref<string[]>([]);
-const secretPathHistory = ref<string[]>([]);
-const protectionType = ref<Protection["type"]>('raw');
+const protectionType = ref<Protection["type"]>('passwordless');
 const password = ref<string>('');
 const showsPassword = ref<boolean>(false);
+const passwordlessSendAndVerify = ref<boolean>(false);
+const showsMoreOptions = ref<boolean>(false);
 
 // Random strings for suggested secret paths
 const randomStrs = ref<string[]>([
@@ -303,25 +322,15 @@ const showsSnackbar = ref<boolean>(false);
 // Message of snackbar
 const snackbarMessage = ref<string>('');
 
-const icons = {
-  mdiUpload,
-  mdiDownload,
-  mdiDelete,
-  mdiFileFind,
-  mdiClose,
-  mdiEye,
-  mdiEyeOff,
-  mdiKey,
-  mdiShieldHalfFull,
-  mdiText,
-};
-
 // FIXME: Should be removed
 // This for lazy v-model of Combobox
 const shouldBeRemoved = ref({
   latestServerUrl: serverUrl.value,
   latestSecretPath: secretPath.value,
 });
+const halfWidthLatestSecretPath = computed(() =>
+  shouldBeRemoved.value.latestSecretPath.replace(/[！-～]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+)
 
 // FIXME: Should be removed
 // NOTE: This is for update by clicking listed auto-complete
@@ -349,7 +358,7 @@ const filePondLabelIdle = computed<string | undefined>(() => {
     return undefined;
   }
   // If files are nothing
-  if (files.value.length === 0) {
+  if (inputFiles.value.length === 0) {
     // Hint with file icon
     return `<img src='img/file-icon.svg' style='width: 2em'><br>${strings.value['drop_a_file_here_or_browse']}`;
   } else {
@@ -364,45 +373,28 @@ const protection = computed<Protection>(() => {
   switch (protectionType.value) {
     case 'raw':
     case 'passwordless':
-      return {type: protectionType.value};
+      return {type: protectionType.value, alwaysSendVerify: !passwordlessSendAndVerify.value};
     case 'password':
       return {type: protectionType.value, password: password.value};
   }
 });
 
 function updateRandomStrs() {
-  randomStrs.value[0] = randomStr(3, chars.nonConfusing);
+  randomStrs.value = [
+    initialSecretPath,
+    randomStr(5, chars.numbers),
+    randomStr(6, chars.numbers),
+  ];
 }
 
 const suggestedSecretPaths = computed<string[]>(() => {
   const candidates: string[] = (() => {
-    if ((!isTextMode.value && files.value.length === 0) || (isTextMode.value && inputText.value === '')) {
+    if (inputFiles.value.length === 0 && inputText.value === '') {
       // NOTE: This is for simplicity of UI
       //       Not show suggested secret path on initial status
       return [];
-    } else if (isTextMode.value) {
-      return [...randomStrs.value.map(s => `${s}.txt`), ...randomStrs.value];
-    } else if (files.value.length === 1) {
-      const fileName = files.value[0].filename;
-      const {ext} = baseAndExt(fileName);
-      return [
-        fileName,
-        ...randomStrs.value.map(s => `${s}${ext}`),
-        ...randomStrs.value,
-      ];
-    } else if(files.value.length > 1) {
-      if(secretPath.value.endsWith('.zip')) {
-        return [];
-      } else {
-        return [
-          ...(secretPath.value === '' ? [] : [`${secretPath.value}.zip`]),
-          ...randomStrs.value.map(s => `${s}.zip`),
-          ...randomStrs.value,
-        ];
-      }
-    } else {
-      return randomStrs.value;
     }
+    return randomStrs.value;
   })();
 
   return candidates.filter(c => secretPath.value !== c);
@@ -440,7 +432,7 @@ onMounted(() => {
   });
 
   // Load server URL history from local storage
-  const savedServerUrlHistory: string[] | undefined = loadLocalStorage(t.array(t.string), keys.serverUrlHistory);
+  const savedServerUrlHistory: string[] | undefined = loadLocalStorageWithValidation(t.array(t.string), keys.serverUrlHistory);
   // If none
   if (savedServerUrlHistory === undefined) {
     // Set default
@@ -449,15 +441,11 @@ onMounted(() => {
     // Load from storage
     serverUrlHistory.value = savedServerUrlHistory;
   }
-
-  // Load server URL history from local storage
-  const savedSecretPathHistory: string[] | undefined = loadLocalStorage(t.array(t.string), keys.secretPathHistory);
-  if (savedSecretPathHistory !== undefined) {
-    secretPathHistory.value = savedSecretPathHistory;
-  }
-
-  preloadForUserExperience();
 });
+
+function onFilePondMounted() {
+  preloadForUserExperience();
+}
 
 function preloadForUserExperience() {
   DataUploader();
@@ -493,9 +481,9 @@ async function send() {
   }
   applyLatestServerUrlAndSecretPath();
 
-  if (!isTextMode.value && files.value.length === 0) {
+  if (inputText.value === '' && inputFiles.value.length === 0) {
     // Show error message
-    showSnackbar(strings.value['error_file_not_selected']);
+    showSnackbar(strings.value['error_input_file_or_text']);
     return;
   }
   // If secret path is empty
@@ -512,7 +500,16 @@ async function send() {
     return;
   }
 
-  const body: ActualFileObject[] | string = isTextMode.value ? inputText.value : files.value.map(f => f.file);
+  const files: File[] = inputFiles.value.map(f => new File([f.file], f.file.name, f.file));
+  const body: File[] | string = (() => {
+    if (inputFiles.value.length === 0) {
+      return inputText.value;
+    }
+    if (inputText.value !== '') {
+      return [new File([inputText.value], "input.txt", { type: 'text/plain' }), ...files];
+    }
+    return files;
+  })();
 
   // Increment upload counter
   uploadCount.value++;
@@ -542,20 +539,20 @@ async function send() {
   if (recordsSecretPathHistory.value) {
     // Add secret path
     addSecretPath();
-    // Save to local storage
-    window.localStorage.setItem(keys.secretPathHistory, JSON.stringify(secretPathHistory.value));
   }
 }
 
 // Add secret path: latest-used path is the top
 function addSecretPath(): void {
+  const tmpHistory = secretPathHistory.value.slice();
   // Remove element
-  const idx = secretPathHistory.value.indexOf(secretPath.value);
+  const idx = tmpHistory.indexOf(secretPath.value);
   if (idx !== -1) {
-    secretPathHistory.value.splice(idx, 1);
+    tmpHistory.splice(idx, 1);
   }
   // Enrol secret path
-  secretPathHistory.value.unshift(secretPath.value);
+  tmpHistory.unshift(secretPath.value);
+  secretPathHistory.value = tmpHistory;
 }
 
 // NOTE: Some file types are displayed inline
@@ -656,8 +653,6 @@ function deleteServerUrl(url: string): void {
 function deleteSecretPath(path: string): void {
   // Remove path
   secretPathHistory.value = secretPathHistory.value.filter(p => p !== path);
-  // Save to local storage
-  window.localStorage.setItem(keys.secretPathHistory, JSON.stringify(secretPathHistory.value));
 }
 </script>
 
