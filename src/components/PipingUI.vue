@@ -182,7 +182,10 @@
               </v-btn>
             </v-flex>
             <v-flex xs6>
-              <v-btn color="blue"
+              <!-- NOTE: tag="a" is important. This element will be injected href and download attributes. -->
+              <v-btn tag="a"
+                     ref="download_button"
+                     color="blue"
                      @click="get()"
                      dark
                      block
@@ -226,7 +229,7 @@
 </template>
 
 <script setup lang="ts">
-import Vue, { ref, watch, computed, onMounted } from 'vue';
+import Vue, {ref, watch, computed, onMounted, nextTick} from 'vue';
 const urlJoinAsync = () => import('url-join').then(p => p.default);
 import {type DataUploaderProps} from '@/components/DataUploader.vue';
 const DataUploader = () => import('@/components/DataUploader.vue');
@@ -248,6 +251,8 @@ import {recordsServerUrlHistory} from "@/settings/recordsServerUrlHistory";
 import {recordsSecretPathHistory} from "@/settings/recordsSecretPathHistory";
 import {loadLocalStorageWithValidation} from "@/utils/loadLocalStorageWithValidation";
 import {secretPathHistory} from "@/settings/secretPathHistory";
+import {canTransferReadableStream} from "@/utils/canTransferReadableStream";
+import {getSwDownloadUrl} from "@/sw-download";
 
 const defaultServerUrls: ReadonlyArray<string> = buildConstants.pipingServerUrls;
 
@@ -321,6 +326,8 @@ const expandedPanelIds = ref<number[]>([]);
 const showsSnackbar = ref<boolean>(false);
 // Message of snackbar
 const snackbarMessage = ref<string>('');
+const swDownloadId = ref<string>('');
+const download_button = ref<Vue>();
 
 // FIXME: Should be removed
 // This for lazy v-model of Combobox
@@ -408,9 +415,32 @@ function onEnablePasswordlessProtection(enable: boolean) {
   protectionType.value = enable ? 'passwordless' : 'raw';
 }
 
+// TODO: move
+watch(download_button, () => {
+  const a = download_button.value?.$el as HTMLAnchorElement | null;
+  if (a === null) {
+    return;
+  }
+  // NOTE: Service Worker does not work when "download" attribute attached in Chrome 108 and Safari 16
+  a.href = getSwDownloadUrl(swDownloadId.value);
+  a.target = "_blank";
+});
+
 onMounted(() => {
   // Update random strings
   updateRandomStrs();
+
+  (async () => {
+    const x = await reserveDownload();
+    console.log("reserve", x);
+    swDownloadId.value = x.swDownloadId;
+    // nextTick(() => {
+    //   const a = download_button.value!.$el as HTMLAnchorElement;
+    //   // NOTE: Service Worker does not work when "download" attribute attached in Chrome 108 and Safari 16
+    //   a.href = getSwDownloadUrl(x.swDownloadId);
+    //   a.target = "_blank";
+    // });
+  })();
 
   // Load from Local Storage
   const savedServerUrl = window.localStorage.getItem(keys.selectedServerUrl);
@@ -587,6 +617,8 @@ async function get() {
       serverUrl: serverUrl.value,
       secretPath: secretPath.value,
       protection: protection.value,
+      // TODO: not always
+      swDownloadId: swDownloadId.value,
     }
   });
   expandedPanelIds.value.push(expandedPanels.value.length-1);
@@ -653,6 +685,54 @@ function deleteServerUrl(url: string): void {
 function deleteSecretPath(path: string): void {
   // Remove path
   secretPathHistory.value = secretPathHistory.value.filter(p => p !== path);
+}
+
+async function reserveDownload(): Promise<{ swDownloadId: string }> {
+  // eslint-disable-next-line no-async-promise-executor
+  return new Promise(async (resolve, reject) => {
+    if (!("serviceWorker" in navigator)) {
+      reject(new Error("Service Worker not supported"));
+      return;
+    }
+    if (navigator.serviceWorker.controller === null) {
+      reject(new Error("navigator.serviceWorker.controller is null"));
+      return;
+    }
+    const messageChannel = new MessageChannel();
+    messageChannel.port1.onmessage = (e: MessageEvent) => resolve({
+      swDownloadId: e.data.swDownloadId,
+    });
+    navigator.serviceWorker.controller.postMessage({ type: 'reserve-download'}, [messageChannel.port2]);
+
+    // if (canTransferReadableStream()) {
+    //   const messageChannel = new MessageChannel();
+    //   messageChannel.port1.onmessage = (e: MessageEvent) => resolve({
+    //     swDownloadId: e.data.swDownloadId,
+    //   });
+    //
+    //   return;
+    // }
+    // console.log("Fallback to posting chunks of ReadableStream over MessageChannel, instead of transferring the stream directly")
+    // const messageChannel = new MessageChannel();
+    // messageChannel.port1.onmessage = (e: MessageEvent) => resolve({
+    //   swDownloadId: e.data.swDownloadId,
+    // });
+    // navigator.serviceWorker.controller.postMessage({
+    //   type: 'enroll-download-with-channel',
+    //   headers,
+    // }, [messageChannel.port2]);
+    //
+    // const reader = readableStream.getReader();
+    // while (true) {
+    //   const result = await reader.read();
+    //   if (result.done) {
+    //     messageChannel.port1.postMessage({ done: true });
+    //     break;
+    //   }
+    //   // .slice() is needed otherwise OpenPGP.js causes "TypeError: attempting to access detached ArrayBuffer"
+    //   messageChannel.port1.postMessage(result, [result.value.buffer.slice(0)]);
+    // }
+  });
 }
 </script>
 

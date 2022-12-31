@@ -7,19 +7,28 @@ function generateRandomString(len: number): string {
   const randomArr = crypto.getRandomValues(new Uint32Array(len));
   return [...randomArr].map(n => chars.charAt(n % chars.length)).join('');
 }
+function makePromise<T>(): { promise: Promise<T>, resolve: (value: T | PromiseLike<T>) => void, reject: (reason?: any) => void } {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: any) => void;
+  const promise = new Promise<T>((_resolve, _reject) => {
+    resolve = _resolve;
+    reject = _reject;
+  });
+  return {promise, resolve, reject};
+}
 
 type SwDownload = {
   headers: [string, string][],
   readableStream: ReadableStream,
 };
 
-const idToSwDownload: Map<string, SwDownload> = new Map();
+const idToSwDownloadPromise: Map<string, { promise: Promise<SwDownload>, resolve: (value: SwDownload) => void }> = new Map();
 
 // Generate unique sw-download ID
 function generateUniqueSwDownloadId(): string {
   while(true) {
     const id = generateRandomString(128);
-    if (!idToSwDownload.has(id)) {
+    if (!idToSwDownloadPromise.has(id)) {
       return id;
     }
   }
@@ -46,8 +55,32 @@ sw.addEventListener('message', (e: ExtendableMessageEvent) => {
     case 'skip-waiting':
       sw.skipWaiting();
       break;
-    case 'enroll-download': {
-      const {headers, readableStream} = e.data;
+    case 'reserve-download': {
+      // const {headers, readableStream} = e.data;
+      // if (!isHeaders(headers)) {
+      //   console.error('data.headers is invalid');
+      //   return;
+      // }
+      // if (!(readableStream instanceof ReadableStream)) {
+      //   console.error('data.readableStream is not ReadableStream');
+      //   return;
+      // }
+      // Generate unique ID
+      const id = generateUniqueSwDownloadId();
+      const p = makePromise<SwDownload>();
+      // Reserve info with the ID
+      idToSwDownloadPromise.set(id, p);
+      e.ports[0].postMessage({
+        swDownloadId: id,
+      });
+      break;
+    }
+    case 'provide-download-response': {
+      const {swDownloadId, headers, readableStream} = e.data;
+      if (swDownloadId === undefined) {
+        console.error('swDownloadId is undefined');
+        return;
+      }
       if (!isHeaders(headers)) {
         console.error('data.headers is invalid');
         return;
@@ -56,20 +89,24 @@ sw.addEventListener('message', (e: ExtendableMessageEvent) => {
         console.error('data.readableStream is not ReadableStream');
         return;
       }
-      // Generate unique ID
-      const id = generateUniqueSwDownloadId();
-      // Enroll info with the ID
-      idToSwDownload.set(id, {
+      const swDownloadPromise = idToSwDownloadPromise.get(swDownloadId);
+      if (swDownloadPromise === undefined) {
+        console.error('swDownload is not found');
+        return;
+      }
+      idToSwDownloadPromise.delete(swDownloadId);
+      swDownloadPromise.resolve({
         headers,
         readableStream,
       });
-      e.ports[0].postMessage({
-        swDownloadId: id,
-      });
       break;
     }
-    case 'enroll-download-with-channel': {
-      const {headers} = e.data;
+    case 'provide-download-response-with-channel': {
+      const {swDownloadId, headers} = e.data;
+      if (swDownloadId === undefined) {
+        console.error('swDownloadId is undefined');
+        return;
+      }
       if (!isHeaders(headers)) {
         console.error('data.headers is invalid');
         return;
@@ -86,16 +123,27 @@ sw.addEventListener('message', (e: ExtendableMessageEvent) => {
           };
         }
       });
-      // Generate unique ID
-      const id = generateUniqueSwDownloadId();
-      // Enroll info with the ID
-      idToSwDownload.set(id, {
+      // // Generate unique ID
+      // const id = generateUniqueSwDownloadId();
+      // // Enroll info with the ID
+      // idToSwDownloadPromise.set(id, {
+      //   headers,
+      //   readableStream,
+      // });
+      const swDownloadPromise = idToSwDownloadPromise.get(swDownloadId);
+      if (swDownloadPromise === undefined) {
+        console.error('swDownload is not found');
+        return;
+      }
+      idToSwDownloadPromise.delete(swDownloadId);
+      swDownloadPromise.resolve({
         headers,
         readableStream,
       });
-      e.ports[0].postMessage({
-        swDownloadId: id,
-      });
+      //
+      // e.ports[0].postMessage({
+      //   swDownloadId: id,
+      // });
       break;
     }
     default:
@@ -107,7 +155,7 @@ sw.addEventListener('message', (e: ExtendableMessageEvent) => {
 // Support for stream download
 sw.addEventListener('fetch', (event: FetchEvent) => {
   const url = new URL(event.request.url);
-  if (url.pathname === '/sw-download-support/v2') {
+  if (url.pathname === '/sw-download-support/v3') {
     // Return "OK"
     event.respondWith(new Response(
       new ReadableStream({
@@ -117,7 +165,9 @@ sw.addEventListener('fetch', (event: FetchEvent) => {
         }
       })
     ));
-  } else if (url.pathname === '/sw-download/v2') {
+    return;
+  }
+  if (url.pathname === '/sw-download/v3') {
     const fragmentQuery = new URL(`a://a${url.hash.substring(1)}`).searchParams;
     // Get sw-download ID
     const id = fragmentQuery.get("id");
@@ -125,15 +175,16 @@ sw.addEventListener('fetch', (event: FetchEvent) => {
       console.error("id not found", url);
       return;
     }
-    const swDownload = idToSwDownload.get(id);
-    if (swDownload === undefined) {
+    const swDownloadPromise = idToSwDownloadPromise.get(id);
+    if (swDownloadPromise === undefined) {
       console.error(`download ID ${id} not found`);
       return;
     }
-    idToSwDownload.delete(id);
-    const headers = new Headers(swDownload.headers);
+    // idToSwDownloadPromise.delete(id);
     event.respondWith((async () => {
-      await new Promise(resolve => setTimeout(resolve,  30 * 1000));
+      const swDownload: SwDownload = await swDownloadPromise.promise;
+      const headers = new Headers(swDownload.headers);
+      // await new Promise(resolve => setTimeout(resolve,  30 * 1000));
       return new Response(swDownload.readableStream, {
         headers,
       })

@@ -56,6 +56,7 @@ export type DataDownloaderProps = {
   serverUrl: string,
   secretPath: string,
   protection: Protection,
+  swDownloadId: string | undefined,
 };
 </script>
 
@@ -276,33 +277,37 @@ onMounted(async () => {
     ...( mimeTypeAndFileExtension === undefined ? [] : [ [ "Content-Type", mimeTypeAndFileExtension.mimeType ] ] satisfies [[string, string]] ),
     ['Content-Disposition', "attachment; filename*=UTF-8''" + escapedFileName],
   ];
-  // Enroll download ReadableStream and get sw-download ID
-  const {swDownloadId} = await enrollDownload(headers, readableStreamForDownload);
-  // Download via Service Worker
-  // NOTE: '/sw-download/v2' can be received by Service Worker in src/sw.js
-  // NOTE: URL fragment is passed to Service Worker but not passed to Web server
-  const downloadUrl = `/sw-download/v2#?id=${swDownloadId}`;
-  // const win = window.open(downloadUrl, "_blank");
-  // console.log("window.open()?.closed =", win?.closed);
-  // // NOTE: Desktop and iOS Safari 16.1 blocks by default
-  // if(win === null || win.closed || win.closed === undefined) {
-    openRetryDownload.value = true;
-    nextTick(() => {
-      // Use real click, not element.click()
-      const a = retry_download_button.value!.$el as HTMLAnchorElement;
-      a.href = downloadUrl;
-      a.target = "_blank";
-      // NOTE: Service Worker does not work when "download" attribute attached in Chrome 108 and Safari 16
-      // a.download = fileName;
-    });
-  // }
+  // // Enroll download ReadableStream and get sw-download ID
+  // const {swDownloadId} = await enrollDownload(headers, readableStreamForDownload);
+
+  const rr = await provideDownloadResponse(props.composedProps.swDownloadId!, headers, readableStreamForDownload);
+  console.log("rr", rr);
+
+  // // Download via Service Worker
+  // // NOTE: '/sw-download/v2' can be received by Service Worker in src/sw.js
+  // // NOTE: URL fragment is passed to Service Worker but not passed to Web server
+  // const downloadUrl = `/sw-download/v2#?id=${swDownloadId}`;
+  // // const win = window.open(downloadUrl, "_blank");
+  // // console.log("window.open()?.closed =", win?.closed);
+  // // // NOTE: Desktop and iOS Safari 16.1 blocks by default
+  // // if(win === null || win.closed || win.closed === undefined) {
+  //   openRetryDownload.value = true;
+  //   nextTick(() => {
+  //     // Use real click, not element.click()
+  //     const a = retry_download_button.value!.$el as HTMLAnchorElement;
+  //     a.href = downloadUrl;
+  //     a.target = "_blank";
+  //     // NOTE: Service Worker does not work when "download" attribute attached in Chrome 108 and Safari 16
+  //     // a.download = fileName;
+  //   });
+  // // }
   // Without this, memory leak occurs. It consumes as much memory as the received file size.
   // Memory still leaks when using `npm run serve`. Build and serve to confirm.
   await readableStreamForFileType.cancel();
 });
 
 // (base: https://googlechrome.github.io/samples/service-worker/post-message/)
-async function enrollDownload(headers: readonly [string, string][], readableStream: ReadableStream<Uint8Array>): Promise<{ swDownloadId: string }> {
+async function provideDownloadResponse(swDownloadId: string, headers: readonly [string, string][], readableStream: ReadableStream<Uint8Array>): Promise<{ swDownloadId: string }> {
   // eslint-disable-next-line no-async-promise-executor
   return new Promise(async (resolve, reject) => {
     if (!("serviceWorker" in navigator)) {
@@ -319,7 +324,8 @@ async function enrollDownload(headers: readonly [string, string][], readableStre
         swDownloadId: e.data.swDownloadId,
       });
       navigator.serviceWorker.controller.postMessage({
-        type: 'enroll-download',
+        type: 'provide-download-response',
+        swDownloadId,
         headers,
         readableStream,
       }, [messageChannel.port2, readableStream] as Transferable[]);
@@ -331,7 +337,8 @@ async function enrollDownload(headers: readonly [string, string][], readableStre
       swDownloadId: e.data.swDownloadId,
     });
     navigator.serviceWorker.controller.postMessage({
-      type: 'enroll-download-with-channel',
+      type: 'provide-download-response--with-channel',
+      swDownloadId,
       headers,
     }, [messageChannel.port2]);
 
@@ -347,4 +354,51 @@ async function enrollDownload(headers: readonly [string, string][], readableStre
     }
   });
 }
+
+// // (base: https://googlechrome.github.io/samples/service-worker/post-message/)
+// async function enrollDownload(headers: readonly [string, string][], readableStream: ReadableStream<Uint8Array>): Promise<{ swDownloadId: string }> {
+//   // eslint-disable-next-line no-async-promise-executor
+//   return new Promise(async (resolve, reject) => {
+//     if (!("serviceWorker" in navigator)) {
+//       reject(new Error("Service Worker not supported"));
+//       return;
+//     }
+//     if (navigator.serviceWorker.controller === null) {
+//       reject(new Error("navigator.serviceWorker.controller is null"));
+//       return;
+//     }
+//     if (canTransferReadableStream()) {
+//       const messageChannel = new MessageChannel();
+//       messageChannel.port1.onmessage = (e: MessageEvent) => resolve({
+//         swDownloadId: e.data.swDownloadId,
+//       });
+//       navigator.serviceWorker.controller.postMessage({
+//         type: 'enroll-download',
+//         headers,
+//         readableStream,
+//       }, [messageChannel.port2, readableStream] as Transferable[]);
+//       return;
+//     }
+//     console.log("Fallback to posting chunks of ReadableStream over MessageChannel, instead of transferring the stream directly")
+//     const messageChannel = new MessageChannel();
+//     messageChannel.port1.onmessage = (e: MessageEvent) => resolve({
+//       swDownloadId: e.data.swDownloadId,
+//     });
+//     navigator.serviceWorker.controller.postMessage({
+//       type: 'enroll-download-with-channel',
+//       headers,
+//     }, [messageChannel.port2]);
+//
+//     const reader = readableStream.getReader();
+//     while (true) {
+//       const result = await reader.read();
+//       if (result.done) {
+//         messageChannel.port1.postMessage({ done: true });
+//         break;
+//       }
+//       // .slice() is needed otherwise OpenPGP.js causes "TypeError: attempting to access detached ArrayBuffer"
+//       messageChannel.port1.postMessage(result, [result.value.buffer.slice(0)]);
+//     }
+//   });
+// }
 </script>
