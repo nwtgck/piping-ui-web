@@ -38,8 +38,9 @@
           <v-card-text>{{ strings['browser_may_have_blocked_download'] }}</v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="primary" text @click="openRetryDownload = false">{{ strings['retry_download_dialog_no'] }}</v-btn>
-            <v-btn color="primary" text @click="retryDownload()">{{ strings['retry_download_dialog_yes'] }}</v-btn>
+            <v-btn color="primary" outlined @click="openRetryDownload = false">{{ strings['retry_download_dialog_no'] }}</v-btn>
+            <!-- NOTE: tag="a" is important. This element will be injected href and download attributes. -->
+            <v-btn ref="retry_download_button" tag="a" @click="openRetryDownload = false" color="primary" outlined>{{ strings['retry_download_dialog_yes'] }}</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -61,7 +62,7 @@ export type DataDownloaderProps = {
 <script setup lang="ts">
 /* eslint-disable */
 
-import Vue, {ref, computed, onMounted} from "vue";
+import Vue, {ref, computed, onMounted, nextTick} from "vue";
 import urlJoin from 'url-join';
 import {mdiAlert, mdiChevronDown} from "@mdi/js";
 import * as pipingUiUtils from "@/piping-ui-utils";
@@ -115,7 +116,7 @@ const downloadPath = computed<string>(() => {
 const rootElement = ref<Vue>();
 const pipingUiAuthVerificationCode = ref<string | undefined>();
 const openRetryDownload = ref<boolean>(false);
-const retryDownload = ref<() => void>(() => {});
+const retry_download_button = ref<Vue>();
 
 // NOTE: Automatically download when mounted
 onMounted(async () => {
@@ -281,17 +282,17 @@ onMounted(async () => {
   // NOTE: '/sw-download/v2' can be received by Service Worker in src/sw.js
   // NOTE: URL fragment is passed to Service Worker but not passed to Web server
   const downloadUrl = `/sw-download/v2#?id=${swDownloadId}`;
-  retryDownload.value = () => {
-    const win = window.open(downloadUrl, "_blank");
-    console.log("retried window.open()?.closed =", win?.closed);
-    openRetryDownload.value = false;
-    retryDownload.value = () => {};
-  };
   const win = window.open(downloadUrl, "_blank");
   console.log("window.open()?.closed =", win?.closed);
   // NOTE: Desktop and iOS Safari 16.1 blocks by default
   if(win === null || win.closed || win.closed === undefined) {
     openRetryDownload.value = true;
+    nextTick(() => {
+      // Use real click, not element.click()
+      const a = retry_download_button.value!.$el as HTMLAnchorElement;
+      a.href = downloadUrl;
+      a.download = fileName;
+    });
   }
   // Without this, memory leak occurs. It consumes as much memory as the received file size.
   // Memory still leaks when using `npm run serve`. Build and serve to confirm.
