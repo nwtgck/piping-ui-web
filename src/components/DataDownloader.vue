@@ -291,7 +291,7 @@ onMounted(async () => {
       // Use real click, not element.click()
       const a = retry_download_button.value!.$el as HTMLAnchorElement;
       a.href = downloadUrl;
-      a.download = fileName;
+      // a.download = fileName;
     });
   // }
   // Without this, memory leak occurs. It consumes as much memory as the received file size.
