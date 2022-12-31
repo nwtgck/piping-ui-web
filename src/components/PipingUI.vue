@@ -435,6 +435,13 @@ onMounted(() => {
 
   (async () => {
     await navigator.serviceWorker.ready;
+    while (true) {
+      const supported: boolean = (await import("@/sw-download")).supportsSwDownload();
+      if (supported) {
+        break;
+      }
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
     const x = await reserveDownload();
     console.log("reserve", x);
     swDownloadId.value = x.swDownloadId;
