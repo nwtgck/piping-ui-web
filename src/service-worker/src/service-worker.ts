@@ -132,8 +132,13 @@ sw.addEventListener('fetch', (event: FetchEvent) => {
     }
     idToSwDownload.delete(id);
     const headers = new Headers(swDownload.headers);
-    event.respondWith(new Response(swDownload.readableStream, {
-      headers,
-    }));
+    event.respondWith(
+      new Promise(resolve => setTimeout(resolve,  10 * 1000))
+        .then(() => {
+          return new Response(swDownload.readableStream, {
+            headers,
+          })
+        })
+    );
   }
 });

@@ -282,10 +282,10 @@ onMounted(async () => {
   // NOTE: '/sw-download/v2' can be received by Service Worker in src/sw.js
   // NOTE: URL fragment is passed to Service Worker but not passed to Web server
   const downloadUrl = `/sw-download/v2#?id=${swDownloadId}`;
-  const win = window.open(downloadUrl, "_blank");
-  console.log("window.open()?.closed =", win?.closed);
-  // NOTE: Desktop and iOS Safari 16.1 blocks by default
-  if(win === null || win.closed || win.closed === undefined) {
+  // const win = window.open(downloadUrl, "_blank");
+  // console.log("window.open()?.closed =", win?.closed);
+  // // NOTE: Desktop and iOS Safari 16.1 blocks by default
+  // if(win === null || win.closed || win.closed === undefined) {
     openRetryDownload.value = true;
     nextTick(() => {
       // Use real click, not element.click()
@@ -293,7 +293,7 @@ onMounted(async () => {
       a.href = downloadUrl;
       a.download = fileName;
     });
-  }
+  // }
   // Without this, memory leak occurs. It consumes as much memory as the received file size.
   // Memory still leaks when using `npm run serve`. Build and serve to confirm.
   await readableStreamForFileType.cancel();
