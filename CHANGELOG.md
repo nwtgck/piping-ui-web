@@ -5,6 +5,23 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [0.13.0] - 2022-12-31
+### Changed
+- Passwordless protection by default
+- Make verification optional in passwordless protection
+- Update dependencies
+- Mitigate path collision in passwordless protection
+- Use numbers, which are the universal language, as secret path by default 
+- Allow users to input both files and text without switching
+- Streaming upload for multiple files with zip
+- Improve error messages
+
+### Fixed
+- Show decrypted loaded byte size not encrypted one
+
+### Added
+- Detect download block and open retry-download dialog especially for Safari
+
 ## [0.12.1] - 2022-12-27
 ### Fixed
 - Solve memory leak when downloading
@@ -426,7 +443,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 ### Added
 - First release
 
-[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.12.1...HEAD
+[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/nwtgck/piping-ui-web/compare/v0.12.1...v0.13.0
 [0.12.1]: https://github.com/nwtgck/piping-ui-web/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/nwtgck/piping-ui-web/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/nwtgck/piping-ui-web/compare/v0.10.0...v0.11.0
