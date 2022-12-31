@@ -431,6 +431,7 @@ onMounted(() => {
   updateRandomStrs();
 
   (async () => {
+    await navigator.serviceWorker.ready;
     const x = await reserveDownload();
     console.log("reserve", x);
     swDownloadId.value = x.swDownloadId;
