@@ -417,8 +417,8 @@ function onEnablePasswordlessProtection(enable: boolean) {
 
 // TODO: move
 watch(download_button, () => {
-  const a = download_button.value?.$el as HTMLAnchorElement | null;
-  if (a === null) {
+  const a = download_button.value?.$el as HTMLAnchorElement | undefined;
+  if (a === undefined) {
     return;
   }
   // NOTE: Service Worker does not work when "download" attribute attached in Chrome 108 and Safari 16
