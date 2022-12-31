@@ -326,8 +326,22 @@ const expandedPanelIds = ref<number[]>([]);
 const showsSnackbar = ref<boolean>(false);
 // Message of snackbar
 const snackbarMessage = ref<string>('');
-const swDownloadId = ref<string>('');
+const swDownloadId = ref<string>();
+
 const download_button = ref<Vue>();
+watch([download_button, swDownloadId], () => {
+  if (swDownloadId.value === undefined) {
+    return;
+  }
+  const a = download_button.value?.$el as HTMLAnchorElement | undefined;
+  if (a === undefined) {
+    return;
+  }
+  // NOTE: Human's real a-tag click is much more stable download especially for Safari
+  // NOTE: Service Worker does not work when "download" attribute attached in Chrome 108 and Safari 16
+  a.href = getSwDownloadUrl(swDownloadId.value);
+  a.target = "_blank";
+});
 
 // FIXME: Should be removed
 // This for lazy v-model of Combobox
@@ -414,17 +428,6 @@ function onEnablePasswordProtection(enable: boolean) {
 function onEnablePasswordlessProtection(enable: boolean) {
   protectionType.value = enable ? 'passwordless' : 'raw';
 }
-
-// TODO: move
-watch(download_button, () => {
-  const a = download_button.value?.$el as HTMLAnchorElement | undefined;
-  if (a === undefined) {
-    return;
-  }
-  // NOTE: Service Worker does not work when "download" attribute attached in Chrome 108 and Safari 16
-  a.href = getSwDownloadUrl(swDownloadId.value);
-  a.target = "_blank";
-});
 
 onMounted(() => {
   // Update random strings

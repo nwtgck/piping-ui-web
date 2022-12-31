@@ -337,7 +337,7 @@ async function provideDownloadResponse(swDownloadId: string, headers: readonly [
       swDownloadId: e.data.swDownloadId,
     });
     navigator.serviceWorker.controller.postMessage({
-      type: 'provide-download-response--with-channel',
+      type: 'provide-download-response-with-channel',
       swDownloadId,
       headers,
     }, [messageChannel.port2]);
