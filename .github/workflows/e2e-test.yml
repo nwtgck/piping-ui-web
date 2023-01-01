@@ -33,7 +33,7 @@ jobs:
 
     runs-on: ubuntu-20.04
     # TODO:
-#    timeout-minutes: 10
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -49,7 +49,8 @@ jobs:
           npm ci &
           (cd e2e-test && npm ci) &
           wait
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
+#      - name: Setup tmate session
+#        uses: mxschmitt/action-tmate@v3
 #      - name: E2E test (${{ matrix.e2e_docker_image_fragment }})
 #        run: cd e2e-test && E2E_DOCKER_IMAGE=selenium/standalone-${{ matrix.e2e_docker_image_fragment }} E2E_DISABLE_SERVICE_WORKER=${{ matrix.e2e_service_worker_disable }} E2E_BLOCK_POPUP=${{ matrix.e2e_block_popup }} npm start
+      - run: E2E_DOCKER_IMAGE=selenium/standalone-firefox:78.0 E2E_DISABLE_SERVICE_WORKER= E2E_BLOCK_POPUP=true npm start
