@@ -67,7 +67,8 @@ function getActions(driver: WebDriver) {
           try {
             retryDownloadButton = await driver.findElement(webdriver.By.css("[data-testid=retry_download_button]"));
             const href = await retryDownloadButton.getAttribute("href");
-            if (href.startsWith("/sw-download/")) {
+            console.log("href", href);
+            if (href.includes("/sw-download/")) {
               break;
             }
           } catch (e) {
