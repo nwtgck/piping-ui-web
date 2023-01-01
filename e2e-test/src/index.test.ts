@@ -22,6 +22,7 @@ const PIPING_UI_URL = `http://localhost:${PIPING_UI_PORT}`;
 const driverFactoryPromise = createDriverFactory({
   dockerBaseImage: process.env["E2E_DOCKER_IMAGE"] || (() => {throw new Error("$E2E_DOCKER_IMAGE not found")})(),
   disablesServiceWorker: process.env["E2E_DISABLE_SERVICE_WORKER"] === "true",
+  blockPopup: process.env["E2E_BLOCK_POPUP"] === "true",
   forwardingTcpPorts: [PIPING_UI_PORT],
 });
 
@@ -57,6 +58,25 @@ function getActions(driver: WebDriver) {
     async inputSecretPath(path: string) {
       await (await elements.secretPathClearButton()).click();
       await (await elements.secretPathInput()).sendKeys(path);
+    },
+    retryDownloadButtonIfNeed(): () => void {
+      let done = false;
+      (async () => {
+        let retryDownloadButton: webdriver.WebElement;
+        while (true) {
+          try {
+            retryDownloadButton = await driver.findElement(webdriver.By.css("[data-testid=retry_download_button]"));
+            break;
+          } catch (e) {
+          }
+          await new Promise(resolve => setTimeout(resolve, 500));
+          if (done) {
+            return;
+          }
+        }
+        await nativeClick(driver, retryDownloadButton);
+      })().catch(e => console.error(e));
+      return () => { done = true };
     },
   };
 }
@@ -110,6 +130,8 @@ describe('Piping UI', () => {
       await nativeClick(driver, await elements.passwordlessSwitch());
       await new Promise(resolve => setTimeout(resolve, 1000));
       await (await elements.downloadButton()).click();
+      const finishRetryDownload = actions.retryDownloadButtonIfNeed();
+      defer(() => finishRetryDownload());
 
       const downloadedFilePath = path.join(downloadPath, secretPath);
       await waitForDownload(downloadedFilePath);
@@ -207,6 +229,8 @@ describe('Piping UI', () => {
       await (await elements.passwordInput()).sendKeys(filePassword);
       await new Promise(resolve => setTimeout(resolve, 1000));
       await (await elements.downloadButton()).click();
+      const finishRetryDownload = actions.retryDownloadButtonIfNeed();
+      defer(() => finishRetryDownload());
 
       const downloadedFilePath = path.join(downloadPath, secretPath);
       await waitForDownload(downloadedFilePath);
@@ -300,6 +324,8 @@ describe('Piping UI', () => {
     await receiverActions.inputSecretPath(secretPath);
     await new Promise(resolve => setTimeout(resolve, 1000));
     await (await receiverElements.downloadButton()).click();
+    const finishRetryDownload = receiverActions.retryDownloadButtonIfNeed();
+    defer(() => finishRetryDownload());
 
     await new Promise(resolve => setTimeout(resolve, 2000));
     await (await senderElements.passwordlessVerifiedButton0()).click();

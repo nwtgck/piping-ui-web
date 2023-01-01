@@ -40,7 +40,7 @@
             <v-spacer></v-spacer>
             <v-btn color="primary" outlined @click="openRetryDownload = false">{{ strings['retry_download_dialog_no'] }}</v-btn>
             <!-- NOTE: tag="a" is important. This element will be injected href and download attributes. -->
-            <v-btn ref="retry_download_button" tag="a" @click="openRetryDownload = false" color="primary" outlined>{{ strings['retry_download_dialog_yes'] }}</v-btn>
+            <v-btn ref="retry_download_button" tag="a" @click="openRetryDownload = false" color="primary" outlined data-testid="retry_download_button">{{ strings['retry_download_dialog_yes'] }}</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>

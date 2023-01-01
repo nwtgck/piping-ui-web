@@ -50,6 +50,7 @@ export async function servePipingUiIfNotServed(port: number) {
   }
 }
 
+// NOTE: e.click() causes "Element <input id="..." type="checkbox"> is not clickable at point because another element <div class="..."> obscures it"
 export async function nativeClick(driver: webdriver.WebDriver, element: webdriver.WebElement) {
   await driver.executeScript((e: any) => e.click(), element);
 }
@@ -94,7 +95,7 @@ export async function waitFor<T>(f: () => T | Promise<T>, { intervalMillis = 100
 
 export const rayTracingPngImage: Buffer = fs.readFileSync("./resources/ray-tracing-iow-1280x720.png");
 
-export async function createDriverFactory({dockerBaseImage, disablesServiceWorker, forwardingTcpPorts}: {dockerBaseImage: string, disablesServiceWorker: boolean, forwardingTcpPorts: readonly number[]}) {
+export async function createDriverFactory({dockerBaseImage, disablesServiceWorker, blockPopup, forwardingTcpPorts}: {dockerBaseImage: string, disablesServiceWorker: boolean, blockPopup: boolean, forwardingTcpPorts: readonly number[]}) {
   const sharePath = fs.mkdtempSync(path.join(os.tmpdir(), "selenium-docker-share-"));
   const sharePathInDocker = "/home/seluser/tmp";
   const downloadPath = fs.mkdtempSync(path.join(os.tmpdir(), "selenium-docker-downloads-share-"));
@@ -122,6 +123,8 @@ export async function createDriverFactory({dockerBaseImage, disablesServiceWorke
             new firefox.Options()
               .setPreference("browser.helperApps.neverAsk.saveToDisk", "application/octet-stream;application/x-unknown-content-type")
               .setPreference("dom.serviceWorkers.enabled", !disablesServiceWorker)
+              // 20 is default value in Firefox 108
+              .setPreference("dom.popup_maximum", blockPopup ? 0 : 20)
           )
           .usingServer("http://localhost:4444/wd/hub").build();
       }
@@ -129,6 +132,9 @@ export async function createDriverFactory({dockerBaseImage, disablesServiceWorke
     if (dockerBaseImage.includes("-chrome:") || dockerBaseImage.includes("-chromium:")) {
       if (disablesServiceWorker) {
         throw new Error(`can not disable Service Worker on Chrome/Chromium`);
+      }
+      if (blockPopup) {
+        throw new Error(`can not block popup on Chrome/Chromium`);
       }
       return () => {
         return new webdriver.Builder().forBrowser(webdriver.Browser.CHROME)
