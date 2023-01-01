@@ -78,11 +78,13 @@ function getActions(driver: WebDriver) {
             return;
           }
         }
-        await driver.executeScript("window.scrollTo(0, 484);")
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        await driver.executeScript((button: any) => {
+          button.scrollIntoView();
+        }, retryDownloadButton);
+        // await new Promise(resolve => setTimeout(resolve, 5000));
         // await nativeClick(driver, retryDownloadButton);
         await retryDownloadButton.click();
-        console.log("AFTER CLICK");
+        // console.log("AFTER CLICK");
       })().catch(e => console.error(e));
       return () => { done = true };
     },
