@@ -82,7 +82,7 @@ function getActions(driver: WebDriver) {
         await driver.executeScript((button: Element) => {
           button.scrollIntoView();
         }, retryDownloadButton);
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 2000));
         await retryDownloadButton.click();
       })().catch(e => console.error("failed to run retryDownloadButtonIfNeed()", e));
       return () => { done = true };
