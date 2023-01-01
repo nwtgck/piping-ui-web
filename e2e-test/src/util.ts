@@ -88,7 +88,7 @@ export async function waitForDownload(filePath: string) {
   // NOTE: Firefox creates 0-byte file and .part file
   while (!fs.existsSync(filePath) || fs.statSync(filePath).size === 0) {
     const dir = path.resolve(filePath, "..");
-    console.log("wait for download", dir);
+    console.log("wait for download", dir, filePath);
     const paths = fs.readdirSync(dir)
     console.log("paths", paths);
     await new Promise(resolve => setTimeout(resolve, 1000));
