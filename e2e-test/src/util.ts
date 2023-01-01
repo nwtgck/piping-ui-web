@@ -89,6 +89,9 @@ export async function waitForDownload(filePath: string) {
   while (!fs.existsSync(filePath) || fs.statSync(filePath).size === 0) {
     const dir = path.resolve(filePath, "..");
     console.log("wait for download", dir, filePath);
+    if (fs.existsSync(filePath)) {
+      console.log("stat", fs.statSync(filePath));
+    }
     const paths = fs.readdirSync(dir)
     console.log("paths", paths);
     await new Promise(resolve => setTimeout(resolve, 1000));
