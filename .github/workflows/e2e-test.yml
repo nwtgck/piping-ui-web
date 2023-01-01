@@ -28,7 +28,7 @@ jobs:
 #            e2e_service_worker_disable: true
 #          - e2e_docker_image_fragment: firefox:78.0
 #            e2e_service_worker_disable: true
-          - e2e_docker_image_fragment: firefox:78.0
+          - e2e_docker_image_fragment: firefox:108.0
             e2e_block_popup: true
 
     runs-on: ubuntu-20.04
@@ -51,6 +51,6 @@ jobs:
           wait
 #      - name: Setup tmate session
 #        uses: mxschmitt/action-tmate@v3
-#      - name: E2E test (${{ matrix.e2e_docker_image_fragment }})
-#        run: cd e2e-test && E2E_DOCKER_IMAGE=selenium/standalone-${{ matrix.e2e_docker_image_fragment }} E2E_DISABLE_SERVICE_WORKER=${{ matrix.e2e_service_worker_disable }} E2E_BLOCK_POPUP=${{ matrix.e2e_block_popup }} npm start
-      - run: cd e2e-test && E2E_DOCKER_IMAGE=selenium/standalone-firefox:108.0 E2E_DISABLE_SERVICE_WORKER= E2E_BLOCK_POPUP=true npm start
+      - name: E2E test (${{ matrix.e2e_docker_image_fragment }})
+        run: cd e2e-test && E2E_DOCKER_IMAGE=selenium/standalone-${{ matrix.e2e_docker_image_fragment }} E2E_DISABLE_SERVICE_WORKER=${{ matrix.e2e_service_worker_disable }} E2E_BLOCK_POPUP=${{ matrix.e2e_block_popup }} npm start
+#      - run: cd e2e-test && E2E_DOCKER_IMAGE=selenium/standalone-firefox:108.0 E2E_DISABLE_SERVICE_WORKER= E2E_BLOCK_POPUP=true npm start
