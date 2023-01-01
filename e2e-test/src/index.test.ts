@@ -78,13 +78,23 @@ function getActions(driver: WebDriver) {
             return;
           }
         }
-        await driver.executeScript((button: any) => {
-          button.scrollIntoView();
-        }, retryDownloadButton);
-        // await new Promise(resolve => setTimeout(resolve, 5000));
-        // await nativeClick(driver, retryDownloadButton);
-        await retryDownloadButton.click();
-        // console.log("AFTER CLICK");
+        // while (true) {
+        //   try {
+            await driver.executeScript((button: Element) => {
+              button.scrollIntoView();
+            }, retryDownloadButton);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            // await nativeClick(driver, retryDownloadButton);
+            await retryDownloadButton.click();
+            console.log("AFTER CLICK");
+        //   } catch (e) {
+        //     // Sometimes "...  is not clickable at point (745,493) because another element <div class="v-overlay__scrim"> obscures it"
+        //   }
+        //   await new Promise(resolve => setTimeout(resolve, 500));
+        //   if (done) {
+        //     return;
+        //   }
+        // }
       })().catch(e => console.error(e));
       return () => { done = true };
     },
