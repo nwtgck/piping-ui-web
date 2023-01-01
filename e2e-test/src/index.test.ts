@@ -84,6 +84,7 @@ function getActions(driver: WebDriver) {
         }, retryDownloadButton);
         await new Promise(resolve => setTimeout(resolve, 2000));
         await retryDownloadButton.click();
+        console.log("AFTER CLICK");
       })().catch(e => console.error("failed to run retryDownloadButtonIfNeed()", e));
       return () => { done = true };
     },
