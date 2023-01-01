@@ -79,8 +79,8 @@ function getActions(driver: WebDriver) {
             return;
           }
         }
-        await driver.executeScript((button: Element) => {
-          button.scrollIntoView();
+        await driver.executeScript((button: HTMLElement) => {
+          window.scrollTo(0, button.offsetTop)
         }, retryDownloadButton);
         await new Promise(resolve => setTimeout(resolve, 2000));
         await retryDownloadButton.click();
