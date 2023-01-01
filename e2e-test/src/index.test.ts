@@ -66,11 +66,11 @@ function getActions(driver: WebDriver) {
         while (true) {
           try {
             retryDownloadButton = await driver.findElement(webdriver.By.css("[data-testid=retry_download_button]"));
-            const href = await retryDownloadButton.getAttribute("href");
-            console.log("href", href);
-            if (href.includes("/sw-download/")) {
-              break;
-            }
+            break;
+            // const href = await retryDownloadButton.getAttribute("href");
+            // if (href.includes("/sw-download/")) {
+            //   break;
+            // }
           } catch (e) {
           }
           await new Promise(resolve => setTimeout(resolve, 500));
@@ -78,24 +78,12 @@ function getActions(driver: WebDriver) {
             return;
           }
         }
-        // while (true) {
-        //   try {
-            await driver.executeScript((button: Element) => {
-              button.scrollIntoView();
-            }, retryDownloadButton);
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            // await nativeClick(driver, retryDownloadButton);
-            await retryDownloadButton.click();
-            console.log("AFTER CLICK");
-        //   } catch (e) {
-        //     // Sometimes "...  is not clickable at point (745,493) because another element <div class="v-overlay__scrim"> obscures it"
-        //   }
-        //   await new Promise(resolve => setTimeout(resolve, 500));
-        //   if (done) {
-        //     return;
-        //   }
-        // }
-      })().catch(e => console.error(e));
+        await driver.executeScript((button: Element) => {
+          button.scrollIntoView();
+        }, retryDownloadButton);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        await retryDownloadButton.click();
+      })().catch(e => console.error("failed to run retryDownloadButtonIfNeed()", e));
       return () => { done = true };
     },
   };
@@ -344,11 +332,12 @@ describe('Piping UI', () => {
     await receiverActions.inputSecretPath(secretPath);
     await new Promise(resolve => setTimeout(resolve, 1000));
     await (await receiverElements.downloadButton()).click();
-    const finishRetryDownload = receiverActions.retryDownloadButtonIfNeed();
-    defer(() => finishRetryDownload());
 
     await new Promise(resolve => setTimeout(resolve, 2000));
     await (await senderElements.passwordlessVerifiedButton0()).click();
+
+    const finishRetryDownload = receiverActions.retryDownloadButtonIfNeed();
+    defer(() => finishRetryDownload());
 
     const downloadedFilePath = path.join(downloadPath, secretPath);
     await waitForDownload(downloadedFilePath);
