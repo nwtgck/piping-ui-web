@@ -56,15 +56,23 @@ export async function nativeClick(driver: webdriver.WebDriver, element: webdrive
 }
 
 export async function getBufferByBlobUrl(driver: webdriver.WebDriver, blobUrl: string): Promise<Buffer> {
-  const array: number[] = await driver.executeAsyncScript(async function (blobUrl: string) {
+  const base64String: string = await driver.executeAsyncScript(async function (blobUrl: string) {
     // eslint-disable-next-line prefer-rest-params
     const callback = arguments[arguments.length - 1];
     const res = await window.fetch(blobUrl);
     const arrayBuffer = await res.arrayBuffer();
     // NOTE: transferring raw Uint8Array causes "Error: Accessing TypedArray data over Xrays is slow, and forbidden in order to encourage performant code. To copy TypedArrays across origin boundaries, consider using Components.utils.cloneInto()."
-    callback([...new Uint8Array(arrayBuffer)]);
+    // NOTE: Transferring Base64 string is faster than transferring number[] especially in Firefox
+    const array = [...new Uint8Array(arrayBuffer)];
+    // NOTE: chunking avoids an error "RangeError: too many function arguments"
+    const chunkSize = 65536;
+    let str = '';
+    while (array.length > 0) {
+      str += String.fromCharCode.apply(null, array.splice(0, chunkSize));
+    }
+    callback(btoa(str));
   }, blobUrl);
-  return Buffer.from(array);
+  return Buffer.from(base64String, "base64");
 }
 
 export function randomBytesAvoidingMimeTypeDetection(size: number): Buffer {
