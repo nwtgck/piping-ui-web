@@ -16,6 +16,29 @@
 
       <v-spacer></v-spacer>
 
+      <v-combobox
+        v-model="inputtingPipingServerUrl"
+        :items="pipingServerUrlHistory"
+        :label="strings?.['server']"
+        @blur="attachProtocolToUrl()"
+        clearable
+        :clear-icon="mdiClose"
+        outlined
+        dense
+        @keyup="updatePipingServerUrl($event)"
+        class="readable-font"
+        :style="{ marginTop: '1.6rem', maxWidth: `${Math.max(10, (inputtingPipingServerUrl ?? '').length - 2)}rem` }">
+        <template v-slot:item="{ index, item }">
+          <span class="readable-font">{{ item }}</span>
+          <div class="flex-grow-1"></div>
+          <v-list-item-action @click.stop>
+            <v-btn icon @click.stop.prevent="deleteServerUrl(item)">
+              <v-icon>{{ mdiDelete }}</v-icon>
+            </v-btn>
+          </v-list-item-action>
+        </template>
+      </v-combobox>
+
       <!-- Menu -->
       <v-menu :close-on-content-click="false">
         <template v-slot:activator="{ on }">
@@ -34,7 +57,7 @@
       <Licenses v-model="licenseDialog" v-if="licenseDialog"/>
     </v-dialog>
 
-    <v-main>
+    <v-main style="padding-top: 2.2rem;">
       <PipingUI/>
     </v-main>
   </v-app>
@@ -43,16 +66,50 @@
 <script setup lang="ts">
 /* eslint-disable */
 import type Vue from "vue";
-import {ref, onMounted} from "vue";
+import {onMounted, ref, watch} from "vue";
+import {VERSION} from '@/version';
+import {mdiClose, mdiDelete, mdiDotsVertical} from "@mdi/js";
+import {appBarPromiseResolverWhichShouldBeUsedInAppVue} from "@/app-bar-promise";
+import {strings} from "@/strings/strings";
+import {pipingServerUrl} from "@/settings/pipingServerUrl";
+import {pipingServerUrlHistory} from "@/settings/pipingServerUrlHistory";
+
 const PipingUI = () => import('@/components/PipingUI.vue');
 const MenuContent = () => import('@/components/MenuContent.vue');
 const Licenses = () => import("@/components/Licenses.vue");
-import {VERSION} from '@/version';
-import {mdiDotsVertical} from "@mdi/js";
-import {appBarPromiseResolverWhichShouldBeUsedInAppVue} from "@/app-bar-promise";
+
 
 const appBarRef = ref<Vue>();
 const licenseDialog = ref(false);
+const inputtingPipingServerUrl = ref<string | null>(pipingServerUrl.value);
+
+function updatePipingServerUrl(event: any) {
+  if (typeof event.target.value !== "string") {
+    throw new Error("event.target.value is not string");
+  }
+  pipingServerUrl.value = event.target.value;
+}
+
+// NOTE: Combobox is lazy to update v-model
+watch(inputtingPipingServerUrl, () => {
+  // NOTE: Clearing input makes inputtingPipingServerUrl null
+  pipingServerUrl.value = inputtingPipingServerUrl.value ?? "";
+});
+
+function attachProtocolToUrl(): void {
+  // FIXME: Don't use setTimeout()
+  // @blur is called before the value changed.
+  setTimeout(() => {
+    if (inputtingPipingServerUrl.value?.match(/^https?:\/\//) === null) {
+      inputtingPipingServerUrl.value = `https://${inputtingPipingServerUrl.value}`;
+    }
+  }, 100);
+}
+
+function deleteServerUrl(url: string): void {
+  // Remove path
+  pipingServerUrlHistory.value = pipingServerUrlHistory.value.filter(u => u !== url);
+}
 
 onMounted(() => {
   // Resolve app bar element

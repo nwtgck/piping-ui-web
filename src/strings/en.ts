@@ -27,14 +27,14 @@ export const en = {
   },
   get: 'Get',
   text_mode: 'Text mode',
-  text_placeholder: 'Text',
-  server_url: 'Server URL',
+  text_placeholder: 'Text or links',
+  server: 'Server',
   secret_path: 'Secret path',
   secret_path_placeholder: 'e.g. mypath374',
   make_half_width(notHalfWidth: string) {
     return `Make "${notHalfWidth}" half-width`;
   },
-  drop_a_file_here_or_browse: 'Drop a file here or <span class=\'filepond--label-action\'>Browse</span>',
+  drop_files_here_or_browse: 'Drop files here or <span class=\'filepond--label-action\'>Browse</span>',
   protect_with_password: 'Protect with password',
   passwordless_protection: 'Passwordless',
   passwordless_verify_and_send: 'Verify and send',
