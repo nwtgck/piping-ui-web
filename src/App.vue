@@ -20,8 +20,9 @@
         v-model="pipingServerUrlWithoutProtocol"
         :items="pipingServerUrlHistory"
         :label="strings?.['server']"
-        @blur="removeHttpsFromPipingServerUrl()"
-        clearable
+        @focus="pipingServerUrlClearable = true"
+        @blur="removeHttpsFromPipingServerUrl(); pipingServerUrlClearable = false"
+        :clearable="pipingServerUrlClearable"
         :clear-icon="mdiClose"
         outlined
         dense
@@ -89,6 +90,7 @@ watch(pipingServerUrlWithoutProtocol, () => {
   pipingServerUrl.value = (url.startsWith("http://") || url === "") ? url : `https://${url}`;
 });
 removeHttpsFromPipingServerUrl();
+const pipingServerUrlClearable = ref(false);
 
 function updatePipingServerUrl(event: any) {
   if (typeof event.target.value !== "string") {
