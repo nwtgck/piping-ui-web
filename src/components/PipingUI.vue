@@ -26,6 +26,7 @@
                       v-model="inputText"
                       clearable
                       :clear-icon="mdiClose"
+                      :prepend-inner-icon="mdiPencil"
                       rows="2"
                       auto-grow
                       outlined
@@ -209,7 +210,7 @@ import {type DataUploaderProps} from '@/components/DataUploader.vue';
 import {type DataViewerProps} from "@/components/DataViewer.vue";
 import {type DataDownloaderProps} from "@/components/DataDownloader.vue";
 import * as t from 'io-ts';
-import {mdiAlert, mdiClose, mdiCollapseAll, mdiDelete, mdiDownload, mdiExpandAll, mdiEye, mdiEyeOff, mdiFileFind, mdiKey, mdiShieldCheck, mdiShieldHalfFull, mdiUpload} from "@mdi/js";
+import {mdiAlert, mdiClose, mdiCollapseAll, mdiDelete, mdiDownload, mdiExpandAll, mdiEye, mdiEyeOff, mdiFileFind, mdiKey, mdiShieldCheck, mdiShieldHalfFull, mdiUpload, mdiPencil} from "@mdi/js";
 import {strings} from "@/strings/strings";
 import {type FilePondFile} from "filepond";
 import {type Protection} from "@/datatypes";
