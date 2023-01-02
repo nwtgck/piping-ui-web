@@ -390,8 +390,8 @@ function preloadForUserExperience() {
   import("jwk-thumbprint");
   import("@/utils/openpgp-utils");
   import("file-type/browser");
-  import("linkifyjs/html");
-  import("sanitize-html");
+  import("linkifyjs");
+  import("linkify-string");
   import("jszip");
 
   const logoImage = new Image();

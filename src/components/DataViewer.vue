@@ -111,7 +111,7 @@
 
       <!-- Text viewer -->
       <!-- NOTE: Don't use v-if because the inner uses "ref" and the ref is loaded in mounted()-->
-      <div v-show="linkifiedText !== undefined" style="text-align: center">
+      <div v-show="linkifiedTextAsHtml !== ''" style="text-align: center">
         <div style="text-align: right">
           <v-tooltip v-model="showsCopied" bottom>
             <template v-slot:activator="{}">
@@ -123,8 +123,7 @@
             <span>{{ strings['copied'] }}</span>
           </v-tooltip>
         </div>
-        <pre v-html="linkifiedText"
-             class="text-view"/>
+        <pre v-html="linkifiedTextAsHtml" class="text-view"/>
       </div>
 
       <div v-if="isCancelable" style="text-align: right">
@@ -173,7 +172,7 @@ export type DataViewerProps = {
 <script setup lang="ts">
 import Vue, {ref, computed, watch, onMounted} from "vue";
 import urlJoin from 'url-join';
-import linkifyHtml from 'linkifyjs/html';
+import linkifyStr from "linkify-string";
 const FileSaverAsync = () => import('file-saver').then(p => p.default);
 const clipboardCopyAsync = () => import("clipboard-copy").then(p => p.default);
 import * as fileType from 'file-type/browser';
@@ -192,7 +191,6 @@ import * as pipingUiAuth from "@/piping-ui-auth";
 import {uint8ArrayIsText} from "@/utils/uint8ArrayIsText";
 import {readableBytesString} from "@/utils/readableBytesString";
 import {readBlobAsText} from "@/utils/readBlobAsText";
-import {sanitizeHtmlAllowingATag} from "@/utils/sanitizeHtmlAllowingATag";
 import {makePromise} from "@/utils/makePromise";
 import {useErrorMessage} from "@/useErrorMessage";
 import {getReadableStreamWithProgress} from "@/utils/getReadableStreamWithProgress";
@@ -279,11 +277,11 @@ const downloadPath = computed<string>(() => {
   return urlJoin(props.composedProps.serverUrl, props.composedProps.secretPath);
 });
 
-const linkifiedText = ref<string>();
-watch(text, async () => {
-  linkifiedText.value = await sanitizeHtmlAllowingATag(linkifyHtml(text.value, {
-    defaultProtocol: 'https'
-  }));
+const linkifiedTextAsHtml = computed(() => {
+  return linkifyStr(text.value, {
+    defaultProtocol: 'https',
+    target: "_blank",
+  });
 });
 
 async function copyToClipboard() {
