@@ -16,29 +16,31 @@
 
       <v-spacer></v-spacer>
 
-      <v-combobox
-        v-model="pipingServerUrlWithoutProtocol"
-        :items="pipingServerUrlHistory"
-        :label="strings?.['server']"
-        @focus="pipingServerUrlClearable = true"
-        @blur="removeHttpsFromPipingServerUrl(); pipingServerUrlClearable = false"
-        :clearable="pipingServerUrlClearable"
-        :clear-icon="mdiClose"
-        outlined
-        dense
-        @keyup="updatePipingServerUrl($event)"
-        class="readable-font"
-        :style="{ marginTop: '1.6rem', maxWidth: `${Math.max(10, (pipingServerUrlWithoutProtocol ?? '').length - 2)}rem` }">
-        <template v-slot:item="{ index, item }">
-          <span class="readable-font">{{ item }}</span>
-          <div class="flex-grow-1"></div>
-          <v-list-item-action @click.stop>
-            <v-btn icon @click.stop.prevent="deleteServerUrl(item)">
-              <v-icon>{{ mdiDelete }}</v-icon>
-            </v-btn>
-          </v-list-item-action>
-        </template>
-      </v-combobox>
+      <v-responsive class="ma-0 pa-0" :style="{ maxWidth: `${Math.max(10, (latestPipingServerUrlWithoutProtocol ?? '').length - 1)}em` }">
+        <v-combobox
+          v-model="pipingServerUrlWithoutProtocol"
+          :items="pipingServerUrlHistory"
+          :label="strings?.['server']"
+          @focus="pipingServerUrlClearable = true"
+          @blur="removeHttpsFromPipingServerUrl(); pipingServerUrlClearable = false"
+          @keyup="setLatestPipingServerUrlWithoutProtocol($event)"
+          :clearable="pipingServerUrlClearable"
+          :clear-icon="mdiClose"
+          outlined
+          dense
+          class="readable-font"
+          style="margin-top: 1.6rem">
+          <template v-slot:item="{ index, item }">
+            <span class="readable-font">{{ item }}</span>
+            <div class="flex-grow-1"></div>
+            <v-list-item-action @click.stop>
+              <v-btn icon @click.stop.prevent="deleteServerUrl(item)">
+                <v-icon>{{ mdiDelete }}</v-icon>
+              </v-btn>
+            </v-list-item-action>
+          </template>
+        </v-combobox>
+      </v-responsive>
 
       <!-- Menu -->
       <v-menu :close-on-content-click="false">
@@ -84,19 +86,21 @@ const appBarRef = ref<Vue>();
 const licenseDialog = ref(false);
 // NOTE: Clearing input makes inputtingPipingServerUrl null
 const pipingServerUrlWithoutProtocol = ref<string | null>(pipingServerUrl.value);
-// Add "https://"
-watch(pipingServerUrlWithoutProtocol, () => {
-  const url = pipingServerUrlWithoutProtocol.value ?? "";
-  pipingServerUrl.value = (url.startsWith("http://") || url === "") ? url : `https://${url}`;
-});
 removeHttpsFromPipingServerUrl();
+const latestPipingServerUrlWithoutProtocol = ref(pipingServerUrlWithoutProtocol.value);
+watch(pipingServerUrlWithoutProtocol, () => {
+  latestPipingServerUrlWithoutProtocol.value = pipingServerUrlWithoutProtocol.value;
+});
 const pipingServerUrlClearable = ref(false);
+watch(latestPipingServerUrlWithoutProtocol, () => {
+  pipingServerUrl.value = attachHttpsToUrlIfNeed(latestPipingServerUrlWithoutProtocol.value);
+});
 
-function updatePipingServerUrl(event: any) {
+function setLatestPipingServerUrlWithoutProtocol(event: any) {
   if (typeof event.target.value !== "string") {
     throw new Error("event.target.value is not string");
   }
-  pipingServerUrl.value = event.target.value;
+  latestPipingServerUrlWithoutProtocol.value = event.target.value;
 }
 
 function removeHttpsFromPipingServerUrl() {
@@ -110,6 +114,10 @@ function removeHttpsFromPipingServerUrl() {
 function deleteServerUrl(url: string): void {
   // Remove path
   pipingServerUrlHistory.value = pipingServerUrlHistory.value.filter(u => u !== url);
+}
+function attachHttpsToUrlIfNeed(url: string | null) {
+  url = url ?? "";
+  return (url.startsWith("http://") || url === "") ? url : `https://${url}`;
 }
 
 onMounted(() => {
