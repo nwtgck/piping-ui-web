@@ -158,5 +158,6 @@ export async function createDriverFactory({dockerBaseImage, disablesServiceWorke
     downloadPath,
     downloadPathInDocker,
     createDriver,
+    blockPopup,
   };
 }
