@@ -73,6 +73,7 @@ import * as pipingUiAuth from "@/piping-ui-auth";
 import * as fileType from 'file-type/browser';
 import {canTransferReadableStream} from "@/utils/canTransferReadableStream";
 import {makePromise} from "@/utils/makePromise";
+import {isFirefox} from "@/utils/isFirefox";
 import {useErrorMessage} from "@/useErrorMessage";
 import {strings} from "@/strings/strings";
 import {ecdsaP384SigningKeyPairPromise} from "@/signing-key";
@@ -291,8 +292,14 @@ onMounted(async () => {
       // Use real click, not element.click()
       const a = retry_download_button.value!.$el as HTMLAnchorElement;
       a.href = downloadUrl;
-      // NOTE: With "download" attributes, Chrome 108 and Safari 16.1 bypass Service Worker
-      // a.download = fileName;
+      // NOTE: The feature detection can not be created because it would confirm the downloaded file.
+      if (isFirefox()) {
+        // NOTE: With "download" attributes, Chrome 108 and Safari 16.1 bypass Service Worker
+        // NOTE: Without "download" attribute, Firefox frequently fails to download a large file. Passwordless protection is stable without "download" attribute because it uses Piping UI Robust, which transfer small chunks especially first chunk even in Firefox.
+        // For testing in Firefox, you can enable "Block pop-up windows" in your preference.
+        a.download = fileName;
+        console.log("'download' attribute added to <a>");
+      }
     });
   }
   // Without this, memory leak occurs. It consumes as much memory as the received file size.

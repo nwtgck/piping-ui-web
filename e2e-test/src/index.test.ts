@@ -80,7 +80,8 @@ function getActions(driver: WebDriver) {
         await driver.executeScript((button: HTMLElement) => {
           window.scrollTo(0, button.offsetTop)
         }, retryDownloadButton);
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // GitHub Actions frequently fails in 2 seconds.
+        await new Promise(resolve => setTimeout(resolve, 5000));
         await retryDownloadButton.click();
       })().catch(e => console.error("failed to run retryDownloadButtonIfNeed()", e));
       return () => { done = true };
@@ -102,11 +103,6 @@ describe('Piping UI', () => {
 
   it('should send and download a file', async function () {
     const {sharePath, sharePathInDocker, downloadPath, createDriver, blockPopup} = await driverFactoryPromise;
-    if (blockPopup) {
-      // NOTE: Firefox frequently fails to download. You can reproduce when transferring large file without E2E encryption.
-      this.skip();
-      return;
-    }
 
     const secretPath = crypto.randomBytes(8).toString("hex");
     const transferContent = randomBytesAvoidingMimeTypeDetection(1024 * 1024);
@@ -158,9 +154,6 @@ describe('Piping UI', () => {
   it('should send and show a file', async function () {
     const {sharePath, sharePathInDocker, downloadPath, createDriver, blockPopup} = await driverFactoryPromise;
     // NOTE: Skip because GitHub Actions frequently failed. In local Intel Mac, it succeeds.
-    if (blockPopup) {
-      this.skip();
-    }
 
     const secretPath = crypto.randomBytes(8).toString("hex");
     {
@@ -205,9 +198,6 @@ describe('Piping UI', () => {
 
   it('should send and download an E2E encrypted file with password', async function () {
     const {sharePath, sharePathInDocker, downloadPath, createDriver, blockPopup} = await driverFactoryPromise;
-    if (blockPopup) {
-      this.skip();
-    }
 
     const secretPath = crypto.randomBytes(8).toString("hex");
     const transferContent = randomBytesAvoidingMimeTypeDetection(1024 * 1024);
@@ -263,9 +253,6 @@ describe('Piping UI', () => {
 
   it('should send and show an E2E encrypted file with password', async function () {
     const {sharePath, sharePathInDocker, downloadPath, createDriver, blockPopup} = await driverFactoryPromise;
-    if (blockPopup) {
-      this.skip();
-    }
 
     const secretPath = crypto.randomBytes(8).toString("hex");
     const filePassword = crypto.randomBytes(32).toString("binary");
@@ -316,7 +303,6 @@ describe('Piping UI', () => {
 
   it('should send and download a file by passwordless E2E encryption', async function () {
     const {sharePath, sharePathInDocker, downloadPath, createDriver, blockPopup} = await driverFactoryPromise;
-    // NOTE: not skip when blockPopup is true
 
     const secretPath = crypto.randomBytes(8).toString("hex");
     const transferContent = randomBytesAvoidingMimeTypeDetection(1024 * 1024);
@@ -365,9 +351,6 @@ describe('Piping UI', () => {
 
   it('should send and show a file by passwordless E2E encryption', async function () {
     const {sharePath, sharePathInDocker, downloadPath, createDriver, blockPopup} = await driverFactoryPromise;
-    if (blockPopup) {
-      this.skip();
-    }
 
     const secretPath = crypto.randomBytes(8).toString("hex");
 
