@@ -1,12 +1,12 @@
 <template>
   <v-expansion-panel ref="rootElement">
     <v-expansion-panel-header :disable-icon-rotate="hasError">
-      <span>{{ strings['download_in_downloader'] }} #{{ composedProps.downloadNo }}</span>
+      <span>{{ strings?.['download_in_downloader'] }} #{{ composedProps.downloadNo }}</span>
     </v-expansion-panel-header>
     <v-expansion-panel-content>
 
       <v-alert type="info" v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'initial'">
-        <span style="">{{ strings['waiting_for_sender'] }}</span>
+        <span style="">{{ strings?.['waiting_for_sender'] }}</span>
       </v-alert>
 
       <span v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'verification_code_arrived'">
@@ -16,11 +16,11 @@
       <v-simple-table class="text-left">
         <tbody>
         <tr class="text-left">
-          <td>{{ strings['download_url'] }}</td>
+          <td>{{ strings?.['download_url'] }}</td>
           <td>{{ downloadPath }}</td>
         </tr>
         <tr v-if="pipingUiAuthVerificationCode !== undefined" class="text-left">
-          <td>{{ strings['verification_code'] }}</td>
+          <td>{{ strings?.['verification_code'] }}</td>
           <td>{{ pipingUiAuthVerificationCode }}</td>
         </tr>
         </tbody>
@@ -34,13 +34,13 @@
 
       <v-dialog v-model="openRetryDownload" persistent max-width="290">
         <v-card>
-          <v-card-title class="text-h5">{{ strings['retry_download_dialog_title'] }}</v-card-title>
-          <v-card-text>{{ strings['browser_may_have_blocked_download'] }}</v-card-text>
+          <v-card-title class="text-h5">{{ strings?.['retry_download_dialog_title'] }}</v-card-title>
+          <v-card-text>{{ strings?.['browser_may_have_blocked_download'] }}</v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="primary" outlined @click="openRetryDownload = false">{{ strings['retry_download_dialog_no'] }}</v-btn>
+            <v-btn color="primary" outlined @click="openRetryDownload = false">{{ strings?.['retry_download_dialog_no'] }}</v-btn>
             <!-- NOTE: tag="a" is important. This element will be injected href and download attributes. -->
-            <v-btn ref="retry_download_button" tag="a" @click="openRetryDownload = false" color="primary" outlined data-testid="retry_download_button">{{ strings['retry_download_dialog_yes'] }}</v-btn>
+            <v-btn ref="retry_download_button" tag="a" @click="openRetryDownload = false" color="primary" outlined data-testid="retry_download_button">{{ strings?.['retry_download_dialog_yes'] }}</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>

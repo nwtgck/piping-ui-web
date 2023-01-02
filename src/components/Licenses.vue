@@ -1,6 +1,6 @@
 <template>
   <v-card>
-    <v-card-title>{{ strings['open_source_licenses'] }}</v-card-title>
+    <v-card-title>{{ strings?.['open_source_licenses'] }}</v-card-title>
     <v-divider></v-divider>
     <v-card-text>
 
@@ -31,7 +31,7 @@
     <v-divider></v-divider>
     <v-card-actions class="justify-end">
       <v-btn color="blue darken-1" text @click="$emit('input', false)">
-        {{ strings['close'] }}
+        {{ strings?.['close'] }}
       </v-btn>
     </v-card-actions>
   </v-card>

@@ -1,6 +1,6 @@
 <template>
   <v-alert type="info" :color="color">
-    <span style="font-size: 1.2em">{{ strings['verification_code'] }}: <b>{{ value }}</b></span>
+    <span style="font-size: 1.2em">{{ strings?.['verification_code'] }}: <b>{{ value }}</b></span>
   </v-alert>
 </template>
 
