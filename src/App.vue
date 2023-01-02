@@ -17,17 +17,17 @@
       <v-spacer></v-spacer>
 
       <v-combobox
-        v-model="inputtingPipingServerUrl"
+        v-model="pipingServerUrlWithoutProtocol"
         :items="pipingServerUrlHistory"
         :label="strings?.['server']"
-        @blur="attachProtocolToUrl()"
+        @blur="removeHttpsFromPipingServerUrl()"
         clearable
         :clear-icon="mdiClose"
         outlined
         dense
         @keyup="updatePipingServerUrl($event)"
         class="readable-font"
-        :style="{ marginTop: '1.6rem', maxWidth: `${Math.max(10, (inputtingPipingServerUrl ?? '').length - 2)}rem` }">
+        :style="{ marginTop: '1.6rem', maxWidth: `${Math.max(10, (pipingServerUrlWithoutProtocol ?? '').length - 2)}rem` }">
         <template v-slot:item="{ index, item }">
           <span class="readable-font">{{ item }}</span>
           <div class="flex-grow-1"></div>
@@ -81,7 +81,14 @@ const Licenses = () => import("@/components/Licenses.vue");
 
 const appBarRef = ref<Vue>();
 const licenseDialog = ref(false);
-const inputtingPipingServerUrl = ref<string | null>(pipingServerUrl.value);
+// NOTE: Clearing input makes inputtingPipingServerUrl null
+const pipingServerUrlWithoutProtocol = ref<string | null>(pipingServerUrl.value);
+// Add "https://"
+watch(pipingServerUrlWithoutProtocol, () => {
+  const url = pipingServerUrlWithoutProtocol.value ?? "";
+  pipingServerUrl.value = (url.startsWith("http://") || url === "") ? url : `https://${url}`;
+});
+removeHttpsFromPipingServerUrl();
 
 function updatePipingServerUrl(event: any) {
   if (typeof event.target.value !== "string") {
@@ -90,20 +97,12 @@ function updatePipingServerUrl(event: any) {
   pipingServerUrl.value = event.target.value;
 }
 
-// NOTE: Combobox is lazy to update v-model
-watch(inputtingPipingServerUrl, () => {
-  // NOTE: Clearing input makes inputtingPipingServerUrl null
-  pipingServerUrl.value = inputtingPipingServerUrl.value ?? "";
-});
-
-function attachProtocolToUrl(): void {
-  // FIXME: Don't use setTimeout()
-  // @blur is called before the value changed.
-  setTimeout(() => {
-    if (inputtingPipingServerUrl.value?.match(/^https?:\/\//) === null) {
-      inputtingPipingServerUrl.value = `https://${inputtingPipingServerUrl.value}`;
-    }
-  }, 100);
+function removeHttpsFromPipingServerUrl() {
+  const url = pipingServerUrlWithoutProtocol.value;
+  if (url === null) {
+    return;
+  }
+  pipingServerUrlWithoutProtocol.value = url.replace(/^https:\/\//, "");
 }
 
 function deleteServerUrl(url: string): void {
