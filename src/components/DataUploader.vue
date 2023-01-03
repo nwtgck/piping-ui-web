@@ -133,10 +133,10 @@ import {readableBytesString} from "@/utils/readableBytesString";
 import {zipFilesAsReadableStream} from "@/utils/zipFilesAsReadableStream";
 import {supportsFetchUploadStreaming} from "@/utils/supportsFetchUploadStreaming";
 import {makePromise} from "@/utils/makePromise";
-import {forceDisableStreamingUpload} from "@/settings/forceDisableStreamingUpload";
+import {forceDisableStreamingUpload} from "@/states/forceDisableStreamingUpload";
 import {useErrorMessage} from "@/useErrorMessage";
 import {strings} from "@/strings/strings";
-import {ecdsaP384SigningKeyPairPromise} from "@/signing-key";
+import {ecdsaP384SigningKeyPairPromise} from "@/states/ecdsaP384SigningKeyPairPromise";
 import * as fileType from 'file-type/browser';
 
 const props = defineProps<{ composedProps: DataUploaderProps }>();

@@ -71,9 +71,9 @@ import {defineComponent} from "vue";
 import {strings} from "@/strings/strings";
 import {language} from "@/language";
 import DarkThemeSwitch from "@/components/DarkThemeSwitch.vue";
-import {recordsServerUrlHistory} from "@/settings/recordsServerUrlHistory";
-import {recordsSecretPathHistory} from "@/settings/recordsSecretPathHistory";
-import {forceDisableStreamingUpload} from "@/settings/forceDisableStreamingUpload";
+import {recordsServerUrlHistory} from "@/states/recordsServerUrlHistory";
+import {recordsSecretPathHistory} from "@/states/recordsSecretPathHistory";
+import {forceDisableStreamingUpload} from "@/states/forceDisableStreamingUpload";
 
 // Available languages
 type Language = 'en' | 'ja';

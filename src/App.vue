@@ -74,8 +74,8 @@ import {VERSION} from '@/version';
 import {mdiClose, mdiDelete, mdiDotsVertical} from "@mdi/js";
 import {appBarPromiseResolverWhichShouldBeUsedInAppVue} from "@/app-bar-promise";
 import {strings} from "@/strings/strings";
-import {pipingServerUrl} from "@/settings/pipingServerUrl";
-import {pipingServerUrlHistory} from "@/settings/pipingServerUrlHistory";
+import {pipingServerUrl} from "@/states/pipingServerUrl";
+import {pipingServerUrlHistory} from "@/states/pipingServerUrlHistory";
 
 const PipingUI = () => import('@/components/PipingUI.vue');
 const MenuContent = () => import('@/components/MenuContent.vue');

@@ -76,7 +76,7 @@ import {makePromise} from "@/utils/makePromise";
 import {isFirefox} from "@/utils/isFirefox";
 import {useErrorMessage} from "@/useErrorMessage";
 import {strings} from "@/strings/strings";
-import {ecdsaP384SigningKeyPairPromise} from "@/signing-key";
+import {ecdsaP384SigningKeyPairPromise} from "@/states/ecdsaP384SigningKeyPairPromise";
 import {firstAtLeastBlobFromReadableStream} from "@/utils/firstAtLeastBlobFromReadableStream";
 
 const FileSaverAsync = () => import('file-saver').then(p => p.default);

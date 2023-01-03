@@ -214,11 +214,11 @@ import {mdiAlert, mdiClose, mdiCollapseAll, mdiDelete, mdiDownload, mdiExpandAll
 import {strings} from "@/strings/strings";
 import {type FilePondFile} from "filepond";
 import {type Protection} from "@/datatypes";
-import {recordsServerUrlHistory} from "@/settings/recordsServerUrlHistory";
-import {recordsSecretPathHistory} from "@/settings/recordsSecretPathHistory";
-import {secretPathHistory} from "@/settings/secretPathHistory";
-import {pipingServerUrl} from "@/settings/pipingServerUrl";
-import {pipingServerUrlHistory} from "@/settings/pipingServerUrlHistory";
+import {recordsServerUrlHistory} from "@/states/recordsServerUrlHistory";
+import {recordsSecretPathHistory} from "@/states/recordsSecretPathHistory";
+import {secretPathHistory} from "@/states/secretPathHistory";
+import {pipingServerUrl} from "@/states/pipingServerUrl";
+import {pipingServerUrlHistory} from "@/states/pipingServerUrlHistory";
 
 const urlJoinAsync = () => import('url-join').then(p => p.default);
 const DataUploader = () => import('@/components/DataUploader.vue');
