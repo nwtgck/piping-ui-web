@@ -192,7 +192,6 @@ import * as pipingUiRobust from "@/piping-ui-robust";
 
 import * as openPgpUtils from '@/utils/openpgp-utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
-import {type VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import {BlobUrlManager} from "@/utils/BlobUrlManager";
 import * as pipingUiAuth from "@/piping-ui-auth";
@@ -227,7 +226,7 @@ const text = ref('');
 const enablePasswordReinput = ref(false);
 const password = ref(props.composedProps.protection.type === "password" ? props.composedProps.protection.password : undefined);
 const showsPassword = ref(false);
-const verificationStep = ref<VerificationStep>({type: 'initial'});
+const verificationStep = ref<pipingUiAuth.VerificationStep>({type: 'initial'});
 let rawBlob = new Blob();
 let blob = new Blob();
 const showsCopied = ref(false);
@@ -313,7 +312,7 @@ onMounted(async () => {
     props.composedProps.secretPath,
     props.composedProps.protection,
     await ecdsaP384SigningKeyPairPromise.value,
-    (step: VerificationStep) => {
+    (step: pipingUiAuth.VerificationStep) => {
       verificationStep.value = step;
     },
     canceledPromise,

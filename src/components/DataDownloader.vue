@@ -75,7 +75,6 @@ import urlJoin from 'url-join';
 import {mdiAlert, mdiChevronDown} from "@mdi/js";
 import * as pipingUiUtils from "@/piping-ui-utils";
 import * as pipingUiRobust from "@/piping-ui-robust";
-import {type VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import * as pipingUiAuth from "@/piping-ui-auth";
 import * as fileType from 'file-type/browser';
@@ -100,7 +99,7 @@ canceledPromise.then(() => {
 });
 
 const {errorMessage, updateErrorMessage} = useErrorMessage();
-const verificationStep = ref<VerificationStep>({type: 'initial'});
+const verificationStep = ref<pipingUiAuth.VerificationStep>({type: 'initial'});
 const hasError = computed<boolean>(() => errorMessage.value !== undefined);
 const headerIcon = computed<string>(() => {
   if (hasError.value) {

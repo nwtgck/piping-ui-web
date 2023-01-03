@@ -134,7 +134,6 @@ import * as openPgpUtils from '@/utils/openpgp-utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
 import * as pipingUiRobust from "@/piping-ui-robust";
 import {mdiAlert, mdiCancel, mdiCheck, mdiChevronDown, mdiCloseCircle} from "@mdi/js";
-import type {VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import * as pipingUiAuth from "@/piping-ui-auth";
 import {readableBytesString} from "@/utils/readableBytesString";
@@ -166,7 +165,7 @@ const xhr: XMLHttpRequest = new XMLHttpRequest();
 const canceled = ref(false);
 const isCompressing = ref(false);
 const isNonStreamingEncrypting = ref(false);
-const verificationStep = ref<VerificationStep>({type: 'initial'});
+const verificationStep = ref<pipingUiAuth.VerificationStep>({type: 'initial'});
 const pipingUiAuthVerificationCode = ref<string | undefined>();
 
 const progressPercentage = computed<number | null>(() => {
