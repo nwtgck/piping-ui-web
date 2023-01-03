@@ -394,6 +394,7 @@ function preloadForUserExperience() {
   import("linkifyjs");
   import("linkify-string");
   import("jszip");
+  import("@/components/MenuContent.vue");
 
   const logoImage = new Image();
   logoImage.src = require('@/assets/logo.svg');
