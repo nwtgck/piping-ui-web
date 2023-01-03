@@ -58,7 +58,7 @@
         </v-combobox>
 
         <div style="text-align: right;">
-          <template v-if="sendOrGet === 'send' && suggestedSecretPaths.length !== 0" >
+          <template v-if="suggestedSecretPaths.length !== 0" >
             <!-- Secret path suggestion  -->
             <v-chip v-for="suggestedSecretPath in suggestedSecretPaths"
                     :key="suggestedSecretPath"
