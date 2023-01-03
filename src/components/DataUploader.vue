@@ -74,9 +74,17 @@
 
       <v-simple-table class="text-left">
         <tbody>
-        <tr class="text-left">
+        <tr v-if="composedProps.protection.type === 'passwordless'" class="text-left">
+          <td>{{ strings?.['server'] }}</td>
+          <td>{{ props.composedProps.serverUrl }}</td>
+        </tr>
+        <tr v-if="composedProps.protection.type === 'passwordless'" class="text-left">
+          <td>{{ strings?.['secret_path'] }}</td>
+          <td>{{ props.composedProps.secretPath }}</td>
+        </tr>
+        <tr v-if="composedProps.protection.type !== 'passwordless'" class="text-left">
           <td>{{ strings?.['upload_url'] }}</td>
-          <td>{{ uploadPath }}</td>
+          <td>{{ uploadUrl }}</td>
         </tr>
         <tr v-if="pipingUiAuthVerificationCode !== undefined" class="text-left">
           <td>{{ strings?.['verification_code'] }}</td>
@@ -175,7 +183,7 @@ const isDoneUpload = computed<boolean>(() => {
   return progressPercentage.value === 100;
 });
 
-const uploadPath = computed<string>(() => urlJoin(props.composedProps.serverUrl, props.composedProps.secretPath));
+const uploadUrl = computed<string>(() => urlJoin(props.composedProps.serverUrl, props.composedProps.secretPath));
 
 const hasError = computed<boolean>(() => errorMessage.value !== undefined);
 
@@ -387,7 +395,7 @@ async function send(password: string | Uint8Array | undefined) {
   });
   try {
     // Upload encrypted stream
-    const res = await fetch(uploadPath.value, {
+    const res = await fetch(uploadUrl.value, {
       method: 'POST',
       body: encryptedStream,
       duplex: 'half',
@@ -412,7 +420,7 @@ function uploadByXhr(body: Blob | Uint8Array, bodyLength: number) {
     xhr.abort();
   });
   // Send
-  xhr.open('POST', uploadPath.value, true);
+  xhr.open('POST', uploadUrl.value, true);
   xhr.responseType = 'text';
   // Update progress bar
   xhr.upload.onprogress = (ev) => {
