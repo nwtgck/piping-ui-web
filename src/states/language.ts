@@ -1,5 +1,5 @@
 import {ref, watch} from "vue";
-import {keys} from "./local-storage-keys";
+import {keys} from "../local-storage-keys";
 import constants from "@/constants";
 
 export const language = (() => {

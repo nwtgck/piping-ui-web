@@ -4,7 +4,7 @@
 
 <script lang="ts">
 import Vue from 'vue';
-import {enableDarkTheme} from "@/enable-dark-theme";
+import {enableDarkTheme} from "@/states/enableDarkTheme";
 
 export default Vue.extend({
   computed: {

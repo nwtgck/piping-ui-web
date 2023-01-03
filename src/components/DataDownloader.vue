@@ -74,7 +74,7 @@ import * as fileType from 'file-type/browser';
 import {canTransferReadableStream} from "@/utils/canTransferReadableStream";
 import {makePromise} from "@/utils/makePromise";
 import {isFirefox} from "@/utils/isFirefox";
-import {useErrorMessage} from "@/useErrorMessage";
+import {useErrorMessage} from "@/composables/useErrorMessage";
 import {strings} from "@/strings/strings";
 import {ecdsaP384SigningKeyPairPromise} from "@/states/ecdsaP384SigningKeyPairPromise";
 import {firstAtLeastBlobFromReadableStream} from "@/utils/firstAtLeastBlobFromReadableStream";

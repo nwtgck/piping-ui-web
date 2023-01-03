@@ -134,7 +134,7 @@ import {zipFilesAsReadableStream} from "@/utils/zipFilesAsReadableStream";
 import {supportsFetchUploadStreaming} from "@/utils/supportsFetchUploadStreaming";
 import {makePromise} from "@/utils/makePromise";
 import {forceDisableStreamingUpload} from "@/states/forceDisableStreamingUpload";
-import {useErrorMessage} from "@/useErrorMessage";
+import {useErrorMessage} from "@/composables/useErrorMessage";
 import {strings} from "@/strings/strings";
 import {ecdsaP384SigningKeyPairPromise} from "@/states/ecdsaP384SigningKeyPairPromise";
 import * as fileType from 'file-type/browser';

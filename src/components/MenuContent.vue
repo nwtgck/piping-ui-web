@@ -69,7 +69,7 @@
 <script lang="ts">
 import {defineComponent} from "vue";
 import {strings} from "@/strings/strings";
-import {language} from "@/language";
+import {language} from "@/states/language";
 import DarkThemeSwitch from "@/components/DarkThemeSwitch.vue";
 import {recordsServerUrlHistory} from "@/states/recordsServerUrlHistory";
 import {recordsSecretPathHistory} from "@/states/recordsSecretPathHistory";

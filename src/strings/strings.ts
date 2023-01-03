@@ -1,6 +1,6 @@
 import {ref, watch, type Ref} from "vue";
 
-import {language} from "@/language"
+import {language} from "@/states/language"
 import {type Strings} from "@/strings/en";
 const enAsync = () => import("./en").then(p => p.en);
 const jaAsync = () => import("./ja").then(p => p.ja);

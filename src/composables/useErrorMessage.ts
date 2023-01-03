@@ -1,5 +1,5 @@
 import {Ref, ref, watch} from "vue";
-import {language} from "@/language";
+import {language} from "@/states/language";
 
 type ReadonlyRef<T> = Ref<T> & { readonly value: T}
 

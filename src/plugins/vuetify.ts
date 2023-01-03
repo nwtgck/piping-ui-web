@@ -1,6 +1,6 @@
 import Vue from 'vue';
 import Vuetify from 'vuetify/lib';
-import {enableDarkTheme} from "@/enable-dark-theme";
+import {enableDarkTheme} from "@/states/enableDarkTheme";
 
 Vue.use(Vuetify);
 
