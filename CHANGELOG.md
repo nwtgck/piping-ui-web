@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
-## [0.14.0] - 2022-01-03
+## [0.14.0] - 2023-01-03
 ### Changed
 - Improve retry-download
 - Make UI height shorter to be the send button visible without scrolling for mobile users
