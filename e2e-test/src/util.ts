@@ -50,20 +50,29 @@ export async function servePipingUiIfNotServed(port: number) {
   }
 }
 
+// NOTE: e.click() causes "Element <input id="..." type="checkbox"> is not clickable at point because another element <div class="..."> obscures it"
 export async function nativeClick(driver: webdriver.WebDriver, element: webdriver.WebElement) {
   await driver.executeScript((e: any) => e.click(), element);
 }
 
 export async function getBufferByBlobUrl(driver: webdriver.WebDriver, blobUrl: string): Promise<Buffer> {
-  const array: number[] = await driver.executeAsyncScript(async function (blobUrl: string) {
+  const base64String: string = await driver.executeAsyncScript(async function (blobUrl: string) {
     // eslint-disable-next-line prefer-rest-params
     const callback = arguments[arguments.length - 1];
     const res = await window.fetch(blobUrl);
     const arrayBuffer = await res.arrayBuffer();
     // NOTE: transferring raw Uint8Array causes "Error: Accessing TypedArray data over Xrays is slow, and forbidden in order to encourage performant code. To copy TypedArrays across origin boundaries, consider using Components.utils.cloneInto()."
-    callback([...new Uint8Array(arrayBuffer)]);
+    // NOTE: Transferring Base64 string is faster than transferring number[] especially in Firefox
+    const array = [...new Uint8Array(arrayBuffer)];
+    // NOTE: chunking avoids an error "RangeError: too many function arguments"
+    const chunkSize = 65536;
+    let str = '';
+    while (array.length > 0) {
+      str += String.fromCharCode.apply(null, array.splice(0, chunkSize));
+    }
+    callback(btoa(str));
   }, blobUrl);
-  return Buffer.from(array);
+  return Buffer.from(base64String, "base64");
 }
 
 export function randomBytesAvoidingMimeTypeDetection(size: number): Buffer {
@@ -94,7 +103,7 @@ export async function waitFor<T>(f: () => T | Promise<T>, { intervalMillis = 100
 
 export const rayTracingPngImage: Buffer = fs.readFileSync("./resources/ray-tracing-iow-1280x720.png");
 
-export async function createDriverFactory({dockerBaseImage, disablesServiceWorker, forwardingTcpPorts}: {dockerBaseImage: string, disablesServiceWorker: boolean, forwardingTcpPorts: readonly number[]}) {
+export async function createDriverFactory({dockerBaseImage, disablesServiceWorker, blockPopup, forwardingTcpPorts}: {dockerBaseImage: string, disablesServiceWorker: boolean, blockPopup: boolean, forwardingTcpPorts: readonly number[]}) {
   const sharePath = fs.mkdtempSync(path.join(os.tmpdir(), "selenium-docker-share-"));
   const sharePathInDocker = "/home/seluser/tmp";
   const downloadPath = fs.mkdtempSync(path.join(os.tmpdir(), "selenium-docker-downloads-share-"));
@@ -122,6 +131,8 @@ export async function createDriverFactory({dockerBaseImage, disablesServiceWorke
             new firefox.Options()
               .setPreference("browser.helperApps.neverAsk.saveToDisk", "application/octet-stream;application/x-unknown-content-type")
               .setPreference("dom.serviceWorkers.enabled", !disablesServiceWorker)
+              // 20 is default value in Firefox 108
+              .setPreference("dom.popup_maximum", blockPopup ? 0 : 20)
           )
           .usingServer("http://localhost:4444/wd/hub").build();
       }
@@ -129,6 +140,9 @@ export async function createDriverFactory({dockerBaseImage, disablesServiceWorke
     if (dockerBaseImage.includes("-chrome:") || dockerBaseImage.includes("-chromium:")) {
       if (disablesServiceWorker) {
         throw new Error(`can not disable Service Worker on Chrome/Chromium`);
+      }
+      if (blockPopup) {
+        throw new Error(`can not block popup on Chrome/Chromium`);
       }
       return () => {
         return new webdriver.Builder().forBrowser(webdriver.Browser.CHROME)
@@ -144,5 +158,6 @@ export async function createDriverFactory({dockerBaseImage, disablesServiceWorke
     downloadPath,
     downloadPathInDocker,
     createDriver,
+    blockPopup,
   };
 }

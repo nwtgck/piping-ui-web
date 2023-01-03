@@ -1,7 +1,7 @@
 <template>
   <v-expansion-panel ref="rootElement" active="true">
     <v-expansion-panel-header :disable-icon-rotate="isDoneUpload || hasError">
-      <span>{{ strings['upload'] }} #{{ composedProps.uploadNo }}</span>
+      <span>{{ strings?.['upload'] }} #{{ composedProps.uploadNo }}</span>
       <!-- Percentage -->
       {{ isReadyToUpload ? progressPercentage && `${progressPercentage.toFixed(2)} %` : '' }}
       <template v-slot:actions>
@@ -13,7 +13,7 @@
     <v-expansion-panel-content>
 
       <v-alert type="info" v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'initial'" :color="canceled ? 'grey' : undefined">
-        <span>{{ strings['waiting_for_receiver'] }}</span>
+        <span>{{ strings?.['waiting_for_receiver'] }}</span>
       </v-alert>
 
       <span v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'verification_code_arrived'">
@@ -27,7 +27,7 @@
                    block
                    data-testid="passwordless_verified_button">
               <v-icon left dark>{{ mdiCheck }}</v-icon>
-              {{ strings['passwordless_verified'] }}
+              {{ strings?.['passwordless_verified'] }}
             </v-btn>
           </v-flex>
           <v-flex xs6>
@@ -36,7 +36,7 @@
                    @click="verify(false)"
                    block>
               <v-icon left dark>{{ mdiCancel }}</v-icon>
-              {{ strings['cancel'] }}
+              {{ strings?.['cancel'] }}
             </v-btn>
           </v-flex>
         </v-layout>
@@ -44,7 +44,7 @@
 
       <div v-show="isCompressing">
         <div style="text-align: center">
-          {{ strings['compressing'] }}
+          {{ strings?.['compressing'] }}
         </div>
         <!-- Compression progress bar -->
         <v-progress-linear indeterminate />
@@ -52,7 +52,7 @@
 
       <div v-show="isNonStreamingEncrypting">
         <div style="text-align: center">
-          {{ strings['encrypting'] }}
+          {{ strings?.['encrypting'] }}
         </div>
         <!-- Encryption progress bar -->
         <v-progress-linear indeterminate />
@@ -75,11 +75,11 @@
       <v-simple-table class="text-left">
         <tbody>
         <tr class="text-left">
-          <td>{{ strings['upload_url'] }}</td>
+          <td>{{ strings?.['upload_url'] }}</td>
           <td>{{ uploadPath }}</td>
         </tr>
         <tr v-if="pipingUiAuthVerificationCode !== undefined" class="text-left">
-          <td>{{ strings['verification_code'] }}</td>
+          <td>{{ strings?.['verification_code'] }}</td>
           <td>{{ pipingUiAuthVerificationCode }}</td>
         </tr>
         </tbody>
@@ -92,7 +92,7 @@
                class="ma-2 justify-end"
                @click="cancel()">
           <v-icon >{{ mdiCloseCircle }}</v-icon>
-          {{ strings['cancel'] }}
+          {{ strings?.['cancel'] }}
         </v-btn>
       </div>
 
@@ -133,10 +133,10 @@ import {readableBytesString} from "@/utils/readableBytesString";
 import {zipFilesAsReadableStream} from "@/utils/zipFilesAsReadableStream";
 import {supportsFetchUploadStreaming} from "@/utils/supportsFetchUploadStreaming";
 import {makePromise} from "@/utils/makePromise";
-import {forceDisableStreamingUpload} from "@/settings/forceDisableStreamingUpload";
-import {useErrorMessage} from "@/useErrorMessage";
+import {forceDisableStreamingUpload} from "@/states/forceDisableStreamingUpload";
+import {useErrorMessage} from "@/composables/useErrorMessage";
 import {strings} from "@/strings/strings";
-import {ecdsaP384SigningKeyPairPromise} from "@/signing-key";
+import {ecdsaP384SigningKeyPairPromise} from "@/states/ecdsaP384SigningKeyPairPromise";
 import * as fileType from 'file-type/browser';
 
 const props = defineProps<{ composedProps: DataUploaderProps }>();

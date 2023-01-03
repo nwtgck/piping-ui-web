@@ -9,10 +9,10 @@
 
           <v-list-item-content>
             <v-list-item-title>Piping UI</v-list-item-title>
-            <v-list-item-subtitle>{{ strings['version'] }}</v-list-item-subtitle>
+            <v-list-item-subtitle>{{ strings?.['version'] }}</v-list-item-subtitle>
             <a href="https://github.com/nwtgck/piping-ui-web" target="_blank">
               <font-awesome-icon :icon="['fab', 'github']" />
-              {{ strings['view_on_github'] }}
+              {{ strings?.['view_on_github'] }}
             </a>
           </v-list-item-content>
         </v-list-item>
@@ -24,7 +24,7 @@
         <v-list-item-action>
           <v-select v-model="language"
                     :items="availableLanguages"
-                    :label="strings['language']"
+                    :label="strings?.['language']"
                     item-text="str"
                     item-value="lang"
                     outlined/>
@@ -32,21 +32,21 @@
       </v-list-item>
 
       <v-list-item>
-        <v-list-item-title>{{ strings['dark_theme'] }}</v-list-item-title>
+        <v-list-item-title>{{ strings?.['dark_theme'] }}</v-list-item-title>
         <v-list-item-action>
           <dark-theme-switch />
         </v-list-item-action>
       </v-list-item>
 
       <v-list-item>
-        <v-list-item-title>{{ strings['record_server_url'] }}</v-list-item-title>
+        <v-list-item-title>{{ strings?.['record_server_url'] }}</v-list-item-title>
         <v-list-item-action>
           <v-switch v-model="recordsServerUrlHistory"></v-switch>
         </v-list-item-action>
       </v-list-item>
 
       <v-list-item>
-        <v-list-item-title>{{ strings['record_secret_path'] }}</v-list-item-title>
+        <v-list-item-title>{{ strings?.['record_secret_path'] }}</v-list-item-title>
         <v-list-item-action>
           <v-switch v-model="recordsSecretPathHistory"></v-switch>
         </v-list-item-action>
@@ -60,7 +60,7 @@
       </v-list-item>
 
       <v-list-item @click="$emit('input', true)">
-        <v-list-item-title>{{ strings['open_source_licenses'] }}</v-list-item-title>
+        <v-list-item-title>{{ strings?.['open_source_licenses'] }}</v-list-item-title>
       </v-list-item>
     </v-list>
   </v-card>
@@ -69,11 +69,11 @@
 <script lang="ts">
 import {defineComponent} from "vue";
 import {strings} from "@/strings/strings";
-import {language} from "@/language";
+import {language} from "@/states/language";
 import DarkThemeSwitch from "@/components/DarkThemeSwitch.vue";
-import {recordsServerUrlHistory} from "@/settings/recordsServerUrlHistory";
-import {recordsSecretPathHistory} from "@/settings/recordsSecretPathHistory";
-import {forceDisableStreamingUpload} from "@/settings/forceDisableStreamingUpload";
+import {recordsServerUrlHistory} from "@/states/recordsServerUrlHistory";
+import {recordsSecretPathHistory} from "@/states/recordsSecretPathHistory";
+import {forceDisableStreamingUpload} from "@/states/forceDisableStreamingUpload";
 
 // Available languages
 type Language = 'en' | 'ja';

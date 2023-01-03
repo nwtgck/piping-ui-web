@@ -3,7 +3,7 @@
     <v-flex xs12 sm8 offset-sm2 offset-md3 md6>
       <v-card style="padding: 1em; margin-bottom: 1em;">
 
-        <div style="text-align: center">
+        <div style="text-align: center; margin-bottom: 1.2rem;">
           <v-btn-toggle v-model="sendOrGet" mandatory>
             <v-btn text value="send" data-testid="send_menu_button">
               {{ strings?.['send'] }}
@@ -16,7 +16,7 @@
           </v-btn-toggle>
         </div>
 
-        <div v-show="sendOrGet === 'send'" style="margin-top: 1.2rem;">
+        <div v-show="sendOrGet === 'send'">
           <file-pond-wrapper v-model="inputFiles"
                              :label-idle="filePondLabelIdle"
                              data-testid="file_input"
@@ -26,41 +26,20 @@
                       v-model="inputText"
                       clearable
                       :clear-icon="mdiClose"
+                      :prepend-inner-icon="mdiPencil"
                       rows="2"
                       auto-grow
                       outlined
           ></v-textarea>
         </div>
 
-        <v-combobox :label="strings?.['server_url']"
-                    v-model="serverUrl"
-                    :items="serverUrlHistory"
-                    @change="onUpdateServerUrl()"
-                    @blur="attachProtocolToUrl()"
-                    ref="server_url_ref"
-                    clearable
-                    :clear-icon="mdiClose"
-                    style="margin-bottom: 0.8em;"
-                    class="readable-font"
-                    data-testid="server_url_input">
-          <template v-slot:item="{ index, item }">
-            <span class="readable-font">{{ item }}</span>
-            <div class="flex-grow-1"></div>
-            <v-list-item-action @click.stop>
-              <v-btn icon
-                     @click.stop.prevent="deleteServerUrl(item)"
-              >
-                <v-icon>{{ mdiDelete }}</v-icon>
-              </v-btn>
-            </v-list-item-action>
-          </template>
-        </v-combobox>
         <v-combobox :label="strings?.['secret_path']"
                     v-model="secretPath"
                     :items="secretPathHistory"
                     :placeholder="strings?.['secret_path_placeholder']"
                     ref="secret_path_ref"
                     class="ma-0 pa-0 readable-font"
+                    outlined
                     clearable
                     :clear-icon="mdiClose"
                     data-testid="secret_path_input"
@@ -78,8 +57,8 @@
           </template>
         </v-combobox>
 
-        <div style="text-align: right; margin-bottom: 1.5em;">
-          <template v-if="sendOrGet === 'send' && suggestedSecretPaths.length !== 0" >
+        <div style="text-align: right;">
+          <template v-if="suggestedSecretPaths.length !== 0" >
             <!-- Secret path suggestion  -->
             <v-chip v-for="suggestedSecretPath in suggestedSecretPaths"
                     :key="suggestedSecretPath"
@@ -103,12 +82,12 @@
         </div>
 
         <v-col class="pa-0">
-          <v-row align="center" class="ma-0" style="padding-top: 0.4em;">
+          <v-row align="center" class="ma-0">
             <v-switch :input-value="protectionType === 'passwordless'"
                       @change="onEnablePasswordlessProtection"
                       inset
                       data-testid="passwordless_switch"
-                      style="margin-right: 2.5rem;">
+                      style="margin-right: 2rem;">
               <template v-slot:label>
                 <v-icon class="icon-and-text-margin" :color="protectionType === 'passwordless' ? 'blue' : ''">{{ mdiShieldHalfFull }}</v-icon>
                 {{ strings?.['passwordless_protection'] }}
@@ -152,13 +131,6 @@
           </v-row>
         </v-col>
 
-        <v-btn @click="showsMoreOptions = !showsMoreOptions" depressed plain style="margin-bottom: 1rem; text-transform: none" data-testid="more_options_button">
-          <v-icon left dark>
-            {{ showsMoreOptions ? mdiCollapseAll : mdiExpandAll }}
-          </v-icon>
-          {{ showsMoreOptions ? strings?.['hide_options'] : strings?.['more_options'] }}
-        </v-btn>
-
         <div>
           <v-btn v-if="sendOrGet === 'send'"
                  color="primary"
@@ -195,6 +167,13 @@
           </v-layout>
         </div>
 
+        <v-btn @click="showsMoreOptions = !showsMoreOptions" depressed plain style="margin-top: 1.2rem; text-transform: none" data-testid="more_options_button">
+          <v-icon left dark>
+            {{ showsMoreOptions ? mdiCollapseAll : mdiExpandAll }}
+          </v-icon>
+          {{ showsMoreOptions ? strings?.['hide_options'] : strings?.['more_options'] }}
+        </v-btn>
+
       </v-card>
 
       <div style="padding: 0.5em;">
@@ -226,30 +205,28 @@
 </template>
 
 <script setup lang="ts">
-import Vue, { ref, watch, computed, onMounted } from 'vue';
-const urlJoinAsync = () => import('url-join').then(p => p.default);
+import Vue, {computed, onMounted, ref, watch} from 'vue';
 import {type DataUploaderProps} from '@/components/DataUploader.vue';
-const DataUploader = () => import('@/components/DataUploader.vue');
 import {type DataViewerProps} from "@/components/DataViewer.vue";
-const DataViewer = () => import("@/components/DataViewer.vue");
-const DataDownloader = () => import('@/components/DataDownloader.vue');
 import {type DataDownloaderProps} from "@/components/DataDownloader.vue";
-// NOTE: Use `const FilePond = () => import('vue-filepond').then(vueFilePond => vueFilePond.default())` and <file-pond> in template causes "[Vue warn]: Failed to mount component: template or render function not defined."
-const FilePondWrapper = () => import("@/components/FilePondWrapper.vue");
 import * as t from 'io-ts';
-import {mdiUpload, mdiDownload, mdiDelete, mdiFileFind, mdiClose, mdiEye, mdiEyeOff, mdiKey, mdiShieldHalfFull, mdiShieldCheck, mdiExpandAll, mdiCollapseAll, mdiAlert} from "@mdi/js";
-
-import {keys} from "@/local-storage-keys";
+import {mdiAlert, mdiClose, mdiCollapseAll, mdiDelete, mdiDownload, mdiExpandAll, mdiEye, mdiEyeOff, mdiFileFind, mdiKey, mdiShieldCheck, mdiShieldHalfFull, mdiUpload, mdiPencil} from "@mdi/js";
 import {strings} from "@/strings/strings";
 import {type FilePondFile} from "filepond";
 import {type Protection} from "@/datatypes";
-import buildConstants from "@/build-constants";
-import {recordsServerUrlHistory} from "@/settings/recordsServerUrlHistory";
-import {recordsSecretPathHistory} from "@/settings/recordsSecretPathHistory";
-import {loadLocalStorageWithValidation} from "@/utils/loadLocalStorageWithValidation";
-import {secretPathHistory} from "@/settings/secretPathHistory";
+import {recordsServerUrlHistory} from "@/states/recordsServerUrlHistory";
+import {recordsSecretPathHistory} from "@/states/recordsSecretPathHistory";
+import {secretPathHistory} from "@/states/secretPathHistory";
+import {pipingServerUrl} from "@/states/pipingServerUrl";
+import {pipingServerUrlHistory} from "@/states/pipingServerUrlHistory";
 
-const defaultServerUrls: ReadonlyArray<string> = buildConstants.pipingServerUrls;
+const urlJoinAsync = () => import('url-join').then(p => p.default);
+const DataUploader = () => import('@/components/DataUploader.vue');
+const DataViewer = () => import("@/components/DataViewer.vue");
+const DataDownloader = () => import('@/components/DataDownloader.vue');
+// NOTE: Use `const FilePond = () => import('vue-filepond').then(vueFilePond => vueFilePond.default())` and <file-pond> in template causes "[Vue warn]: Failed to mount component: template or render function not defined."
+const FilePondWrapper = () => import("@/components/FilePondWrapper.vue");
+
 
 function normalizeUrl(url: string): string {
   return new URL(url).href;
@@ -272,12 +249,9 @@ function getShareTargetText(): string | null {
   return new URL(window.location.toString()).searchParams.get("text");
 }
 
-const server_url_ref = ref<Vue>();
 const secret_path_ref = ref<Vue>();
 
 const sendOrGet = ref<'send' | 'get'>('send');
-
-const serverUrl = ref<string>(defaultServerUrls[0]);
 const initialSecretPath = randomStr(4, chars.numbers);
 const secretPath = ref<string>(initialSecretPath);
 const inputText = ref<string>((() => {
@@ -291,7 +265,6 @@ watch(inputText, () => {
   }
 });
 const inputFiles = ref<FilePondFile[]>([]);
-const serverUrlHistory = ref<string[]>([]);
 const protectionType = ref<Protection["type"]>('passwordless');
 const password = ref<string>('');
 const showsPassword = ref<boolean>(false);
@@ -325,18 +298,11 @@ const snackbarMessage = ref<string>('');
 // FIXME: Should be removed
 // This for lazy v-model of Combobox
 const shouldBeRemoved = ref({
-  latestServerUrl: serverUrl.value,
   latestSecretPath: secretPath.value,
 });
 const halfWidthLatestSecretPath = computed(() =>
   shouldBeRemoved.value.latestSecretPath.replace(/[！-～]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
 )
-
-// FIXME: Should be removed
-// NOTE: This is for update by clicking listed auto-complete
-watch(serverUrl, () => {
-  shouldBeRemoved.value.latestServerUrl = serverUrl.value;
-});
 
 watch(secretPath, () => {
   // NOTE: <v-combobox> "clearable" makes it null or undefined (maybe)
@@ -349,10 +315,6 @@ watch(secretPath, () => {
   shouldBeRemoved.value.latestSecretPath = secretPath.value;
 });
 
-function onUpdateServerUrl() {
-  window.localStorage.setItem(keys.selectedServerUrl, serverUrl.value);
-}
-
 const filePondLabelIdle = computed<string | undefined>(() => {
   if (strings.value === undefined) {
     return undefined;
@@ -360,9 +322,9 @@ const filePondLabelIdle = computed<string | undefined>(() => {
   // If files are nothing
   if (inputFiles.value.length === 0) {
     // Hint with file icon
-    return `<img src='img/file-icon.svg' style='width: 2em'><br>${strings.value['drop_a_file_here_or_browse']}`;
+    return `<img src='img/file-icon.svg' style='width: 2em'><br>${strings.value['drop_files_here_or_browse']}`;
   } else {
-    return strings.value['drop_a_file_here_or_browse'];
+    return strings.value['drop_files_here_or_browse'];
   }
 });
 
@@ -389,9 +351,7 @@ function updateRandomStrs() {
 
 const suggestedSecretPaths = computed<string[]>(() => {
   const candidates: string[] = (() => {
-    if (inputFiles.value.length === 0 && inputText.value === '') {
-      // NOTE: This is for simplicity of UI
-      //       Not show suggested secret path on initial status
+    if (shouldBeRemoved.value.latestSecretPath) {
       return [];
     }
     return randomStrs.value;
@@ -412,35 +372,12 @@ onMounted(() => {
   // Update random strings
   updateRandomStrs();
 
-  // Load from Local Storage
-  const savedServerUrl = window.localStorage.getItem(keys.selectedServerUrl);
-  if (savedServerUrl !== null) {
-    serverUrl.value = savedServerUrl;
-  }
-
-  // FIXME: Combobox is lazy to update v-model
-  // This is for updating server URL in real-time
-  server_url_ref.value!.$el.querySelector('input')!.addEventListener('keyup', (ev)=>{
-    // NOTE: [Send] button is hidden by auto-complete list if assigning to this.serverUrl
-    shouldBeRemoved.value.latestServerUrl = (ev.target as any).value;
-  });
   // FIXME: Combobox is lazy to update v-model
   // This is for updating secret path in real-time
   secret_path_ref.value!.$el.querySelector('input')!.addEventListener('keyup', (ev)=>{
     // NOTE: [Send] button is hidden by auto-complete list if assigning to this.secretPath
     shouldBeRemoved.value.latestSecretPath = (ev.target as any).value;
   });
-
-  // Load server URL history from local storage
-  const savedServerUrlHistory: string[] | undefined = loadLocalStorageWithValidation(t.array(t.string), keys.serverUrlHistory);
-  // If none
-  if (savedServerUrlHistory === undefined) {
-    // Set default
-    serverUrlHistory.value = defaultServerUrls.slice();
-  } else {
-    // Load from storage
-    serverUrlHistory.value = savedServerUrlHistory;
-  }
 });
 
 function onFilePondMounted() {
@@ -454,8 +391,8 @@ function preloadForUserExperience() {
   import("jwk-thumbprint");
   import("@/utils/openpgp-utils");
   import("file-type/browser");
-  import("linkifyjs/html");
-  import("sanitize-html");
+  import("linkifyjs");
+  import("linkify-string");
   import("jszip");
 
   const logoImage = new Image();
@@ -466,9 +403,6 @@ function preloadForUserExperience() {
 
 // FIXME: Should be removed
 function applyLatestServerUrlAndSecretPath() {
-  // FIXME: should be removed after fix
-  // NOTE: This set the latest secret path because v-model of Combobox is lazy
-  serverUrl.value = shouldBeRemoved.value.latestServerUrl;
   // FIXME: should be removed after fix
   // NOTE: This set the latest secret path because v-model of Combobox is lazy
   secretPath.value = shouldBeRemoved.value.latestSecretPath;
@@ -519,7 +453,7 @@ async function send() {
     props: {
       uploadNo: uploadCount.value,
       data: body,
-      serverUrl: serverUrl.value,
+      serverUrl: pipingServerUrl.value,
       secretPath: secretPath.value,
       protection: protection.value,
     }
@@ -528,11 +462,9 @@ async function send() {
   expandedPanelIds.value.push(expandedPanels.value.length-1);
 
   // If history is enable and user-input server URL is new
-  if (recordsServerUrlHistory.value && !serverUrlHistory.value.map(normalizeUrl).includes(normalizeUrl(serverUrl.value))) {
+  if (recordsServerUrlHistory.value && !pipingServerUrlHistory.value.map(normalizeUrl).includes(normalizeUrl(pipingServerUrl.value))) {
     // Enroll server URLs
-    serverUrlHistory.value.push(serverUrl.value);
-    // Save to local storage
-    window.localStorage.setItem(keys.serverUrlHistory, JSON.stringify(serverUrlHistory.value));
+    pipingServerUrlHistory.value = [...pipingServerUrlHistory.value, pipingServerUrl.value];
   }
 
   // If history is enable and user-input secret path is new
@@ -584,7 +516,7 @@ async function get() {
     type: 'data_downloader',
     props: {
       downloadNo: downloadCount.value,
-      serverUrl: serverUrl.value,
+      serverUrl: pipingServerUrl.value,
       secretPath: secretPath.value,
       protection: protection.value,
     }
@@ -618,7 +550,7 @@ async function view() {
     type: 'data_viewer',
     props: {
       viewNo: viewCount.value,
-      serverUrl: serverUrl.value,
+      serverUrl: pipingServerUrl.value,
       secretPath: secretPath.value,
       protection: protection.value,
     }
@@ -631,23 +563,6 @@ async function view() {
 function showSnackbar(message: string): void {
   showsSnackbar.value = true;
   snackbarMessage.value = message;
-}
-
-function attachProtocolToUrl(): void {
-  // FIXME: Don't use setTimeout()
-  // @blur is called before the value changed.
-  setTimeout(() => {
-    if (serverUrl.value.match(/^https?:\/\//) === null) {
-      serverUrl.value = `https://${serverUrl.value}`;
-    }
-  }, 100);
-}
-
-function deleteServerUrl(url: string): void {
-  // Remove path
-  serverUrlHistory.value = serverUrlHistory.value.filter(u => u !== url);
-  // Save to local storage
-  window.localStorage.setItem(keys.serverUrlHistory, JSON.stringify(serverUrlHistory.value));
 }
 
 function deleteSecretPath(path: string): void {

@@ -1,7 +1,7 @@
 <template>
   <v-expansion-panel ref="rootElement">
     <v-expansion-panel-header :disable-icon-rotate="isDoneDownload || hasError">
-      <span>{{ strings['view_in_viewer'] }} #{{ composedProps.viewNo }}</span>
+      <span>{{ strings?.['view_in_viewer'] }} #{{ composedProps.viewNo }}</span>
       <!-- Percentage -->
       {{ progressPercentage ? `${progressPercentage.toFixed(2)} %` : "" }}
       <template v-slot:actions>
@@ -13,7 +13,7 @@
     <v-expansion-panel-content>
 
       <v-alert type="info" v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'initial'" :color="canceled ? 'grey' : undefined">
-        <span style="">{{ strings['waiting_for_sender'] }}</span>
+        <span style="">{{ strings?.['waiting_for_sender'] }}</span>
       </v-alert>
 
       <span v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'verification_code_arrived'">
@@ -40,7 +40,7 @@
 
       <div v-show="isDecrypting">
         <div style="text-align: center">
-          {{ strings['decrypting'] }}
+          {{ strings?.['decrypting'] }}
         </div>
         <!-- Decryption progress bar -->
         <v-progress-linear indeterminate />
@@ -49,11 +49,11 @@
       <v-simple-table class="text-left">
         <tbody>
         <tr class="text-left">
-          <td>{{ strings['download_url'] }}</td>
+          <td>{{ strings?.['download_url'] }}</td>
           <td>{{ downloadPath }}</td>
         </tr>
         <tr v-if="pipingUiAuthVerificationCode !== undefined" class="text-left">
-          <td>{{ strings['verification_code'] }}</td>
+          <td>{{ strings?.['verification_code'] }}</td>
           <td>{{ pipingUiAuthVerificationCode }}</td>
         </tr>
         </tbody>
@@ -64,14 +64,14 @@
         <v-layout>
           <v-switch v-model="enablePasswordReinput"
                     inset
-                    :label="strings['reinput_password']"
+                    :label="strings?.['reinput_password']"
                     color="blue"
                     style="padding-left: 0.5em;"/>
 
           <v-text-field v-if="enablePasswordReinput"
                         v-model="password"
                         :type="showsPassword ? 'text' : 'password'"
-                        :label="strings['password']"
+                        :label="strings?.['password']"
                         :append-icon="showsPassword ? mdiEye : mdiEyeOff"
                         @click:append="showsPassword = !showsPassword"
                         single-line
@@ -83,13 +83,13 @@
                  text
                  @click="decryptIfNeedAndViewBlob(password)">
             <v-icon >{{ mdiKey }}</v-icon>
-            {{ strings['unlock'] }}
+            {{ strings?.['unlock'] }}
           </v-btn>
           <v-btn color="primary"
                  text
                  @click="viewRaw()">
             <v-icon >{{ mdiFeatureSearchOutline }}</v-icon>
-            {{ strings['view_raw'] }}
+            {{ strings?.['view_raw'] }}
           </v-btn>
         </div>
       </div>
@@ -111,7 +111,7 @@
 
       <!-- Text viewer -->
       <!-- NOTE: Don't use v-if because the inner uses "ref" and the ref is loaded in mounted()-->
-      <div v-show="linkifiedText !== undefined" style="text-align: center">
+      <div v-show="linkifiedTextAsHtml !== ''" style="text-align: center">
         <div style="text-align: right">
           <v-tooltip v-model="showsCopied" bottom>
             <template v-slot:activator="{}">
@@ -120,11 +120,10 @@
                 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" focusable="false" width="1.5em" height="1.5em" style="-ms-transform: rotate(360deg); -webkit-transform: rotate(360deg); transform: rotate(360deg);" preserveAspectRatio="xMidYMid meet" viewBox="0 0 14 16"><path fill-rule="evenodd" d="M2 13h4v1H2v-1zm5-6H2v1h5V7zm2 3V8l-3 3 3 3v-2h5v-2H9zM4.5 9H2v1h2.5V9zM2 12h2.5v-1H2v1zm9 1h1v2c-.02.28-.11.52-.3.7-.19.18-.42.28-.7.3H1c-.55 0-1-.45-1-1V4c0-.55.45-1 1-1h3c0-1.11.89-2 2-2 1.11 0 2 .89 2 2h3c.55 0 1 .45 1 1v5h-1V6H1v9h10v-2zM2 5h8c0-.55-.45-1-1-1H8c-.55 0-1-.45-1-1s-.45-1-1-1-1 .45-1 1-.45 1-1 1H3c-.55 0-1 .45-1 1z" fill="#000000"/></svg>
               </v-btn>
             </template>
-            <span>{{ strings['copied'] }}</span>
+            <span>{{ strings?.['copied'] }}</span>
           </v-tooltip>
         </div>
-        <pre v-html="linkifiedText"
-             class="text-view"/>
+        <pre v-html="linkifiedTextAsHtml" class="text-view"/>
       </div>
 
       <div v-if="isCancelable" style="text-align: right">
@@ -134,7 +133,7 @@
                class="ma-2 justify-end"
                @click="cancel()">
           <v-icon >{{ mdiCloseCircle }}</v-icon>
-          {{ strings['cancel'] }}
+          {{ strings?.['cancel'] }}
         </v-btn>
       </div>
 
@@ -145,7 +144,7 @@
              @click="save()"
              style="margin-top: 1em;">
         <v-icon >{{ mdiContentSave }}</v-icon>
-        {{ strings['save'] }}
+        {{ strings?.['save'] }}
       </v-btn>
 
       <v-alert type="error"
@@ -173,7 +172,7 @@ export type DataViewerProps = {
 <script setup lang="ts">
 import Vue, {ref, computed, watch, onMounted} from "vue";
 import urlJoin from 'url-join';
-import linkifyHtml from 'linkifyjs/html';
+import linkifyStr from "linkify-string";
 const FileSaverAsync = () => import('file-saver').then(p => p.default);
 const clipboardCopyAsync = () => import("clipboard-copy").then(p => p.default);
 import * as fileType from 'file-type/browser';
@@ -187,17 +186,16 @@ import * as openPgpUtils from '@/utils/openpgp-utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
 import {type VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
-import {BlobUrlManager} from "@/blob-url-manager";
+import {BlobUrlManager} from "@/utils/BlobUrlManager";
 import * as pipingUiAuth from "@/piping-ui-auth";
 import {uint8ArrayIsText} from "@/utils/uint8ArrayIsText";
 import {readableBytesString} from "@/utils/readableBytesString";
 import {readBlobAsText} from "@/utils/readBlobAsText";
-import {sanitizeHtmlAllowingATag} from "@/utils/sanitizeHtmlAllowingATag";
 import {makePromise} from "@/utils/makePromise";
-import {useErrorMessage} from "@/useErrorMessage";
+import {useErrorMessage} from "@/composables/useErrorMessage";
 import {getReadableStreamWithProgress} from "@/utils/getReadableStreamWithProgress";
 import {strings} from "@/strings/strings";
-import {ecdsaP384SigningKeyPairPromise} from "@/signing-key";
+import {ecdsaP384SigningKeyPairPromise} from "@/states/ecdsaP384SigningKeyPairPromise";
 
 // eslint-disable-next-line no-undef
 const props = defineProps<{ composedProps: DataViewerProps }>();
@@ -279,11 +277,11 @@ const downloadPath = computed<string>(() => {
   return urlJoin(props.composedProps.serverUrl, props.composedProps.secretPath);
 });
 
-const linkifiedText = ref<string>();
-watch(text, async () => {
-  linkifiedText.value = await sanitizeHtmlAllowingATag(linkifyHtml(text.value, {
-    defaultProtocol: 'https'
-  }));
+const linkifiedTextAsHtml = computed(() => {
+  return linkifyStr(text.value, {
+    defaultProtocol: 'https',
+    target: "_blank",
+  });
 });
 
 async function copyToClipboard() {

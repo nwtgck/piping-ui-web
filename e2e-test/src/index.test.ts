@@ -22,6 +22,7 @@ const PIPING_UI_URL = `http://localhost:${PIPING_UI_PORT}`;
 const driverFactoryPromise = createDriverFactory({
   dockerBaseImage: process.env["E2E_DOCKER_IMAGE"] || (() => {throw new Error("$E2E_DOCKER_IMAGE not found")})(),
   disablesServiceWorker: process.env["E2E_DISABLE_SERVICE_WORKER"] === "true",
+  blockPopup: process.env["E2E_BLOCK_POPUP"] === "true",
   forwardingTcpPorts: [PIPING_UI_PORT],
 });
 
@@ -58,6 +59,33 @@ function getActions(driver: WebDriver) {
       await (await elements.secretPathClearButton()).click();
       await (await elements.secretPathInput()).sendKeys(path);
     },
+    retryDownloadButtonIfNeed(): () => void {
+      let done = false;
+      (async () => {
+        let retryDownloadButton: webdriver.WebElement;
+        while (true) {
+          try {
+            retryDownloadButton = await driver.findElement(webdriver.By.css("[data-testid=retry_download_button]"));
+            const href = await retryDownloadButton.getAttribute("href");
+            if (href.includes("/sw-download/")) {
+              break;
+            }
+          } catch (e) {
+          }
+          await new Promise(resolve => setTimeout(resolve, 500));
+          if (done) {
+            return;
+          }
+        }
+        await driver.executeScript((button: HTMLElement) => {
+          window.scrollTo(0, button.offsetTop)
+        }, retryDownloadButton);
+        // GitHub Actions frequently fails in 2 seconds.
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        await retryDownloadButton.click();
+      })().catch(e => console.error("failed to run retryDownloadButtonIfNeed()", e));
+      return () => { done = true };
+    },
   };
 }
 
@@ -73,8 +101,8 @@ describe('Piping UI', () => {
     afterCallbacks.push(f);
   }
 
-  it('should send and download a file', async () => {
-    const {sharePath, sharePathInDocker, downloadPath, createDriver} = await driverFactoryPromise;
+  it('should send and download a file', async function () {
+    const {sharePath, sharePathInDocker, downloadPath, createDriver, blockPopup} = await driverFactoryPromise;
 
     const secretPath = crypto.randomBytes(8).toString("hex");
     const transferContent = randomBytesAvoidingMimeTypeDetection(1024 * 1024);
@@ -110,6 +138,8 @@ describe('Piping UI', () => {
       await nativeClick(driver, await elements.passwordlessSwitch());
       await new Promise(resolve => setTimeout(resolve, 1000));
       await (await elements.downloadButton()).click();
+      const finishRetryDownload = actions.retryDownloadButtonIfNeed();
+      defer(() => finishRetryDownload());
 
       const downloadedFilePath = path.join(downloadPath, secretPath);
       await waitForDownload(downloadedFilePath);
@@ -121,8 +151,9 @@ describe('Piping UI', () => {
     }
   });
 
-  it('should send and show a file', async () => {
-    const {sharePath, sharePathInDocker, downloadPath, createDriver} = await driverFactoryPromise;
+  it('should send and show a file', async function () {
+    const {sharePath, sharePathInDocker, downloadPath, createDriver, blockPopup} = await driverFactoryPromise;
+    // NOTE: Skip because GitHub Actions frequently failed. In local Intel Mac, it succeeds.
 
     const secretPath = crypto.randomBytes(8).toString("hex");
     {
@@ -165,8 +196,8 @@ describe('Piping UI', () => {
     }
   });
 
-  it('should send and download an E2E encrypted file with password', async () => {
-    const {sharePath, sharePathInDocker, downloadPath, createDriver} = await driverFactoryPromise;
+  it('should send and download an E2E encrypted file with password', async function () {
+    const {sharePath, sharePathInDocker, downloadPath, createDriver, blockPopup} = await driverFactoryPromise;
 
     const secretPath = crypto.randomBytes(8).toString("hex");
     const transferContent = randomBytesAvoidingMimeTypeDetection(1024 * 1024);
@@ -207,6 +238,8 @@ describe('Piping UI', () => {
       await (await elements.passwordInput()).sendKeys(filePassword);
       await new Promise(resolve => setTimeout(resolve, 1000));
       await (await elements.downloadButton()).click();
+      const finishRetryDownload = actions.retryDownloadButtonIfNeed();
+      defer(() => finishRetryDownload());
 
       const downloadedFilePath = path.join(downloadPath, secretPath);
       await waitForDownload(downloadedFilePath);
@@ -218,8 +251,8 @@ describe('Piping UI', () => {
     }
   });
 
-  it('should send and show an E2E encrypted file with password', async () => {
-    const {sharePath, sharePathInDocker, downloadPath, createDriver} = await driverFactoryPromise;
+  it('should send and show an E2E encrypted file with password', async function () {
+    const {sharePath, sharePathInDocker, downloadPath, createDriver, blockPopup} = await driverFactoryPromise;
 
     const secretPath = crypto.randomBytes(8).toString("hex");
     const filePassword = crypto.randomBytes(32).toString("binary");
@@ -268,8 +301,8 @@ describe('Piping UI', () => {
     }
   });
 
-  it('should send and download a file by passwordless E2E encryption', async () => {
-    const {sharePath, sharePathInDocker, downloadPath, createDriver} = await driverFactoryPromise;
+  it('should send and download a file by passwordless E2E encryption', async function () {
+    const {sharePath, sharePathInDocker, downloadPath, createDriver, blockPopup} = await driverFactoryPromise;
 
     const secretPath = crypto.randomBytes(8).toString("hex");
     const transferContent = randomBytesAvoidingMimeTypeDetection(1024 * 1024);
@@ -304,6 +337,9 @@ describe('Piping UI', () => {
     await new Promise(resolve => setTimeout(resolve, 2000));
     await (await senderElements.passwordlessVerifiedButton0()).click();
 
+    const finishRetryDownload = receiverActions.retryDownloadButtonIfNeed();
+    defer(() => finishRetryDownload());
+
     const downloadedFilePath = path.join(downloadPath, secretPath);
     await waitForDownload(downloadedFilePath);
     const downloadedFileContent = fs.readFileSync(downloadedFilePath);
@@ -313,8 +349,8 @@ describe('Piping UI', () => {
     fs.rmSync(downloadedFilePath);
   });
 
-  it('should send and show a file by passwordless E2E encryption', async () => {
-    const {sharePath, sharePathInDocker, downloadPath, createDriver} = await driverFactoryPromise;
+  it('should send and show a file by passwordless E2E encryption', async function () {
+    const {sharePath, sharePathInDocker, downloadPath, createDriver, blockPopup} = await driverFactoryPromise;
 
     const secretPath = crypto.randomBytes(8).toString("hex");
 

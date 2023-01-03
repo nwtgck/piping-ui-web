@@ -21,13 +21,26 @@ jobs:
           # "selenium/standalone-${e2e_docker_image_fragment}"
           # Why fragment? These short names are more readable in GitHub UI
           - e2e_docker_image_fragment: chrome:108.0
+            e2e_service_worker_disable: false
+            e2e_block_popup: false
           - e2e_docker_image_fragment: chrome:84.0
+            e2e_service_worker_disable: false
+            e2e_block_popup: false
           - e2e_docker_image_fragment: firefox:108.0
+            e2e_service_worker_disable: false
+            e2e_block_popup: false
           - e2e_docker_image_fragment: firefox:78.0
+            e2e_service_worker_disable: false
+            e2e_block_popup: false
           - e2e_docker_image_fragment: firefox:108.0
             e2e_service_worker_disable: true
+            e2e_block_popup: false
           - e2e_docker_image_fragment: firefox:78.0
             e2e_service_worker_disable: true
+            e2e_block_popup: false
+          - e2e_docker_image_fragment: firefox:108.0
+            e2e_service_worker_disable: false
+            e2e_block_popup: true
 
     runs-on: ubuntu-20.04
     timeout-minutes: 10
@@ -47,4 +60,4 @@ jobs:
           (cd e2e-test && npm ci) &
           wait
       - name: E2E test (${{ matrix.e2e_docker_image_fragment }})
-        run: cd e2e-test && E2E_DOCKER_IMAGE=selenium/standalone-${{ matrix.e2e_docker_image_fragment }} E2E_DISABLE_SERVICE_WORKER=${{ matrix.e2e_service_worker_disable }} npm start
+        run: cd e2e-test && E2E_DOCKER_IMAGE=selenium/standalone-${{ matrix.e2e_docker_image_fragment }} E2E_DISABLE_SERVICE_WORKER=${{ matrix.e2e_service_worker_disable }} E2E_BLOCK_POPUP=${{ matrix.e2e_block_popup }} npm start

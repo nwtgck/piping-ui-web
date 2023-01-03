@@ -1,12 +1,12 @@
 <template>
   <v-expansion-panel ref="rootElement">
     <v-expansion-panel-header :disable-icon-rotate="hasError">
-      <span>{{ strings['download_in_downloader'] }} #{{ composedProps.downloadNo }}</span>
+      <span>{{ strings?.['download_in_downloader'] }} #{{ composedProps.downloadNo }}</span>
     </v-expansion-panel-header>
     <v-expansion-panel-content>
 
       <v-alert type="info" v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'initial'">
-        <span style="">{{ strings['waiting_for_sender'] }}</span>
+        <span style="">{{ strings?.['waiting_for_sender'] }}</span>
       </v-alert>
 
       <span v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'verification_code_arrived'">
@@ -16,11 +16,11 @@
       <v-simple-table class="text-left">
         <tbody>
         <tr class="text-left">
-          <td>{{ strings['download_url'] }}</td>
+          <td>{{ strings?.['download_url'] }}</td>
           <td>{{ downloadPath }}</td>
         </tr>
         <tr v-if="pipingUiAuthVerificationCode !== undefined" class="text-left">
-          <td>{{ strings['verification_code'] }}</td>
+          <td>{{ strings?.['verification_code'] }}</td>
           <td>{{ pipingUiAuthVerificationCode }}</td>
         </tr>
         </tbody>
@@ -34,12 +34,13 @@
 
       <v-dialog v-model="openRetryDownload" persistent max-width="290">
         <v-card>
-          <v-card-title class="text-h5">{{ strings['retry_download_dialog_title'] }}</v-card-title>
-          <v-card-text>{{ strings['browser_may_have_blocked_download'] }}</v-card-text>
+          <v-card-title class="text-h5">{{ strings?.['retry_download_dialog_title'] }}</v-card-title>
+          <v-card-text>{{ strings?.['browser_may_have_blocked_download'] }}</v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="primary" text @click="openRetryDownload = false">{{ strings['retry_download_dialog_no'] }}</v-btn>
-            <v-btn color="primary" text @click="retryDownload()">{{ strings['retry_download_dialog_yes'] }}</v-btn>
+            <v-btn color="primary" outlined @click="openRetryDownload = false">{{ strings?.['retry_download_dialog_no'] }}</v-btn>
+            <!-- NOTE: tag="a" is important. This element will be injected href and download attributes. -->
+            <v-btn ref="retry_download_button" tag="a" @click="openRetryDownload = false" color="primary" outlined data-testid="retry_download_button">{{ strings?.['retry_download_dialog_yes'] }}</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -61,7 +62,7 @@ export type DataDownloaderProps = {
 <script setup lang="ts">
 /* eslint-disable */
 
-import Vue, {ref, computed, onMounted} from "vue";
+import Vue, {ref, computed, onMounted, nextTick} from "vue";
 import urlJoin from 'url-join';
 import {mdiAlert, mdiChevronDown} from "@mdi/js";
 import * as pipingUiUtils from "@/piping-ui-utils";
@@ -72,9 +73,10 @@ import * as pipingUiAuth from "@/piping-ui-auth";
 import * as fileType from 'file-type/browser';
 import {canTransferReadableStream} from "@/utils/canTransferReadableStream";
 import {makePromise} from "@/utils/makePromise";
-import {useErrorMessage} from "@/useErrorMessage";
+import {isFirefox} from "@/utils/isFirefox";
+import {useErrorMessage} from "@/composables/useErrorMessage";
 import {strings} from "@/strings/strings";
-import {ecdsaP384SigningKeyPairPromise} from "@/signing-key";
+import {ecdsaP384SigningKeyPairPromise} from "@/states/ecdsaP384SigningKeyPairPromise";
 import {firstAtLeastBlobFromReadableStream} from "@/utils/firstAtLeastBlobFromReadableStream";
 
 const FileSaverAsync = () => import('file-saver').then(p => p.default);
@@ -115,7 +117,7 @@ const downloadPath = computed<string>(() => {
 const rootElement = ref<Vue>();
 const pipingUiAuthVerificationCode = ref<string | undefined>();
 const openRetryDownload = ref<boolean>(false);
-const retryDownload = ref<() => void>(() => {});
+const retry_download_button = ref<Vue>();
 
 // NOTE: Automatically download when mounted
 onMounted(async () => {
@@ -281,17 +283,24 @@ onMounted(async () => {
   // NOTE: '/sw-download/v2' can be received by Service Worker in src/sw.js
   // NOTE: URL fragment is passed to Service Worker but not passed to Web server
   const downloadUrl = `/sw-download/v2#?id=${swDownloadId}`;
-  retryDownload.value = () => {
-    const win = window.open(downloadUrl, "_blank");
-    console.log("retried window.open()?.closed =", win?.closed);
-    openRetryDownload.value = false;
-    retryDownload.value = () => {};
-  };
   const win = window.open(downloadUrl, "_blank");
   console.log("window.open()?.closed =", win?.closed);
   // NOTE: Desktop and iOS Safari 16.1 blocks by default
   if(win === null || win.closed || win.closed === undefined) {
     openRetryDownload.value = true;
+    nextTick(() => {
+      // Use real click, not element.click()
+      const a = retry_download_button.value!.$el as HTMLAnchorElement;
+      a.href = downloadUrl;
+      // NOTE: The feature detection can not be created because it would confirm the downloaded file.
+      if (isFirefox()) {
+        // NOTE: With "download" attributes, Chrome 108 and Safari 16.1 bypass Service Worker
+        // NOTE: Without "download" attribute, Firefox frequently fails to download a large file. Passwordless protection is stable without "download" attribute because it uses Piping UI Robust, which transfer small chunks especially first chunk even in Firefox.
+        // For testing in Firefox, you can enable "Block pop-up windows" in your preference.
+        a.download = fileName;
+        console.log("'download' attribute added to <a>");
+      }
+    });
   }
   // Without this, memory leak occurs. It consumes as much memory as the received file size.
   // Memory still leaks when using `npm run serve`. Build and serve to confirm.
