@@ -10,6 +10,7 @@ import {base64ToUint8Array} from 'binconv/dist/src/base64ToUint8Array';
 import {uint8ArrayToHexString} from 'binconv/dist/src/uint8ArrayToHexString';
 import urlJoin from "url-join";
 import * as t from 'io-ts';
+import {KEY_EXCHANGE_VERSION} from "@/piping-ui-auth/KEY_EXCHANGE_VERSION";
 
 export const keyExchangeParcelType = t.type({
   version: t.number,
@@ -108,8 +109,6 @@ type KeyExchangeResult =
   {type: "key", key: Uint8Array, mainPath: string, verificationCode: string} |
   {type: "error", keyExchangeError: KeyExchangeError} |
   {type: "canceled"};
-
-export const KEY_EXCHANGE_VERSION = 3;
 
 export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver', secretPath: string, ecdsaP384SigningKeyPair: CryptoKeyPair, canceledPromise: Promise<void>): Promise<KeyExchangeResult> {
   // 256 is max value for deriveBits()
