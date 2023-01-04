@@ -20,7 +20,6 @@
           <file-pond-wrapper v-model="inputFiles"
                              :label-idle="filePondLabelIdle"
                              data-testid="file_input"
-                             @hook:mounted="onFilePondMounted()"
           />
           <v-textarea :label="strings?.['text_placeholder']"
                       v-model="inputText"
@@ -378,11 +377,11 @@ onMounted(() => {
     // NOTE: [Send] button is hidden by auto-complete list if assigning to this.secretPath
     shouldBeRemoved.value.latestSecretPath = (ev.target as any).value;
   });
-});
 
-function onFilePondMounted() {
-  preloadForUserExperience();
-}
+  window.addEventListener('load', () => {
+    preloadForUserExperience();
+  });
+});
 
 function preloadForUserExperience() {
   DataUploader();
