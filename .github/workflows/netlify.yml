@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3.5.1
+      - uses: actions/setup-node@v3.6.0
         with:
           node-version: 16.x
       # base: https://github.com/actions/setup-node/issues/214#issuecomment-810829250
