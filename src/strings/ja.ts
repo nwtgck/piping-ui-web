@@ -38,8 +38,11 @@ export const ja: Strings = {
   drop_files_here_or_browse: 'ファイルをドラッグするか<span class=\'filepond--label-action\'>開く</span>',
   protect_with_password: 'パスワードで保護',
   passwordless_protection: 'パスワードレス',
+  passwordless_protection_info_html: "", // TODO:
   passwordless_verify_and_send: '確認して送信',
+  passwordless_verify_and_send_info_html: "", // TODO:
   password: 'パスワード',
+  password_info_html: "", // TODO:
   password_is_required: 'パスワードを入力してください',
   more_options: 'その他のオプション',
   hide_options: 'オプション非表示',

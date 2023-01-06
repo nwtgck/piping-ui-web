@@ -38,8 +38,36 @@ export const en = {
   drop_files_here_or_browse: 'Drop files here or <span class=\'filepond--label-action\'>Browse</span>',
   protect_with_password: 'Protect with password',
   passwordless_protection: 'Passwordless',
+  passwordless_protection_info_html: `\
+<b>General</b>
+Passwordless protection provides higher level of security. Both sender and receiver should enable this to use it.
+
+<b>For developers</b>
+It allows you to transfer data with end-to-end encryption using OpenPGP. Elliptic curve Diffie–Hellman key exchange (ECDH) shares the encryption key securely between sender and receiver even over untrusted channel. A new encryption key is generated for each transfer.
+`.replace(/\n/g, '<br>'),
   passwordless_verify_and_send: 'Verify and send',
+  passwordless_verify_and_send_info_html: `\
+<b>General</b>
+You can verify whether the receiver is who you expect in a trusted channel before uploading the data. This makes the passwordless protection more secure.
+
+<b>For developers</b>
+Enabling this option prevents man-in-the-middle attach (MITM). The public encryption keys shared by ECDH are signed. The public signing keys derives a verification code. The signing key is generated in your device and refreshed by browser's reload.
+`.replace(/\n/g, '<br>'),
   password: 'Password',
+  password_info_html: `\
+<b>General</b>
+This protects the data with password.
+
+<b>For developers</b>
+It allows you to transfer data with end-to-end encryption using OpenPGP. This way is compatible with gpg command. You can send with Piping UI and receive with curl and gpp, and vice versa.
+
+<code># Send
+export GPG_TTY=$(tty)
+echo 'hello' | gpg -c | curl -T - https://ppng.io/mypath</code>
+
+<code># Receive
+curl https://ppng.io/mypath | gpg</code>  
+`.replace(/\n/g, '<br>'),
   password_is_required: 'Password is required',
   more_options: 'More options',
   hide_options: 'Hide options',
