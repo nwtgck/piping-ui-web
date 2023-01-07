@@ -4,13 +4,14 @@
              :label-idle="labelIdle"
              :allow-multiple="true"
              :allow-paste="true"
+             credits=""
   />
 </template>
 
 <script lang="ts">
 import Vue, {PropType} from "vue";
 import {type FilePondFile} from "filepond";
-import * as filePond from "filepond";
+
 const FilePond = () => import('vue-filepond').then(vueFilePond => vueFilePond.default());
 
 (async () => require('filepond/dist/filepond.min.css'))();
@@ -28,11 +29,5 @@ export default Vue.extend({
       this.$emit("input", value);
     },
   },
-  created() {
-    // Disable "Powered by PQINA" link
-    filePond.setOptions({
-      credits: false,
-    });
-  }
 });
 </script>

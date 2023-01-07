@@ -20,7 +20,6 @@
           <file-pond-wrapper v-model="inputFiles"
                              :label-idle="filePondLabelIdle"
                              data-testid="file_input"
-                             @hook:mounted="onFilePondMounted()"
           />
           <v-textarea :label="strings?.['text_placeholder']"
                       v-model="inputText"
@@ -83,40 +82,74 @@
 
         <v-col class="pa-0">
           <v-row align="center" class="ma-0">
-            <v-switch :input-value="protectionType === 'passwordless'"
-                      @change="onEnablePasswordlessProtection"
-                      inset
-                      data-testid="passwordless_switch"
-                      style="margin-right: 2rem;">
-              <template v-slot:label>
-                <v-icon class="icon-and-text-margin" :color="protectionType === 'passwordless' ? 'blue' : ''">{{ mdiShieldHalfFull }}</v-icon>
-                {{ strings?.['passwordless_protection'] }}
-              </template>
-            </v-switch>
+            <div>
+              <v-switch :input-value="protectionType === 'passwordless'"
+                        @change="onEnablePasswordlessProtection"
+                        inset
+                        style="display: inline-block"
+                        data-testid="passwordless_switch">
+                <template v-slot:label>
+                  <v-icon class="icon-and-text-margin" :color="protectionType === 'passwordless' ? 'blue' : ''">{{ mdiShieldHalfFull }}</v-icon>
+                  {{ strings?.['passwordless_protection'] }}
+                </template>
+              </v-switch>
 
-            <v-switch v-if="sendOrGet === 'send' && protectionType === 'passwordless'"
-                      v-model="passwordlessSendAndVerify"
-                      inset
-                      data-testid="passwordless_send_and_verify_switch">
-              <template v-slot:label>
-                <v-icon class="icon-and-text-margin" :color="passwordlessSendAndVerify ? 'blue' : ''">{{ mdiShieldCheck }}</v-icon>
-                {{ strings?.['passwordless_verify_and_send'] }}
-              </template>
-            </v-switch>
+              <v-tooltip top :open-on-hover="tooltipOpenOnHover">
+                <template v-slot:activator="{ on, attrs }">
+                  <v-icon dark v-bind="attrs" v-on="on" small class="tooltip-icon-after-switch" style="margin-right: 1.5rem;">
+                    {{ mdiInformation }}
+                  </v-icon>
+                </template>
+                <div v-html="strings?.['passwordless_protection_info_html']" style="width: 20rem" />
+              </v-tooltip>
+            </div>
+
+            <div v-if="sendOrGet === 'send' && protectionType === 'passwordless'">
+              <v-switch v-model="passwordlessSendAndVerify"
+                        inset
+                        style="display: inline-block"
+                        data-testid="passwordless_send_and_verify_switch">
+                <template v-slot:label>
+                  <v-icon class="icon-and-text-margin" :color="passwordlessSendAndVerify ? 'blue' : ''">{{ mdiShieldCheck }}</v-icon>
+                  {{ strings?.['passwordless_verify_and_send'] }}
+                </template>
+              </v-switch>
+
+              <v-tooltip top :open-on-hover="tooltipOpenOnHover">
+                <template v-slot:activator="{ on, attrs }">
+                  <v-icon dark v-bind="attrs" v-on="on" small class="tooltip-icon-after-switch">
+                    {{ mdiInformation }}
+                  </v-icon>
+                </template>
+                <div v-html="strings?.['passwordless_verify_and_send_info_html']" style="width: 20rem" />
+              </v-tooltip>
+            </div>
           </v-row>
 
           <v-row v-if='showsMoreOptions' align="center" class="ma-0" style="padding-top: 0.5em;">
-            <v-switch :input-value="protectionType === 'password'"
-                      @change="onEnablePasswordProtection"
-                      inset
-                      color="blue"
-                      class="ma-0 pa-0"
-                      data-testid="password_switch">
-              <template v-slot:label>
-                <v-icon class="icon-and-text-margin" :color="protectionType === 'password' ? 'blue' : ''">{{ mdiKey }}</v-icon>
-                {{ protectionType === 'password' ? '' : strings?.['protect_with_password'] }}
-              </template>
-            </v-switch>
+            <div>
+              <v-switch :input-value="protectionType === 'password'"
+                        @change="onEnablePasswordProtection"
+                        inset
+                        color="blue"
+                        class="ma-0 pa-0"
+                        style="display: inline-block"
+                        data-testid="password_switch">
+                <template v-slot:label>
+                  <v-icon class="icon-and-text-margin" :color="protectionType === 'password' ? 'blue' : ''">{{ mdiKey }}</v-icon>
+                  {{ protectionType === 'password' ? '' : strings?.['protect_with_password'] }}
+                </template>
+              </v-switch>
+
+              <v-tooltip top :open-on-hover="tooltipOpenOnHover">
+                <template v-slot:activator="{ on, attrs }">
+                  <v-icon dark v-bind="attrs" v-on="on" small class="tooltip-icon-after-switch">
+                    {{ mdiInformation }}
+                  </v-icon>
+                </template>
+                <div v-html="strings?.['password_info_html']" style="width: 20rem" />
+              </v-tooltip>
+            </div>
 
             <v-text-field v-if="protectionType === 'password'"
                           v-model="password"
@@ -210,7 +243,7 @@ import {type DataUploaderProps} from '@/components/DataUploader.vue';
 import {type DataViewerProps} from "@/components/DataViewer.vue";
 import {type DataDownloaderProps} from "@/components/DataDownloader.vue";
 import * as t from 'io-ts';
-import {mdiAlert, mdiClose, mdiCollapseAll, mdiDelete, mdiDownload, mdiExpandAll, mdiEye, mdiEyeOff, mdiFileFind, mdiKey, mdiShieldCheck, mdiShieldHalfFull, mdiUpload, mdiPencil} from "@mdi/js";
+import {mdiAlert, mdiClose, mdiCollapseAll, mdiDelete, mdiDownload, mdiExpandAll, mdiEye, mdiEyeOff, mdiFileFind, mdiKey, mdiShieldCheck, mdiShieldHalfFull, mdiUpload, mdiPencil, mdiInformation} from "@mdi/js";
 import {strings} from "@/strings/strings";
 import {type FilePondFile} from "filepond";
 import {type Protection} from "@/datatypes";
@@ -270,6 +303,9 @@ const password = ref<string>('');
 const showsPassword = ref<boolean>(false);
 const passwordlessSendAndVerify = ref<boolean>(false);
 const showsMoreOptions = ref<boolean>(false);
+// Tooltip does not show in iOS Safari without `:open-on-hover="false"`
+// https://github.com/vuetifyjs/vuetify/issues/7114#issuecomment-695188818
+const tooltipOpenOnHover: boolean = !matchMedia('(hover: none), (pointer: coarse)').matches;
 
 // Random strings for suggested secret paths
 const randomStrs = ref<string[]>([
@@ -378,11 +414,11 @@ onMounted(() => {
     // NOTE: [Send] button is hidden by auto-complete list if assigning to this.secretPath
     shouldBeRemoved.value.latestSecretPath = (ev.target as any).value;
   });
-});
 
-function onFilePondMounted() {
-  preloadForUserExperience();
-}
+  window.addEventListener('load', () => {
+    preloadForUserExperience();
+  });
+});
 
 function preloadForUserExperience() {
   DataUploader();
@@ -394,6 +430,7 @@ function preloadForUserExperience() {
   import("linkifyjs");
   import("linkify-string");
   import("jszip");
+  import("@/components/MenuContent.vue");
 
   const logoImage = new Image();
   logoImage.src = require('@/assets/logo.svg');
@@ -580,5 +617,10 @@ function deleteSecretPath(path: string): void {
   /* Fonts used in GitHub code */
   /* easier to distinguish similar words */
   font-family: SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace;
+}
+
+.tooltip-icon-after-switch {
+  margin-left: 0.5rem;
+  margin-bottom: 0.6rem;
 }
 </style>

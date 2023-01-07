@@ -48,9 +48,17 @@
 
       <v-simple-table class="text-left">
         <tbody>
-        <tr class="text-left">
+        <tr v-if="composedProps.protection.type === 'passwordless'" class="text-left">
+          <td>{{ strings?.['server'] }}</td>
+          <td>{{ props.composedProps.serverUrl }}</td>
+        </tr>
+        <tr v-if="composedProps.protection.type === 'passwordless'" class="text-left">
+          <td>{{ strings?.['secret_path'] }}</td>
+          <td>{{ props.composedProps.secretPath }}</td>
+        </tr>
+        <tr v-if="composedProps.protection.type !== 'passwordless'" class="text-left">
           <td>{{ strings?.['download_url'] }}</td>
-          <td>{{ downloadPath }}</td>
+          <td>{{ downloadUrl }}</td>
         </tr>
         <tr v-if="pipingUiAuthVerificationCode !== undefined" class="text-left">
           <td>{{ strings?.['verification_code'] }}</td>
@@ -184,7 +192,6 @@ import * as pipingUiRobust from "@/piping-ui-robust";
 
 import * as openPgpUtils from '@/utils/openpgp-utils';
 import * as pipingUiUtils from "@/piping-ui-utils";
-import {type VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import {BlobUrlManager} from "@/utils/BlobUrlManager";
 import * as pipingUiAuth from "@/piping-ui-auth";
@@ -219,7 +226,7 @@ const text = ref('');
 const enablePasswordReinput = ref(false);
 const password = ref(props.composedProps.protection.type === "password" ? props.composedProps.protection.password : undefined);
 const showsPassword = ref(false);
-const verificationStep = ref<VerificationStep>({type: 'initial'});
+const verificationStep = ref<pipingUiAuth.VerificationStep>({type: 'initial'});
 let rawBlob = new Blob();
 let blob = new Blob();
 const showsCopied = ref(false);
@@ -272,8 +279,7 @@ const isReadyToDownload = computed<boolean>(() => {
   return props.composedProps.protection.type === 'passwordless' ? verificationStep.value.type === 'verified' && verificationStep.value.verified : true
 });
 
-// TODO: rename to downloadUrl
-const downloadPath = computed<string>(() => {
+const downloadUrl = computed<string>(() => {
   return urlJoin(props.composedProps.serverUrl, props.composedProps.secretPath);
 });
 
@@ -306,7 +312,7 @@ onMounted(async () => {
     props.composedProps.secretPath,
     props.composedProps.protection,
     await ecdsaP384SigningKeyPairPromise.value,
-    (step: VerificationStep) => {
+    (step: pipingUiAuth.VerificationStep) => {
       verificationStep.value = step;
     },
     canceledPromise,
@@ -354,7 +360,7 @@ onMounted(async () => {
     });
     let res: Response;
     try {
-      res = await fetch(downloadPath.value, {
+      res = await fetch(downloadUrl.value, {
         signal: abortController.signal,
       });
     } catch (err: any) {

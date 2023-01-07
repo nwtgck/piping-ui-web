@@ -1,5 +1,5 @@
 import {Ref, ref, watch} from "vue";
-import {language} from "@/states/language";
+import {strings} from "@/strings/strings";
 
 type ReadonlyRef<T> = Ref<T> & { readonly value: T}
 
@@ -11,7 +11,7 @@ export function useErrorMessage(): {
   //       Delegation is to reassign this value
   const errorMessageDelegate = ref<(() => undefined | string | Promise<string>) | undefined>();
   const errorMessage = ref<string | undefined>();
-  watch([errorMessageDelegate, language], async () => {
+  watch([errorMessageDelegate, strings], async () => {
     if (errorMessageDelegate.value !== undefined) {
       errorMessage.value = await errorMessageDelegate.value();
     }

@@ -15,9 +15,17 @@
 
       <v-simple-table class="text-left">
         <tbody>
-        <tr class="text-left">
+        <tr v-if="composedProps.protection.type === 'passwordless'" class="text-left">
+          <td>{{ strings?.['server'] }}</td>
+          <td>{{ props.composedProps.serverUrl }}</td>
+        </tr>
+        <tr v-if="composedProps.protection.type === 'passwordless'" class="text-left">
+          <td>{{ strings?.['secret_path'] }}</td>
+          <td>{{ props.composedProps.secretPath }}</td>
+        </tr>
+        <tr v-if="composedProps.protection.type !== 'passwordless'" class="text-left">
           <td>{{ strings?.['download_url'] }}</td>
-          <td>{{ downloadPath }}</td>
+          <td>{{ downloadUrl }}</td>
         </tr>
         <tr v-if="pipingUiAuthVerificationCode !== undefined" class="text-left">
           <td>{{ strings?.['verification_code'] }}</td>
@@ -67,7 +75,6 @@ import urlJoin from 'url-join';
 import {mdiAlert, mdiChevronDown} from "@mdi/js";
 import * as pipingUiUtils from "@/piping-ui-utils";
 import * as pipingUiRobust from "@/piping-ui-robust";
-import {type VerificationStep} from "@/datatypes";
 import VerificationCode from "@/components/VerificationCode.vue";
 import * as pipingUiAuth from "@/piping-ui-auth";
 import * as fileType from 'file-type/browser';
@@ -92,7 +99,7 @@ canceledPromise.then(() => {
 });
 
 const {errorMessage, updateErrorMessage} = useErrorMessage();
-const verificationStep = ref<VerificationStep>({type: 'initial'});
+const verificationStep = ref<pipingUiAuth.VerificationStep>({type: 'initial'});
 const hasError = computed<boolean>(() => errorMessage.value !== undefined);
 const headerIcon = computed<string>(() => {
   if (hasError.value) {
@@ -111,7 +118,7 @@ const headerIconColor = computed<string | undefined>(() => {
 const isReadyToDownload = computed<boolean>(() => {
   return props.composedProps.protection.type === 'passwordless' ? verificationStep.value.type === 'verified' && verificationStep.value.verified : true
 });
-const downloadPath = computed<string>(() => {
+const downloadUrl = computed<string>(() => {
   return urlJoin(props.composedProps.serverUrl, encodeURI(props.composedProps.secretPath));
 });
 const rootElement = ref<Vue>();
@@ -171,7 +178,7 @@ onMounted(async () => {
       console.log("downloading with dynamic <a href> click...");
       // Download or show on browser sometimes
       const aTag = document.createElement('a');
-      aTag.href = downloadPath.value;
+      aTag.href = downloadUrl.value;
       aTag.target = "_blank";
       aTag.download = props.composedProps.secretPath;
       aTag.click();
@@ -192,7 +199,7 @@ onMounted(async () => {
         { abortSignal: abortController.signal },
       );
     } else {
-      const res = await fetch(downloadPath.value);
+      const res = await fetch(downloadUrl.value);
       if (res.status !== 200) {
         const message = await res.text();
         updateErrorMessage(() => strings.value?.['fetch_status_error']({status: res.status, message}));
@@ -232,7 +239,7 @@ onMounted(async () => {
       { abortSignal: abortController.signal },
     );
   } else {
-    const res = await fetch(downloadPath.value);
+    const res = await fetch(downloadUrl.value);
     if (res.status !== 200) {
       const message = await res.text();
       updateErrorMessage(() => strings.value?.['fetch_status_error']({status: res.status, message}));
@@ -282,8 +289,8 @@ onMounted(async () => {
   // Download via Service Worker
   // NOTE: '/sw-download/v2' can be received by Service Worker in src/sw.js
   // NOTE: URL fragment is passed to Service Worker but not passed to Web server
-  const downloadUrl = `/sw-download/v2#?id=${swDownloadId}`;
-  const win = window.open(downloadUrl, "_blank");
+  const swDownloadUrl = `/sw-download/v2#?id=${swDownloadId}`;
+  const win = window.open(swDownloadUrl, "_blank");
   console.log("window.open()?.closed =", win?.closed);
   // NOTE: Desktop and iOS Safari 16.1 blocks by default
   if(win === null || win.closed || win.closed === undefined) {
@@ -291,7 +298,7 @@ onMounted(async () => {
     nextTick(() => {
       // Use real click, not element.click()
       const a = retry_download_button.value!.$el as HTMLAnchorElement;
-      a.href = downloadUrl;
+      a.href = swDownloadUrl;
       // NOTE: The feature detection can not be created because it would confirm the downloaded file.
       if (isFirefox()) {
         // NOTE: With "download" attributes, Chrome 108 and Safari 16.1 bypass Service Worker
