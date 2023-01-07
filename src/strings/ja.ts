@@ -38,11 +38,36 @@ export const ja: Strings = {
   drop_files_here_or_browse: 'ファイルをドラッグするか<span class=\'filepond--label-action\'>開く</span>',
   protect_with_password: 'パスワードで保護',
   passwordless_protection: 'パスワードレス',
-  passwordless_protection_info_html: "", // TODO:
+  passwordless_protection_info_html: `\
+<b>概要</b>
+パスワードレス保護はセキュリティを格段に向上させます。利用するには送信者と受信者の両方がこのオプションを有効にする必要があります。
+
+<b>開発者向け</b>
+OpenPGP を使ったエンドツーエンド暗号化によりデータ転送が可能です。楕円曲線ディフィー・ヘルマン鍵共有 (ECDH) によって信頼できない通信路であっても暗号化鍵をセキュアに共有します。暗号化鍵は転送ごとに新しく生成されます。
+`.replace(/\n/g, '<br>'),
   passwordless_verify_and_send: '確認して送信',
-  passwordless_verify_and_send_info_html: "", // TODO:
+  passwordless_verify_and_send_info_html: `\
+<b>概要</b>
+送信前に受信者が想定した相手かどうかを安全な通信路で確認できます。これによりパスワードレス保護の安全性をさらに引き上げます。
+
+<b>開発者向け</b>
+このオプションを有効化することで中間者攻撃 (MITM) を防ぎます。ECDH によって共有される公開暗号化鍵は署名されています。その公開署名鍵から確認コードが生成されます。署名鍵の生成はデバイス内で行われ、ブラウザのリロードで再生成されます。
+`.replace(/\n/g, '<br>'),
   password: 'パスワード',
-  password_info_html: "", // TODO:
+  password_info_html: `\
+<b>概要</b>
+パスワードによりデータを保護します。
+
+<b>開発者向け</b>
+OpenPGP を使ったエンドツーエンド暗号化によりデータ転送が可能です。gpg コマンドと互換性があります。そのため Piping UI で送信し、curl と gpg で受信できます。またその逆も可能です。
+
+<code># 送信
+export GPG_TTY=$(tty)
+echo 'hello' | gpg -c | curl -T - https://ppng.io/mypath</code>
+
+<code># 受信
+curl https://ppng.io/mypath | gpg</code>  
+`.replace(/\n/g, '<br>'),
   password_is_required: 'パスワードを入力してください',
   more_options: 'その他のオプション',
   hide_options: 'オプション非表示',
