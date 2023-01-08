@@ -28,6 +28,10 @@ export const keyExchangeV4ParcelType = t.type({
 });
 export type KeyExchangeV4Parcel = t.TypeOf<typeof keyExchangeV4ParcelType>;
 
+// Ensure KeyExchangeVXParcel is subtype of KeyExchangeParcel
+type IsSubTypeOf<A extends B, B> = void;
+type __DUMMY1__ = IsSubTypeOf<KeyExchangeV4Parcel, KeyExchangeParcel>;
+
 export const keyExchangeParcelPayloadType = t.type({
   // Public encryption JWK
   public_encrypt_jwk: ecJsonWebKeyType,
