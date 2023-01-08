@@ -17,19 +17,20 @@ export const keyExchangeParcelType = t.type({
 });
 export type KeyExchangeParcel = t.TypeOf<typeof keyExchangeParcelType>;
 
-export const keyExchangeV3ParcelType = t.type({
-  version: t.literal(3),
-  publicSigningJwk: jsonWebKeyType,
+export const keyExchangeV4ParcelType = t.type({
+  format: t.literal("piping_ui_auth"),
+  version: t.literal(4),
+  public_signing_jwk: jsonWebKeyType,
   payload: t.string,
   signature: t.string,
 });
-export type KeyExchangeV3Parcel = t.TypeOf<typeof keyExchangeV3ParcelType>;
+export type KeyExchangeV4Parcel = t.TypeOf<typeof keyExchangeV4ParcelType>;
 
 export const keyExchangeParcelPayloadType = t.type({
   // Public encryption JWK
-  publicEncryptJwk: ecJsonWebKeyType,
+  public_encrypt_jwk: ecJsonWebKeyType,
   // For mitigating path collision
-  mainPathFactor: t.string,
+  main_path_factor: t.string,
 });
 export type keyExchangeParcelPayloadType = t.TypeOf<typeof keyExchangeParcelPayloadType>;
 
@@ -55,6 +56,13 @@ const verifiedExtensionType = t.union([
 ]);
 
 async function keyExchangePath(type: 'sender' | 'receiver', secretPath: string): Promise<string> {
+  if (type === 'sender') {
+    return secretPath;
+  }
+  return `${secretPath}/receiver-sender`;
+}
+
+async function keyExchangePathBeforeV3(type: 'sender' | 'receiver', secretPath: string): Promise<string> {
   return await sha256(`${secretPath}/key_exchange/${type}`);
 }
 
@@ -110,6 +118,34 @@ type KeyExchangeResult =
   {type: "error", keyExchangeError: KeyExchangeError} |
   {type: "canceled"};
 
+// For testing: https://git-ce4f4b3d9b88d47280bc46ee2ce769b01d7b0653--piping-ui.netlify.app/
+function makeKeyExchangeFailForOld(serverUrl: string, type: 'sender' | 'receiver', secretPath: string, abortController: AbortController): void {
+  // key exchange version to notify
+  const oldKeyExchangeVersion = 3;
+  (async () => {
+    try {
+      const keyExchangeParcel: KeyExchangeParcel = {
+        version: oldKeyExchangeVersion + 1,
+      };
+      const myPath = await keyExchangePathBeforeV3(type, secretPath);
+      const peerPath = await keyExchangePathBeforeV3(type === 'sender' ? 'receiver' : 'sender', secretPath);
+      const postResPromise = await fetch(urlJoin(serverUrl, myPath), {
+        method: 'POST',
+        body: JSON.stringify(keyExchangeParcel),
+        signal: abortController.signal,
+      });
+      const peerResPromise = await fetch(urlJoin(serverUrl, peerPath), {
+        signal: abortController.signal,
+      });
+    } catch (e: any) {
+      if (e.name === 'AbortError') {
+        return;
+      }
+      console.warn(e);
+    }
+  })();
+}
+
 export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver', secretPath: string, ecdsaP384SigningKeyPair: CryptoKeyPair, canceledPromise: Promise<void>): Promise<KeyExchangeResult> {
   // 256 is max value for deriveBits()
   const KEY_BITS = 256;
@@ -126,8 +162,8 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
     encryptKeyPair.publicKey
   ) as JsonWebKey & {kty: 'EC'};
   const payloadJson: keyExchangeParcelPayloadType = {
-    publicEncryptJwk,
-    mainPathFactor: uint8ArrayToHexString(new Uint8Array(await crypto.subtle.digest('SHA-256', crypto.getRandomValues(new Uint8Array(32))))),
+    public_encrypt_jwk: publicEncryptJwk,
+    main_path_factor: uint8ArrayToHexString(new Uint8Array(await crypto.subtle.digest('SHA-256', crypto.getRandomValues(new Uint8Array(32))))),
   };
   const payload = JSON.stringify(payloadJson);
   const signature = await window.crypto.subtle.sign(
@@ -136,22 +172,27 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
     new TextEncoder().encode(payload),
   );
   const publicSigningJwk = await crypto.subtle.exportKey('jwk', ecdsaP384SigningKeyPair.publicKey);
-  const keyExchangeParcel: KeyExchangeV3Parcel = {
+  const keyExchangeParcel: KeyExchangeV4Parcel = {
+    format: 'piping_ui_auth',
     version: KEY_EXCHANGE_VERSION,
-    publicSigningJwk,
+    public_signing_jwk: publicSigningJwk,
     payload,
     signature: uint8ArrayToBase64(new Uint8Array(signature)),
   };
   const myPath = await keyExchangePath(type, secretPath);
   const peerPath = await keyExchangePath(type === 'sender' ? 'receiver' : 'sender', secretPath);
   const abortController = new AbortController();
+  const oldKeyExchangeAbortController = new AbortController();
+  makeKeyExchangeFailForOld(serverUrl, type, secretPath, oldKeyExchangeAbortController);
   canceledPromise.then(() => {
     abortController.abort();
+    oldKeyExchangeAbortController.abort();
   });
   // Exchange
   const postResPromise = fetch(urlJoin(serverUrl, myPath), {
     method: 'POST',
-    body: JSON.stringify(keyExchangeParcel),
+    // Indent JSON to let command-line users to know Piping UI Auth enabled
+    body: JSON.stringify(keyExchangeParcel, null, 2),
     signal: abortController.signal,
   });
   const peerResPromise = fetch(urlJoin(serverUrl, peerPath), {
@@ -184,6 +225,7 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
   if (peerRes.status !== 200) {
     return {type: "error", keyExchangeError: {code: 'receive_failed'}};
   }
+  oldKeyExchangeAbortController.abort();
   const peerKeyExchangeEither: Validation<KeyExchangeParcel> = keyExchangeParcelType.decode(JSON.parse(await peerRes.text()));
   if (peerKeyExchangeEither._tag === 'Left') {
     return {type: "error", keyExchangeError: { code: 'invalid_parcel_format' }};
@@ -192,14 +234,14 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
   if (KEY_EXCHANGE_VERSION !== peerKeyExchange.version) {
     return {type: "error", keyExchangeError: {code: 'key_exchange_version_mismatch', peerVersion: peerKeyExchange.version}};
   }
-  const peerExchangeV3Either = keyExchangeV3ParcelType.decode(peerKeyExchange);
+  const peerExchangeV3Either = keyExchangeV4ParcelType.decode(peerKeyExchange);
   if (peerExchangeV3Either._tag === 'Left') {
     return {type: "error", keyExchangeError: {code: 'invalid_v3_parcel_format'}};
   }
   const peerKeyExchangeV3 = peerExchangeV3Either.right;
   const peerPublicSigningKey: CryptoKey = await crypto.subtle.importKey(
     'jwk',
-    peerKeyExchangeV3.publicSigningJwk,
+    peerKeyExchangeV3.public_signing_jwk,
     { name: 'ECDSA', namedCurve: 'P-384' },
     false,
     ["verify"],
@@ -220,7 +262,7 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
   const peerKeyExchangePayload = peerKeyExchangePayloadEither.right;
   const peerPublicEncryptKey = await crypto.subtle.importKey(
     'jwk',
-    peerKeyExchangePayload.publicEncryptJwk,
+    peerKeyExchangePayload.public_encrypt_jwk,
     {name: 'ECDH', namedCurve: 'P-256'},
     false,
     []
@@ -230,8 +272,8 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
     encryptKeyPair.privateKey,
     KEY_BITS,
   );
-  const mainPath = await generateMainPath(payloadJson.mainPathFactor, peerKeyExchangePayload.mainPathFactor);
-  const verificationCode = await generateVerificationCode(publicSigningJwk, peerKeyExchangeV3.publicSigningJwk);
+  const mainPath = await generateMainPath(payloadJson.main_path_factor, peerKeyExchangePayload.main_path_factor);
+  const verificationCode = await generateVerificationCode(publicSigningJwk, peerKeyExchangeV3.public_signing_jwk);
   return {
     type: 'key',
     key: new Uint8Array(keyBits),
