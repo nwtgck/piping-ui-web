@@ -1,1 +1,1 @@
-export const KEY_EXCHANGE_VERSION = 3;
+export const KEY_EXCHANGE_VERSION = 4;
