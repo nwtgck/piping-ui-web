@@ -11,8 +11,10 @@ import {uint8ArrayToHexString} from 'binconv/dist/src/uint8ArrayToHexString';
 import urlJoin from "url-join";
 import * as t from 'io-ts';
 import {KEY_EXCHANGE_VERSION} from "@/piping-ui-auth/KEY_EXCHANGE_VERSION";
+import {makeKeyExchangeFailForLegacy} from "@/piping-ui-auth/for-legacy";
 
 export const keyExchangeParcelType = t.type({
+  format: t.literal("piping_ui_auth"),
   version: t.number,
 });
 export type KeyExchangeParcel = t.TypeOf<typeof keyExchangeParcelType>;
@@ -60,10 +62,6 @@ async function keyExchangePath(type: 'sender' | 'receiver', secretPath: string):
     return secretPath;
   }
   return `${secretPath}/receiver-sender`;
-}
-
-async function keyExchangePathBeforeV3(type: 'sender' | 'receiver', secretPath: string): Promise<string> {
-  return await sha256(`${secretPath}/key_exchange/${type}`);
 }
 
 async function verifiedPath(mainPath: string): Promise<string> {
@@ -118,34 +116,6 @@ type KeyExchangeResult =
   {type: "error", keyExchangeError: KeyExchangeError} |
   {type: "canceled"};
 
-// For testing: https://git-ce4f4b3d9b88d47280bc46ee2ce769b01d7b0653--piping-ui.netlify.app/
-function makeKeyExchangeFailForOld(serverUrl: string, type: 'sender' | 'receiver', secretPath: string, abortController: AbortController): void {
-  // key exchange version to notify
-  const oldKeyExchangeVersion = 3;
-  (async () => {
-    try {
-      const keyExchangeParcel: KeyExchangeParcel = {
-        version: oldKeyExchangeVersion + 1,
-      };
-      const myPath = await keyExchangePathBeforeV3(type, secretPath);
-      const peerPath = await keyExchangePathBeforeV3(type === 'sender' ? 'receiver' : 'sender', secretPath);
-      const postResPromise = await fetch(urlJoin(serverUrl, myPath), {
-        method: 'POST',
-        body: JSON.stringify(keyExchangeParcel),
-        signal: abortController.signal,
-      });
-      const peerResPromise = await fetch(urlJoin(serverUrl, peerPath), {
-        signal: abortController.signal,
-      });
-    } catch (e: any) {
-      if (e.name === 'AbortError') {
-        return;
-      }
-      console.warn(e);
-    }
-  })();
-}
-
 export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver', secretPath: string, ecdsaP384SigningKeyPair: CryptoKeyPair, canceledPromise: Promise<void>): Promise<KeyExchangeResult> {
   // 256 is max value for deriveBits()
   const KEY_BITS = 256;
@@ -183,7 +153,7 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
   const peerPath = await keyExchangePath(type === 'sender' ? 'receiver' : 'sender', secretPath);
   const abortController = new AbortController();
   const oldKeyExchangeAbortController = new AbortController();
-  makeKeyExchangeFailForOld(serverUrl, type, secretPath, oldKeyExchangeAbortController);
+  makeKeyExchangeFailForLegacy(serverUrl, type, secretPath, oldKeyExchangeAbortController);
   canceledPromise.then(() => {
     abortController.abort();
     oldKeyExchangeAbortController.abort();
