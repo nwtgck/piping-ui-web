@@ -482,6 +482,8 @@ async function send() {
     return files;
   })();
 
+  const sendingFilePondFiles: FilePondFile[] = inputFiles.value;
+  const sendingText: string = inputText.value;
   // Increment upload counter
   uploadCount.value++;
   // Delegate data uploading
@@ -493,6 +495,17 @@ async function send() {
       serverUrl: pipingServerUrl.value,
       secretPath: secretPath.value,
       protection: protection.value,
+      // NOTE: This may leak when not succeeded
+      onSentSuccessfully() {
+        if (inputFiles.value === sendingFilePondFiles) {
+          // clear input files
+          inputFiles.value = [];
+        }
+        if (inputText.value === sendingText) {
+          // clear input text
+          inputText.value = '';
+        }
+      },
     }
   });
   // Open by default

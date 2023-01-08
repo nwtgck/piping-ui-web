@@ -122,12 +122,13 @@ export type DataUploaderProps = {
   serverUrl: string,
   secretPath: string,
   protection: Protection,
+  onSentSuccessfully: () => void,
 };
 </script>
 
 <script setup lang="ts">
 /* eslint-disable */
-import Vue, {computed, onMounted, ref} from "vue";
+import Vue, {computed, onMounted, ref, watch} from "vue";
 import urlJoin from 'url-join';
 import {blobToReadableStream} from "binconv/dist/src/blobToReadableStream";
 import * as openPgpUtils from '@/utils/openpgp-utils';
@@ -180,6 +181,11 @@ const progressPercentage = computed<number | null>(() => {
 
 const isDoneUpload = computed<boolean>(() => {
   return progressPercentage.value === 100;
+});
+watch(isDoneUpload, () => {
+  if (isDoneUpload) {
+    props.composedProps.onSentSuccessfully();
+  }
 });
 
 const uploadUrl = computed<string>(() => urlJoin(props.composedProps.serverUrl, props.composedProps.secretPath));
