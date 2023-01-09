@@ -1,11 +1,13 @@
-import * as t from "io-ts";
+import {z} from "zod";
 
 // Load from local storage with validation
-export function loadLocalStorageWithValidation<T>(typeC: t.Type<T>, key: string): T | undefined {
+export function loadLocalStorageWithValidation<Output>(zodType: z.ZodType<Output>, key: string): Output | undefined {
   const item: string | null = window.localStorage.getItem(key);
   if (item !== null) {
-    const either = typeC.decode(JSON.parse(item));
-    if (either._tag === 'Left') return undefined;
-    return either.right;
+    const parseReturn = zodType.safeParse(JSON.parse(item));
+    if (!parseReturn.success) {
+      return undefined;
+    }
+    return parseReturn.data;
   }
 }

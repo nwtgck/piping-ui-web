@@ -1,5 +1,4 @@
 import {ecJsonWebKeyType, jsonWebKeyType, type Protection} from "@/datatypes";
-import type {Validation} from "io-ts";
 import {sha256} from "@/utils/sha256";
 import * as openPgpUtils from "@/utils/openpgp-utils";
 import {jwkThumbprintByEncoding} from "jwk-thumbprint";
@@ -9,42 +8,42 @@ import {uint8ArrayToString} from 'binconv/dist/src/uint8ArrayToString';
 import {base64ToUint8Array} from 'binconv/dist/src/base64ToUint8Array';
 import {uint8ArrayToHexString} from 'binconv/dist/src/uint8ArrayToHexString';
 import urlJoin from "url-join";
-import * as t from 'io-ts';
+import {z} from "zod";
 import {KEY_EXCHANGE_VERSION} from "@/piping-ui-auth/KEY_EXCHANGE_VERSION";
 import {makeKeyExchangeFailForLegacy} from "@/piping-ui-auth/for-legacy";
 
-export const keyExchangeParcelType = t.type({
-  format: t.literal("piping_ui_auth"),
-  version: t.number,
-});
-export type KeyExchangeParcel = t.TypeOf<typeof keyExchangeParcelType>;
+export const keyExchangeParcelType = z.object({
+  format: z.literal("piping_ui_auth"),
+  version: z.number(),
+}).passthrough();
+export type KeyExchangeParcel = z.infer<typeof keyExchangeParcelType>;
 
-export const keyExchangeV4ParcelType = t.type({
-  format: t.literal("piping_ui_auth"),
-  version: t.literal(4),
+export const keyExchangeV4ParcelType = z.object({
+  format: z.literal("piping_ui_auth"),
+  version: z.literal(4),
   public_signing_jwk: jsonWebKeyType,
-  payload: t.string,
-  signature: t.string,
+  payload: z.string(),
+  signature: z.string(),
 });
-export type KeyExchangeV4Parcel = t.TypeOf<typeof keyExchangeV4ParcelType>;
+export type KeyExchangeV4Parcel = z.infer<typeof keyExchangeV4ParcelType>;
 
 // Ensure KeyExchangeVXParcel is subtype of KeyExchangeParcel
 type IsSubTypeOf<A extends B, B> = void;
 type __DUMMY1__ = IsSubTypeOf<KeyExchangeV4Parcel, KeyExchangeParcel>;
 
-export const keyExchangeParcelPayloadType = t.type({
+export const keyExchangeParcelPayloadType = z.object({
   // Public encryption JWK
   public_encrypt_jwk: ecJsonWebKeyType,
   // For mitigating path collision
-  main_path_factor: t.string,
+  main_path_factor: z.string(),
 });
-export type keyExchangeParcelPayloadType = t.TypeOf<typeof keyExchangeParcelPayloadType>;
+export type keyExchangeParcelPayloadType = z.infer<typeof keyExchangeParcelPayloadType>;
 
-export const verifiedParcelType = t.type({
-  verified: t.boolean,
-  extension: t.union([t.unknown, t.undefined]),
+export const verifiedParcelType = z.object({
+  verified: z.boolean(),
+  extension: z.union([z.unknown(), z.undefined()]),
 });
-export type VerifiedParcel = t.TypeOf<typeof verifiedParcelType>
+export type VerifiedParcel = z.infer<typeof verifiedParcelType>
 
 export type VerificationStep =
   {type: 'initial'} |
@@ -52,13 +51,13 @@ export type VerificationStep =
   {type: 'verification_code_arrived', mainPath: string, verificationCode: string, key: Uint8Array} |
   {type: 'verified', verified: boolean};
 
-const verifiedExtensionType = t.union([
-  t.type({
-    version: t.literal(1),
-    mimeType: t.string,
-    fileExtension: t.string,
+const verifiedExtensionType = z.union([
+  z.object({
+    version: z.literal(1),
+    mimeType: z.string(),
+    fileExtension: z.string(),
   }),
-  t.undefined,
+  z.undefined(),
 ]);
 
 async function keyExchangePath(type: 'sender' | 'receiver', secretPath: string): Promise<string> {
@@ -72,7 +71,7 @@ async function verifiedPath(mainPath: string): Promise<string> {
   return await sha256(`${mainPath}/verified`);
 }
 
-export async function verify(serverUrl: string, mainPath: string, key: Uint8Array, verified: boolean, parcelExtension: t.TypeOf<typeof verifiedExtensionType>, canceledPromise: Promise<void>) {
+export async function verify(serverUrl: string, mainPath: string, key: Uint8Array, verified: boolean, parcelExtension: z.infer<typeof verifiedExtensionType>, canceledPromise: Promise<void>) {
   const verifiedParcel: VerifiedParcel = {
     verified,
     extension: parcelExtension,
@@ -200,19 +199,19 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
     return {type: "error", keyExchangeError: {code: 'receive_failed'}};
   }
   oldKeyExchangeAbortController.abort();
-  const peerKeyExchangeEither: Validation<KeyExchangeParcel> = keyExchangeParcelType.decode(JSON.parse(await peerRes.text()));
-  if (peerKeyExchangeEither._tag === 'Left') {
+  const peerKeyExchangeParseReturn: z.SafeParseReturnType<unknown, KeyExchangeParcel> = keyExchangeParcelType.safeParse(JSON.parse(await peerRes.text()));
+  if (!peerKeyExchangeParseReturn.success) {
     return {type: "error", keyExchangeError: { code: 'invalid_parcel_format' }};
   }
-  const peerKeyExchange = peerKeyExchangeEither.right;
+  const peerKeyExchange = peerKeyExchangeParseReturn.data;
   if (KEY_EXCHANGE_VERSION !== peerKeyExchange.version) {
     return {type: "error", keyExchangeError: {code: 'key_exchange_version_mismatch', peerVersion: peerKeyExchange.version}};
   }
-  const peerExchangeV3Either = keyExchangeV4ParcelType.decode(peerKeyExchange);
-  if (peerExchangeV3Either._tag === 'Left') {
+  const peerExchangeV3ParseReturn = keyExchangeV4ParcelType.safeParse(peerKeyExchange);
+  if (!peerExchangeV3ParseReturn.success) {
     return {type: "error", keyExchangeError: {code: 'invalid_v3_parcel_format'}};
   }
-  const peerKeyExchangeV3 = peerExchangeV3Either.right;
+  const peerKeyExchangeV3 = peerExchangeV3ParseReturn.data;
   const peerPublicSigningKey: CryptoKey = await crypto.subtle.importKey(
     'jwk',
     peerKeyExchangeV3.public_signing_jwk,
@@ -229,11 +228,11 @@ export async function keyExchange(serverUrl: string, type: 'sender' | 'receiver'
   if (!payloadVerified) {
     return {type: "error", keyExchangeError: {code: 'payload_not_verified'}};
   }
-  const peerKeyExchangePayloadEither = keyExchangeParcelPayloadType.decode(JSON.parse(peerKeyExchangeV3.payload));
-  if (peerKeyExchangePayloadEither._tag === 'Left') {
+  const peerKeyExchangePayloadParseReturn = keyExchangeParcelPayloadType.safeParse(JSON.parse(peerKeyExchangeV3.payload));
+  if (!peerKeyExchangePayloadParseReturn.success) {
     return {type: "error", keyExchangeError: {code: 'invalid_v3_parcel_format'}};
   }
-  const peerKeyExchangePayload = peerKeyExchangePayloadEither.right;
+  const peerKeyExchangePayload = peerKeyExchangePayloadParseReturn.data;
   const peerPublicEncryptKey = await crypto.subtle.importKey(
     'jwk',
     peerKeyExchangePayload.public_encrypt_jwk,
@@ -336,14 +335,14 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
       // Decrypt body
       const decryptedBody: Uint8Array = await openPgpUtils.decrypt(encryptedVerified, key);
       // Parse
-      const verifiedParcelEither: Validation<VerifiedParcel> = verifiedParcelType.decode(JSON.parse(uint8ArrayToString(decryptedBody)));
-      if (verifiedParcelEither._tag === "Left") {
+      const verifiedParcelParseReturn: z.SafeParseReturnType<unknown, VerifiedParcel> = verifiedParcelType.safeParse(JSON.parse(uint8ArrayToString(decryptedBody)));
+      if (!verifiedParcelParseReturn.success) {
         return {
           type: "error",
           error: { code: 'key_exchange_error', keyExchangeError: { code: 'invalid_parcel_format' }},
         };
       }
-      const {verified, extension} = verifiedParcelEither.right;
+      const {verified, extension} = verifiedParcelParseReturn.data;
       setVerificationStep({type: 'verified', verified});
       if (!verified) {
         return {
@@ -351,8 +350,8 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
           error: { code: 'sender_not_verified' },
         };
       }
-      const verifiedExtensionEither = verifiedExtensionType.decode(extension);
-      if (verifiedExtensionEither._tag === "Left") {
+      const verifiedExtensionParseReturn = verifiedExtensionType.safeParse(extension);
+      if (!verifiedExtensionParseReturn.success) {
         return {
           type: "error",
           error: { code: 'key_exchange_error', keyExchangeError: { code: 'invalid_parcel_format' }},
@@ -364,7 +363,7 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
         protectionType: 'passwordless',
         mainPath,
         verificationCode,
-        fileType: verifiedExtensionEither.right,
+        fileType: verifiedExtensionParseReturn.data,
       };
     }
   }

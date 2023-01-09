@@ -1,4 +1,4 @@
-import * as t from 'io-ts';
+import {z} from "zod";
 
 export type Protection = NoProtection | PasswordProtection| PasswordlessProtection;
 type NoProtection = {
@@ -14,33 +14,36 @@ type PasswordlessProtection = {
   alwaysSendVerify: boolean,
 };
 
-const rsaOtherPrimesInfoType = t.partial({
-  d: t.string,
-  r: t.string,
-  t: t.string,
-});
-export const jsonWebKeyType = t.partial({
-  alg: t.string,
-  crv: t.string,
-  d: t.string,
-  dp: t.string,
-  dq: t.string,
-  e: t.string,
-  ext: t.boolean,
-  k: t.string,
-  key_ops: t.array(t.string),
-  n: t.string,
-  oth: t.array(rsaOtherPrimesInfoType),
-  p: t.string,
-  q: t.string,
-  qi: t.string,
-  use: t.string,
-  x: t.string,
-  y: t.string,
-});
-export const ecJsonWebKeyType = t.intersection([
-  t.type({
-    kty: t.literal('EC'),
+const rsaOtherPrimesInfoType = z.object({
+  d: z.string(),
+  r: z.string(),
+  t: z.string(),
+}).partial();
+
+export const jsonWebKeyType = z.object({
+  alg: z.string(),
+  crv: z.string(),
+  d: z.string(),
+  dp: z.string(),
+  dq: z.string(),
+  e: z.string(),
+  ext: z.boolean(),
+  k: z.string(),
+  key_ops: z.array(z.string()),
+  n: z.string(),
+  oth: z.array(rsaOtherPrimesInfoType),
+  p: z.string(),
+  q: z.string(),
+  qi: z.string(),
+  use: z.string(),
+  x: z.string(),
+  y: z.string(),
+}).partial()
+  .passthrough();
+
+export const ecJsonWebKeyType = z.intersection(
+  z.object({
+    kty: z.literal('EC'),
   }),
   jsonWebKeyType,
-]);
+);

@@ -1,11 +1,11 @@
-import * as t from "io-ts";
+import {z} from "zod";
 import urlJoin from "url-join";
 import {sha256} from "@/utils/sha256";
 
-const keyExchangeParcelLegacyType = t.type({
-  version: t.number,
+const keyExchangeParcelLegacyType = z.object({
+  version: z.number(),
 });
-type KeyExchangeLegacyParcel = t.TypeOf<typeof keyExchangeParcelLegacyType>;
+type KeyExchangeLegacyParcel = z.infer<typeof keyExchangeParcelLegacyType>;
 
 async function keyExchangePathBeforeV3(type: 'sender' | 'receiver', secretPath: string): Promise<string> {
   return await sha256(`${secretPath}/key_exchange/${type}`);
