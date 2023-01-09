@@ -40,7 +40,8 @@
     "url-join": "^4.0.1",
     "vue": "^2.7.10",
     "vue-filepond": "^6.0.3",
-    "vuetify": "^2.6.10"
+    "vuetify": "^2.6.10",
+    "zod": "^3.20.2"
   },
   "devDependencies": {
     "@mdi/js": "^7.0.96",
