@@ -242,7 +242,6 @@ import Vue, {computed, onMounted, ref, watch} from 'vue';
 import {type DataUploaderProps} from '@/components/DataUploader.vue';
 import {type DataViewerProps} from "@/components/DataViewer.vue";
 import {type DataDownloaderProps} from "@/components/DataDownloader.vue";
-import * as t from 'io-ts';
 import {mdiAlert, mdiClose, mdiCollapseAll, mdiDelete, mdiDownload, mdiExpandAll, mdiEye, mdiEyeOff, mdiFileFind, mdiKey, mdiShieldCheck, mdiShieldHalfFull, mdiUpload, mdiPencil, mdiInformation} from "@mdi/js";
 import {strings} from "@/strings/strings";
 import {type FilePondFile} from "filepond";
