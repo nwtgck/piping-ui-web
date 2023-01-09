@@ -138,7 +138,7 @@ onMounted(async () => {
       props.composedProps.secretPath,
       props.composedProps.protection,
       await ecdsaP384SigningKeyPairPromise.value,
-      (step: VerificationStep) => {
+      (step: pipingUiAuth.VerificationStep) => {
         verificationStep.value = step;
       },
       canceledPromise,
