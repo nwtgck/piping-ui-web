@@ -51,14 +51,11 @@ export type VerificationStep =
   {type: 'verification_code_arrived', mainPath: string, verificationCode: string, key: Uint8Array} |
   {type: 'verified', verified: boolean};
 
-const verifiedExtensionType = z.union([
-  z.object({
-    version: z.literal(1),
-    mimeType: z.string(),
-    fileExtension: z.string(),
-  }),
-  z.undefined(),
-]);
+const verifiedExtensionType = z.object({
+  version: z.literal(2),
+  mimeType: z.union([z.string(), z.undefined()]),
+  fileExtension: z.union([z.string(), z.undefined()]),
+});
 
 async function keyExchangePath(type: 'sender' | 'receiver', secretPath: string): Promise<string> {
   if (type === 'sender') {
@@ -277,7 +274,7 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
   Promise<
     {type: 'key', protectionType: 'raw', key: undefined } |
     {type: 'key', protectionType: 'password', key: string} |
-    {type: 'key', protectionType: 'passwordless', key: Uint8Array, mainPath: string, verificationCode: string, fileType: { mimeType: string, fileExtension: string } | undefined } |
+    {type: 'key', protectionType: 'passwordless', key: Uint8Array, mainPath: string, verificationCode: string, fileType: { mimeType: string | undefined, fileExtension: string | undefined } } |
     {type: 'error', error: KeyExchangeAndReceiveVerifiedError } |
     {type: 'canceled' }
   > {
@@ -363,7 +360,10 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
         protectionType: 'passwordless',
         mainPath,
         verificationCode,
-        fileType: verifiedExtensionParseReturn.data,
+        fileType: {
+          mimeType: verifiedExtensionParseReturn.data.mimeType,
+          fileExtension: verifiedExtensionParseReturn.data.fileExtension,
+        },
       };
     }
   }

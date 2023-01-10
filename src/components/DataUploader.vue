@@ -311,7 +311,7 @@ async function verify(verified: boolean) {
   verificationStep.value = {type: 'verified', verified};
 
   const plainBody = await makePlainBodyPromise;
-  const parcelExtension = plainBody.mimeType === undefined ? undefined : { version: 1, mimeType: plainBody.mimeType, fileExtension: plainBody.fileExtension } as const;
+  const parcelExtension = { version: 2, mimeType: plainBody.mimeType, fileExtension: plainBody.fileExtension } as const;
   await pipingUiAuth.verify(props.composedProps.serverUrl, mainPath, key, verified, parcelExtension, canceledPromise);
 
   if (!verified) {

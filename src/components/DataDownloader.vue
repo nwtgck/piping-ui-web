@@ -259,21 +259,18 @@ onMounted(async () => {
     }
   }
   const [readableStreamForDownload, readableStreamForFileType] = readableStream.tee();
-  const mimeTypeAndFileExtension: { mimeType: string, fileExtension: string } | undefined = await (async () => {
+  const { mimeType, fileExtension }: { mimeType: string | undefined, fileExtension: string | undefined } = await (async () => {
     if (keyExchangeRes.protectionType === "passwordless") {
       return keyExchangeRes.fileType;
     }
     // NOTE: Using fileType.fromStream() blocks download when specifying multiple large files in DataUploader.vue. (zip detection may read large bytes)
     // NOTE: 4100 was used in FileType.minimumBytes in file-type until 13.1.2
     const fileTypeResult = await fileType.fromBlob(await firstAtLeastBlobFromReadableStream(readableStreamForFileType, 4100));
-    if (fileTypeResult === undefined) {
-      return undefined;
-    }
-    return { mimeType: fileTypeResult.mime, fileExtension: fileTypeResult.ext };
+    return { mimeType: fileTypeResult?.mime, fileExtension: fileTypeResult?.ext };
   })();
   let fileName = props.composedProps.secretPath;
-  if (mimeTypeAndFileExtension !== undefined && !fileName.match(/.+\..+/)) {
-    fileName = `${fileName}.${mimeTypeAndFileExtension.fileExtension}`;
+  if (fileExtension !== undefined && !fileName.match(/.+\..+/)) {
+    fileName = `${fileName}.${fileExtension}`;
   }
   // (from: https://github.com/jimmywarting/StreamSaver.js/blob/314e64b8984484a3e8d39822c9b86a345eb36454/sw.js#L120-L122)
   // Make filename RFC5987 compatible
@@ -281,7 +278,7 @@ onMounted(async () => {
   const headers: [string, string][] = [
     ...( contentLengthStr === undefined ? [] : [ [ "Content-Length", contentLengthStr ] ] satisfies [[string, string]] ),
     // Without "Content-Type", Safari in iOS 15 adds ".html" to the downloading file
-    ...( mimeTypeAndFileExtension === undefined ? [] : [ [ "Content-Type", mimeTypeAndFileExtension.mimeType ] ] satisfies [[string, string]] ),
+    ...( mimeType === undefined ? [] : [ [ "Content-Type", mimeType ] ] satisfies [[string, string]] ),
     ['Content-Disposition', "attachment; filename*=UTF-8''" + escapedFileName],
   ];
   // Enroll download ReadableStream and get sw-download ID
