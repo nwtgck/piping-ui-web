@@ -351,12 +351,14 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
         };
       }
       const verifiedExtensionParseReturn = verifiedExtensionType.safeParse(extension);
-      if (!verifiedExtensionParseReturn.success) {
-        return {
-          type: "error",
-          error: { code: 'key_exchange_error', keyExchangeError: { code: 'invalid_parcel_format' }},
-        };
-      }
+      const verifiedExtension = (() => {
+        if (verifiedExtensionParseReturn.success) {
+          return verifiedExtensionParseReturn.data;
+        }
+        // Should not occur an error aggressively because the purpose of the extension provides better user experience.
+        console.log("extension is not compatible", extension);
+        return undefined;
+      })();
       return {
         type: 'key',
         key,
@@ -364,10 +366,10 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
         mainPath,
         verificationCode,
         dataMeta: {
-          mimeType: verifiedExtensionParseReturn.data.data_meta.mime_type,
-          size: verifiedExtensionParseReturn.data.data_meta.size,
-          fileName: verifiedExtensionParseReturn.data.data_meta.file_name,
-          fileExtension: verifiedExtensionParseReturn.data.data_meta.file_extension,
+          mimeType: verifiedExtension?.data_meta.mime_type,
+          size: verifiedExtension?.data_meta.size,
+          fileName: verifiedExtension?.data_meta.file_name,
+          fileExtension: verifiedExtension?.data_meta.file_extension,
         },
       };
     }
