@@ -191,7 +191,7 @@ import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle, mdiE
 import * as pipingUiRobust from "@/piping-ui-robust";
 
 import * as openPgpUtils from '@/utils/openpgp-utils';
-import * as pipingUiUtils from "@/piping-ui-utils";
+import {pipingUiScrollTo} from "@/piping-ui-utils/pipingUiScrollTo";
 import VerificationCode from "@/components/VerificationCode.vue";
 import {BlobUrlManager} from "@/utils/BlobUrlManager";
 import * as pipingUiAuth from "@/piping-ui-auth";
@@ -304,7 +304,7 @@ const rootElement = ref<Vue>();
 onMounted(async () => {
   // Scroll to this element
   // NOTE: no need to add `await`
-  pipingUiUtils.scrollTo(rootElement.value!.$el);
+  pipingUiScrollTo(rootElement.value!.$el);
 
   // Key exchange
   const keyExchangeRes = await pipingUiAuth.keyExchangeAndReceiveVerified(

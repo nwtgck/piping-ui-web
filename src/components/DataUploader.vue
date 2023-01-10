@@ -133,7 +133,7 @@ import Vue, {computed, onMounted, ref, watch} from "vue";
 import urlJoin from 'url-join';
 import {blobToReadableStream} from "binconv/dist/src/blobToReadableStream";
 import * as openPgpUtils from '@/utils/openpgp-utils';
-import * as pipingUiUtils from "@/piping-ui-utils";
+import {pipingUiScrollTo} from "@/piping-ui-utils/pipingUiScrollTo";
 import * as pipingUiRobust from "@/piping-ui-robust";
 import {mdiAlert, mdiCancel, mdiCheck, mdiChevronDown, mdiCloseCircle} from "@mdi/js";
 import VerificationCode from "@/components/VerificationCode.vue";
@@ -266,7 +266,7 @@ const rootElement = ref<Vue>();
 onMounted(async () => {
   // Scroll to this element
   // NOTE: no need to add `await`
-  pipingUiUtils.scrollTo(rootElement.value!.$el);
+  pipingUiScrollTo(rootElement.value!.$el);
 
   switch (props.composedProps.protection.type) {
     case 'raw':

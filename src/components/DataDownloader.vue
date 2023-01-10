@@ -73,7 +73,7 @@ export type DataDownloaderProps = {
 import Vue, {ref, computed, onMounted, nextTick} from "vue";
 import urlJoin from 'url-join';
 import {mdiAlert, mdiChevronDown} from "@mdi/js";
-import * as pipingUiUtils from "@/piping-ui-utils";
+import {pipingUiScrollTo} from "@/piping-ui-utils/pipingUiScrollTo";
 import * as pipingUiRobust from "@/piping-ui-robust";
 import VerificationCode from "@/components/VerificationCode.vue";
 import * as pipingUiAuth from "@/piping-ui-auth";
@@ -130,7 +130,7 @@ const retry_download_button = ref<Vue>();
 onMounted(async () => {
   // Scroll to this element
   // NOTE: no need to add `await`
-  pipingUiUtils.scrollTo(rootElement.value!.$el);
+  pipingUiScrollTo(rootElement.value!.$el);
 
   // Key exchange
   const keyExchangeRes = await pipingUiAuth.keyExchangeAndReceiveVerified(
