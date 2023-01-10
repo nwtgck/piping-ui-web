@@ -119,6 +119,7 @@ import {type Protection} from "@/datatypes";
 export type DataUploaderProps = {
   uploadNo: number,
   data: File[] | string,
+  inputFileName: string | undefined,
   serverUrl: string,
   secretPath: string,
   protection: Protection,
@@ -311,7 +312,15 @@ async function verify(verified: boolean) {
   verificationStep.value = {type: 'verified', verified};
 
   const plainBody = await makePlainBodyPromise;
-  const parcelExtension = plainBody.mimeType === undefined ? undefined : { version: 1, mimeType: plainBody.mimeType, fileExtension: plainBody.fileExtension } as const;
+  const parcelExtension: pipingUiAuth.VerifiedExtension = {
+    version: 2,
+    data_meta: {
+      mime_type: plainBody.mimeType,
+      size: plainBody.data instanceof Blob ? plainBody.data.size : undefined,
+      file_name: props.composedProps.inputFileName,
+      file_extension: plainBody.fileExtension,
+    },
+  };
   await pipingUiAuth.verify(props.composedProps.serverUrl, mainPath, key, verified, parcelExtension, canceledPromise);
 
   if (!verified) {

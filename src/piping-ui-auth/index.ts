@@ -2,9 +2,7 @@ import {ecJsonWebKeyType, jsonWebKeyType, type Protection} from "@/datatypes";
 import {sha256} from "@/utils/sha256";
 import * as openPgpUtils from "@/utils/openpgp-utils";
 import {jwkThumbprintByEncoding} from "jwk-thumbprint";
-import {stringToUint8Array} from 'binconv/dist/src/stringToUint8Array';
 import {uint8ArrayToBase64} from 'binconv/dist/src/uint8ArrayToBase64';
-import {uint8ArrayToString} from 'binconv/dist/src/uint8ArrayToString';
 import {base64ToUint8Array} from 'binconv/dist/src/base64ToUint8Array';
 import {uint8ArrayToHexString} from 'binconv/dist/src/uint8ArrayToHexString';
 import urlJoin from "url-join";
@@ -51,14 +49,16 @@ export type VerificationStep =
   {type: 'verification_code_arrived', mainPath: string, verificationCode: string, key: Uint8Array} |
   {type: 'verified', verified: boolean};
 
-const verifiedExtensionType = z.union([
-  z.object({
-    version: z.literal(1),
-    mimeType: z.string(),
-    fileExtension: z.string(),
+const verifiedExtensionType = z.object({
+  version: z.literal(2),
+  data_meta: z.object({
+    mime_type: z.union([z.string(), z.undefined()]),
+    size: z.union([z.number(), z.undefined()]),
+    file_name: z.union([z.string(), z.undefined()]),
+    file_extension: z.union([z.string(), z.undefined()]),
   }),
-  z.undefined(),
-]);
+});
+export type VerifiedExtension = z.infer<typeof verifiedExtensionType>;
 
 async function keyExchangePath(type: 'sender' | 'receiver', secretPath: string): Promise<string> {
   if (type === 'sender') {
@@ -71,13 +71,13 @@ async function verifiedPath(mainPath: string): Promise<string> {
   return await sha256(`${mainPath}/verified`);
 }
 
-export async function verify(serverUrl: string, mainPath: string, key: Uint8Array, verified: boolean, parcelExtension: z.infer<typeof verifiedExtensionType>, canceledPromise: Promise<void>) {
+export async function verify(serverUrl: string, mainPath: string, key: Uint8Array, verified: boolean, parcelExtension: VerifiedExtension, canceledPromise: Promise<void>) {
   const verifiedParcel: VerifiedParcel = {
     verified,
     extension: parcelExtension,
   };
   const encryptedVerifiedParcel = await openPgpUtils.encrypt(
-    stringToUint8Array(JSON.stringify(verifiedParcel)),
+    new TextEncoder().encode(JSON.stringify(verifiedParcel)),
     key,
   );
   const path = urlJoin(serverUrl, await verifiedPath(mainPath));
@@ -277,7 +277,7 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
   Promise<
     {type: 'key', protectionType: 'raw', key: undefined } |
     {type: 'key', protectionType: 'password', key: string} |
-    {type: 'key', protectionType: 'passwordless', key: Uint8Array, mainPath: string, verificationCode: string, fileType: { mimeType: string, fileExtension: string } | undefined } |
+    {type: 'key', protectionType: 'passwordless', key: Uint8Array, mainPath: string, verificationCode: string, dataMeta: { mimeType: string | undefined, fileExtension: string | undefined, size: number | undefined, fileName: string | undefined } } |
     {type: 'error', error: KeyExchangeAndReceiveVerifiedError } |
     {type: 'canceled' }
   > {
@@ -335,7 +335,7 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
       // Decrypt body
       const decryptedBody: Uint8Array = await openPgpUtils.decrypt(encryptedVerified, key);
       // Parse
-      const verifiedParcelParseReturn: z.SafeParseReturnType<unknown, VerifiedParcel> = verifiedParcelType.safeParse(JSON.parse(uint8ArrayToString(decryptedBody)));
+      const verifiedParcelParseReturn: z.SafeParseReturnType<unknown, VerifiedParcel> = verifiedParcelType.safeParse(JSON.parse(new TextDecoder().decode(decryptedBody)));
       if (!verifiedParcelParseReturn.success) {
         return {
           type: "error",
@@ -363,7 +363,12 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
         protectionType: 'passwordless',
         mainPath,
         verificationCode,
-        fileType: verifiedExtensionParseReturn.data,
+        dataMeta: {
+          mimeType: verifiedExtensionParseReturn.data.data_meta.mime_type,
+          size: verifiedExtensionParseReturn.data.data_meta.size,
+          fileName: verifiedExtensionParseReturn.data.data_meta.file_name,
+          fileExtension: verifiedExtensionParseReturn.data.data_meta.file_extension,
+        },
       };
     }
   }

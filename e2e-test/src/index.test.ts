@@ -262,7 +262,7 @@ describe('Piping UI', () => {
     const finishRetryDownload = receiverActions.retryDownloadButtonIfNeed();
     defer(() => finishRetryDownload());
 
-    const downloadedFilePath = path.join(downloadPath, secretPath);
+    const downloadedFilePath = path.join(downloadPath, "mydata.dat");
     await waitForDownload(downloadedFilePath);
     const downloadedFileContent = fs.readFileSync(downloadedFilePath);
 

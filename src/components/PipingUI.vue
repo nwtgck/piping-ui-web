@@ -491,6 +491,7 @@ async function send() {
     props: {
       uploadNo: uploadCount.value,
       data: body,
+      inputFileName: Array.isArray(body) && body.length === 1 ? body[0].name : undefined,
       serverUrl: pipingServerUrl.value,
       secretPath: secretPath.value,
       protection: protection.value,
