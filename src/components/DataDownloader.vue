@@ -217,14 +217,15 @@ onMounted(async () => {
       updateErrorMessage(() => strings.value?.['password_might_be_wrong']);
       return;
     }
-    // Save
     const FileSaver = await FileSaverAsync();
-    let fileName = props.composedProps.secretPath;
-    if (keyExchangeRes.protectionType === "passwordless" && keyExchangeRes.dataMeta.fileName !== undefined) {
-      fileName = keyExchangeRes.dataMeta.fileName;
-    }
-    // TODO: Use mime type for file name
-    FileSaver.saveAs(await new Response(plainStream).blob(), fileName);
+    const blob = await new Response(plainStream).blob();
+    const fileName = decideFileName({
+      topPriorityDataMeta: keyExchangeRes.protectionType === "passwordless" ? keyExchangeRes.dataMeta : undefined,
+      secretPath: props.composedProps.secretPath,
+      sniffedFileExtension: (await fileType.fromBlob(blob))?.ext,
+    });
+    // Save
+    FileSaver.saveAs(blob, fileName);
     return;
   }
   console.log("downloading streaming with the Service Worker and decrypting if need...");
