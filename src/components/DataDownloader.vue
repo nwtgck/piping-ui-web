@@ -85,6 +85,7 @@ import {useErrorMessage} from "@/composables/useErrorMessage";
 import {strings} from "@/strings/strings";
 import {ecdsaP384SigningKeyPairPromise} from "@/states/ecdsaP384SigningKeyPairPromise";
 import {firstAtLeastBlobFromReadableStream} from "@/utils/firstAtLeastBlobFromReadableStream";
+import {decideFileName} from "@/piping-ui-utils/decideFileName";
 
 const FileSaverAsync = () => import('file-saver').then(p => p.default);
 const swDownloadAsync = () => import("@/sw-download");
@@ -265,6 +266,7 @@ onMounted(async () => {
   }
   const [readableStreamForDownload, readableStreamForFileType] = readableStream.tee();
   const { mimeType, fileExtension }: { mimeType: string | undefined, fileExtension: string | undefined } = await (async () => {
+    // Avoid sniffing in passwordless protection
     if (keyExchangeRes.protectionType === "passwordless") {
       return keyExchangeRes.dataMeta;
     }
@@ -273,13 +275,11 @@ onMounted(async () => {
     const fileTypeResult = await fileType.fromBlob(await firstAtLeastBlobFromReadableStream(readableStreamForFileType, 4100));
     return { mimeType: fileTypeResult?.mime, fileExtension: fileTypeResult?.ext };
   })();
-  let fileName = props.composedProps.secretPath;
-  if (fileExtension !== undefined && !fileName.match(/.+\..+/)) {
-    fileName = `${fileName}.${fileExtension}`;
-  }
-  if (keyExchangeRes.protectionType === "passwordless" && keyExchangeRes.dataMeta.fileName !== undefined) {
-    fileName = keyExchangeRes.dataMeta.fileName;
-  }
+  const fileName = decideFileName({
+    topPriorityDataMeta: keyExchangeRes.protectionType === "passwordless" ? keyExchangeRes.dataMeta : undefined,
+    secretPath: props.composedProps.secretPath,
+    sniffedFileExtension: fileExtension,
+  });
   // (from: https://github.com/jimmywarting/StreamSaver.js/blob/314e64b8984484a3e8d39822c9b86a345eb36454/sw.js#L120-L122)
   // Make filename RFC5987 compatible
   const escapedFileName = encodeURIComponent(fileName).replace(/['()]/g, escape).replace(/\*/g, '%2A');
