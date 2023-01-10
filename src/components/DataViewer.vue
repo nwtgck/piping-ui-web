@@ -203,6 +203,7 @@ import {useErrorMessage} from "@/composables/useErrorMessage";
 import {getReadableStreamWithProgress} from "@/utils/getReadableStreamWithProgress";
 import {strings} from "@/strings/strings";
 import {ecdsaP384SigningKeyPairPromise} from "@/states/ecdsaP384SigningKeyPairPromise";
+import {decideFileName} from "@/piping-ui-utils/decideFileName";
 
 // eslint-disable-next-line no-undef
 const props = defineProps<{ composedProps: DataViewerProps }>();
@@ -232,6 +233,7 @@ let blob = new Blob();
 const showsCopied = ref(false);
 const isDecrypting = ref(false);
 const pipingUiAuthVerificationCode = ref<string | undefined>();
+let topPriorityDataMeta: { fileName: string | undefined, fileExtension: string | undefined } | undefined;
 
 const progressPercentage = computed<number | null>(() => {
   if (isDoneDownload.value) {
@@ -342,6 +344,10 @@ onMounted(async () => {
   }
 
   const {key} = keyExchangeRes;
+
+  if (keyExchangeRes.protectionType === "passwordless") {
+    topPriorityDataMeta = keyExchangeRes.dataMeta;
+  }
 
   let rawStream: ReadableStream<Uint8Array>;
   if (keyExchangeRes.protectionType === "passwordless") {
@@ -500,17 +506,11 @@ function viewRaw() {
 
 async function save(): Promise<void> {
   const FileSaver = await FileSaverAsync();
-  const fileName = await (async () => {
-    // If secret path has extension
-    if (props.composedProps.secretPath.match(/.+\..+/)) {
-      return props.composedProps.secretPath;
-    }
-    const fileTypeResult = await fileType.fromStream(blobToReadableStream(blob));
-    if (fileTypeResult === undefined) {
-      return props.composedProps.secretPath;
-    }
-    return `${props.composedProps.secretPath}.${fileTypeResult.ext}`;
-  })();
+  const fileName = decideFileName({
+    topPriorityDataMeta,
+    secretPath: props.composedProps.secretPath,
+    sniffedFileExtension: (await fileType.fromBlob(blob))?.ext,
+  });
   FileSaver.saveAs(blob, fileName);
 }
 </script>
