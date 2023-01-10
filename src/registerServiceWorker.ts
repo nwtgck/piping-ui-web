@@ -3,7 +3,7 @@ const swDownloadAsync = () => import("@/sw-download");
 
 register(`${process.env.BASE_URL}service-worker.js`, {
   ready () {
-    console.log('App is being served from cache by a service worker.');
+    console.log('Service worker is ready.');
   },
   async registered () {
     console.log('Service worker has been registered.');
