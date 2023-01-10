@@ -218,7 +218,12 @@ onMounted(async () => {
     }
     // Save
     const FileSaver = await FileSaverAsync();
-    FileSaver.saveAs(await new Response(plainStream).blob(), props.composedProps.secretPath);
+    let fileName = props.composedProps.secretPath;
+    if (keyExchangeRes.protectionType === "passwordless" && keyExchangeRes.dataMeta.fileName !== undefined) {
+      fileName = keyExchangeRes.dataMeta.fileName;
+    }
+    // TODO: Use mime type for file name
+    FileSaver.saveAs(await new Response(plainStream).blob(), fileName);
     return;
   }
   console.log("downloading streaming with the Service Worker and decrypting if need...");
@@ -261,7 +266,7 @@ onMounted(async () => {
   const [readableStreamForDownload, readableStreamForFileType] = readableStream.tee();
   const { mimeType, fileExtension }: { mimeType: string | undefined, fileExtension: string | undefined } = await (async () => {
     if (keyExchangeRes.protectionType === "passwordless") {
-      return keyExchangeRes.fileType;
+      return keyExchangeRes.dataMeta;
     }
     // NOTE: Using fileType.fromStream() blocks download when specifying multiple large files in DataUploader.vue. (zip detection may read large bytes)
     // NOTE: 4100 was used in FileType.minimumBytes in file-type until 13.1.2
@@ -271,6 +276,9 @@ onMounted(async () => {
   let fileName = props.composedProps.secretPath;
   if (fileExtension !== undefined && !fileName.match(/.+\..+/)) {
     fileName = `${fileName}.${fileExtension}`;
+  }
+  if (keyExchangeRes.protectionType === "passwordless" && keyExchangeRes.dataMeta.fileName !== undefined) {
+    fileName = keyExchangeRes.dataMeta.fileName;
   }
   // (from: https://github.com/jimmywarting/StreamSaver.js/blob/314e64b8984484a3e8d39822c9b86a345eb36454/sw.js#L120-L122)
   // Make filename RFC5987 compatible

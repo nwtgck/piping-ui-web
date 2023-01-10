@@ -53,9 +53,14 @@ export type VerificationStep =
 
 const verifiedExtensionType = z.object({
   version: z.literal(2),
-  mimeType: z.union([z.string(), z.undefined()]),
-  fileExtension: z.union([z.string(), z.undefined()]),
+  data_meta: z.object({
+    mime_type: z.union([z.string(), z.undefined()]),
+    size: z.union([z.number(), z.undefined()]),
+    file_name: z.union([z.string(), z.undefined()]),
+    file_extension: z.union([z.string(), z.undefined()]),
+  }),
 });
+export type VerifiedExtension = z.infer<typeof verifiedExtensionType>;
 
 async function keyExchangePath(type: 'sender' | 'receiver', secretPath: string): Promise<string> {
   if (type === 'sender') {
@@ -68,7 +73,7 @@ async function verifiedPath(mainPath: string): Promise<string> {
   return await sha256(`${mainPath}/verified`);
 }
 
-export async function verify(serverUrl: string, mainPath: string, key: Uint8Array, verified: boolean, parcelExtension: z.infer<typeof verifiedExtensionType>, canceledPromise: Promise<void>) {
+export async function verify(serverUrl: string, mainPath: string, key: Uint8Array, verified: boolean, parcelExtension: VerifiedExtension, canceledPromise: Promise<void>) {
   const verifiedParcel: VerifiedParcel = {
     verified,
     extension: parcelExtension,
@@ -274,7 +279,7 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
   Promise<
     {type: 'key', protectionType: 'raw', key: undefined } |
     {type: 'key', protectionType: 'password', key: string} |
-    {type: 'key', protectionType: 'passwordless', key: Uint8Array, mainPath: string, verificationCode: string, fileType: { mimeType: string | undefined, fileExtension: string | undefined } } |
+    {type: 'key', protectionType: 'passwordless', key: Uint8Array, mainPath: string, verificationCode: string, dataMeta: { mimeType: string | undefined, fileExtension: string | undefined, size: number | undefined, fileName: string | undefined } } |
     {type: 'error', error: KeyExchangeAndReceiveVerifiedError } |
     {type: 'canceled' }
   > {
@@ -360,9 +365,11 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
         protectionType: 'passwordless',
         mainPath,
         verificationCode,
-        fileType: {
-          mimeType: verifiedExtensionParseReturn.data.mimeType,
-          fileExtension: verifiedExtensionParseReturn.data.fileExtension,
+        dataMeta: {
+          mimeType: verifiedExtensionParseReturn.data.data_meta.mime_type,
+          size: verifiedExtensionParseReturn.data.data_meta.size,
+          fileName: verifiedExtensionParseReturn.data.data_meta.file_name,
+          fileExtension: verifiedExtensionParseReturn.data.data_meta.file_extension,
         },
       };
     }
