@@ -2,9 +2,7 @@ import {ecJsonWebKeyType, jsonWebKeyType, type Protection} from "@/datatypes";
 import {sha256} from "@/utils/sha256";
 import * as openPgpUtils from "@/utils/openpgp-utils";
 import {jwkThumbprintByEncoding} from "jwk-thumbprint";
-import {stringToUint8Array} from 'binconv/dist/src/stringToUint8Array';
 import {uint8ArrayToBase64} from 'binconv/dist/src/uint8ArrayToBase64';
-import {uint8ArrayToString} from 'binconv/dist/src/uint8ArrayToString';
 import {base64ToUint8Array} from 'binconv/dist/src/base64ToUint8Array';
 import {uint8ArrayToHexString} from 'binconv/dist/src/uint8ArrayToHexString';
 import urlJoin from "url-join";
@@ -79,7 +77,7 @@ export async function verify(serverUrl: string, mainPath: string, key: Uint8Arra
     extension: parcelExtension,
   };
   const encryptedVerifiedParcel = await openPgpUtils.encrypt(
-    stringToUint8Array(JSON.stringify(verifiedParcel)),
+    new TextEncoder().encode(JSON.stringify(verifiedParcel)),
     key,
   );
   const path = urlJoin(serverUrl, await verifiedPath(mainPath));
@@ -337,7 +335,7 @@ export async function keyExchangeAndReceiveVerified(serverUrl: string, secretPat
       // Decrypt body
       const decryptedBody: Uint8Array = await openPgpUtils.decrypt(encryptedVerified, key);
       // Parse
-      const verifiedParcelParseReturn: z.SafeParseReturnType<unknown, VerifiedParcel> = verifiedParcelType.safeParse(JSON.parse(uint8ArrayToString(decryptedBody)));
+      const verifiedParcelParseReturn: z.SafeParseReturnType<unknown, VerifiedParcel> = verifiedParcelType.safeParse(JSON.parse(new TextDecoder().decode(decryptedBody)));
       if (!verifiedParcelParseReturn.success) {
         return {
           type: "error",
