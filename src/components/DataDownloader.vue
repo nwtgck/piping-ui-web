@@ -1,7 +1,14 @@
 <template>
   <v-expansion-panel ref="rootElement">
-    <v-expansion-panel-header :disable-icon-rotate="hasError">
+    <v-expansion-panel-header :disable-icon-rotate="progressPercentage === 100 || hasError">
       <span>{{ strings?.['download_in_downloader'] }} #{{ composedProps.downloadNo }}</span>
+      <!-- Percentage -->
+      {{ progressPercentage ? `${progressPercentage.toFixed(2)} %` : "" }}
+      <template v-slot:actions>
+        <v-icon :color="headerIconColor" style="margin-left: 0.3em">
+          {{ headerIcon}}
+        </v-icon>
+      </template>
     </v-expansion-panel-header>
     <v-expansion-panel-content>
 
@@ -11,6 +18,24 @@
 
       <span v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'verification_code_arrived'">
         <VerificationCode :value="verificationStep.verificationCode"/>
+      </span>
+
+      <!-- NOTE: Don't use v-if because the "sibling" element uses "ref" and the ref is loaded in mounted(), but don't know why "sibling" affects. -->
+      <span v-show="showsProgressBar">
+        <!-- loaded of total -->
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on }">
+            <div style="text-align: center" v-on="on">
+              {{ readableBytesString(progressSetting.loadedBytes, 1) }}{{ !progressSetting.totalBytes ? "" : ` of ${readableBytesString(progressSetting.totalBytes, 1)}` }}
+            </div>
+          </template>
+          <span>{{ progressSetting.loadedBytes }}{{ !progressSetting.totalBytes ? "" : ` of ${progressSetting.totalBytes}` }}</span>
+        </v-tooltip>
+
+        <!-- Progress bar -->
+        <v-progress-linear :value="progressPercentage"
+                           :indeterminate="progressPercentage === null && !canceled && !hasError"
+                           :color="canceled ? 'grey' : undefined" />
       </span>
 
       <v-simple-table class="text-left">
@@ -72,7 +97,7 @@ export type DataDownloaderProps = {
 
 import Vue, {ref, computed, onMounted, nextTick} from "vue";
 import urlJoin from 'url-join';
-import {mdiAlert, mdiChevronDown} from "@mdi/js";
+import {mdiAlert, mdiCheck, mdiChevronDown, mdiCloseCircle} from "@mdi/js";
 import {pipingUiScrollTo} from "@/piping-ui-utils/pipingUiScrollTo";
 import * as pipingUiRobust from "@/piping-ui-robust";
 import VerificationCode from "@/components/VerificationCode.vue";
@@ -86,6 +111,8 @@ import {strings} from "@/strings/strings";
 import {ecdsaP384SigningKeyPairPromise} from "@/states/ecdsaP384SigningKeyPairPromise";
 import {firstAtLeastBlobFromReadableStream} from "@/utils/firstAtLeastBlobFromReadableStream";
 import {decideFileName} from "@/piping-ui-utils/decideFileName";
+import {readableBytesString} from "@/utils/readableBytesString";
+import {getReadableStreamWithProgress} from "@/utils/getReadableStreamWithProgress";
 
 const FileSaverAsync = () => import('file-saver').then(p => p.default);
 const swDownloadAsync = () => import("@/sw-download");
@@ -96,8 +123,9 @@ const props = defineProps<{ composedProps: DataDownloaderProps }>();
 // TODO: support cancel
 const {promise: canceledPromise, resolve: cancel} = makePromise<void>();
 canceledPromise.then(() => {
-  // canceled.value = true;
+  canceled.value = true;
 });
+const canceled = ref(false);
 
 const {errorMessage, updateErrorMessage} = useErrorMessage();
 const verificationStep = ref<pipingUiAuth.VerificationStep>({type: 'initial'});
@@ -105,16 +133,26 @@ const hasError = computed<boolean>(() => errorMessage.value !== undefined);
 const headerIcon = computed<string>(() => {
   if (hasError.value) {
     return mdiAlert;
-  } else {
-    return mdiChevronDown;
   }
+  if (canceled.value) {
+    return mdiCloseCircle;
+  }
+  if (progressPercentage.value === 100) {
+    return mdiCheck;
+  }
+  return mdiChevronDown;
 });
 const headerIconColor = computed<string | undefined>(() => {
   if (hasError.value) {
     return "error";
-  } else {
-    return undefined
   }
+  if (canceled.value) {
+    return "grey";
+  }
+  if (progressPercentage.value === 100) {
+    return "teal";
+  }
+  return undefined;
 });
 const isReadyToDownload = computed<boolean>(() => {
   return props.composedProps.protection.type === 'passwordless' ? verificationStep.value.type === 'verified' && verificationStep.value.verified : true
@@ -126,6 +164,20 @@ const rootElement = ref<Vue>();
 const pipingUiAuthVerificationCode = ref<string | undefined>();
 const openRetryDownload = ref<boolean>(false);
 const retry_download_button = ref<Vue>();
+const showsProgressBar = ref(false);
+const progressSetting = ref<{loadedBytes: number, totalBytes?: number}>({
+  loadedBytes: 0,
+  totalBytes: undefined,
+});
+const progressPercentage = computed<number | null>(() => {
+  if (progressSetting.value.totalBytes === undefined) {
+    return null;
+  }
+  if (progressSetting.value.totalBytes === 0) {
+    return 100;
+  }
+  return progressSetting.value.loadedBytes / progressSetting.value.totalBytes * 100;
+});
 
 // NOTE: Automatically download when mounted
 onMounted(async () => {
@@ -199,6 +251,9 @@ onMounted(async () => {
         keyExchangeRes.mainPath,
         { abortSignal: abortController.signal },
       );
+      if (keyExchangeRes.dataMeta.size !== undefined) {
+        progressSetting.value.totalBytes = keyExchangeRes.dataMeta.size;
+      }
     } else {
       const res = await fetch(downloadUrl.value);
       if (res.status !== 200) {
@@ -207,6 +262,7 @@ onMounted(async () => {
         return;
       }
       encryptedStream = res.body!;
+      // Should not set Content-Length to progressSetting.value.totalBytes because it is encrypted length
     }
     // Decrypt the response body
     let plainStream: ReadableStream;
@@ -217,8 +273,18 @@ onMounted(async () => {
       updateErrorMessage(() => strings.value?.['password_might_be_wrong']);
       return;
     }
+    showsProgressBar.value = true;
+    const {stream: plainStreamWithProgress, cancel: cancelPlainStreamWithProgress} = getReadableStreamWithProgress(plainStream, {
+      onRead(n) {
+        progressSetting.value.loadedBytes += n;
+      },
+    });
+    canceledPromise.then(() => {
+      cancelPlainStreamWithProgress();
+    });
     const FileSaver = await FileSaverAsync();
-    const blob = await new Response(plainStream).blob();
+    const blob = await new Response(plainStreamWithProgress).blob();
+    progressSetting.value.totalBytes = blob.size;
     const fileName = decideFileName({
       topPriorityDataMeta: keyExchangeRes.protectionType === "passwordless" ? keyExchangeRes.dataMeta : undefined,
       secretPath: props.composedProps.secretPath,
@@ -230,6 +296,8 @@ onMounted(async () => {
   }
   console.log("downloading streaming with the Service Worker and decrypting if need...");
   const openPgpUtils = await openPgpUtilsAsync();
+
+  showsProgressBar.value = true;
 
   let readableStream: ReadableStream;
   let contentLengthStr: string | undefined = undefined;
@@ -245,6 +313,9 @@ onMounted(async () => {
       keyExchangeRes.mainPath,
       { abortSignal: abortController.signal },
     );
+    if (keyExchangeRes.dataMeta.size !== undefined) {
+      progressSetting.value.totalBytes = keyExchangeRes.dataMeta.size;
+    }
   } else {
     const res = await fetch(downloadUrl.value);
     if (res.status !== 200) {
@@ -252,7 +323,11 @@ onMounted(async () => {
       updateErrorMessage(() => strings.value?.['fetch_status_error']({status: res.status, message}));
       return;
     }
+    // NOTE: Should not use Content-Length when password is defined because it is encrypted byte size
     contentLengthStr = key === undefined ? res.headers.get("Content-Length") ?? undefined : undefined;
+    if (contentLengthStr !== undefined) {
+      progressSetting.value.totalBytes = parseInt(contentLengthStr, 10);
+    }
     readableStream = res.body!
   }
 
@@ -290,8 +365,19 @@ onMounted(async () => {
     ...( mimeType === undefined ? [] : [ [ "Content-Type", mimeType ] ] satisfies [[string, string]] ),
     ['Content-Disposition', "attachment; filename*=UTF-8''" + escapedFileName],
   ];
+  const {stream: readableStreamForDownloadWithProgress, cancel: cancelReadableStreamForDownloadWithProgress} = getReadableStreamWithProgress(readableStreamForDownload, {
+    onRead(n) {
+      progressSetting.value.loadedBytes += n;
+    },
+    onFinished() {
+      progressSetting.value.totalBytes = progressSetting.value.loadedBytes;
+    },
+  });
+  canceledPromise.then(() => {
+    cancelReadableStreamForDownloadWithProgress();
+  });
   // Enroll download ReadableStream and get sw-download ID
-  const {swDownloadId} = await enrollDownload(headers, readableStreamForDownload);
+  const {swDownloadId} = await enrollDownload(headers, readableStreamForDownloadWithProgress);
   // Download via Service Worker
   // NOTE: '/sw-download/v2' can be received by Service Worker in src/sw.js
   // NOTE: URL fragment is passed to Service Worker but not passed to Web server
