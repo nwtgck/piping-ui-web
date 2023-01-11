@@ -251,6 +251,9 @@ onMounted(async () => {
         keyExchangeRes.mainPath,
         { abortSignal: abortController.signal },
       );
+      if (keyExchangeRes.dataMeta.size !== undefined) {
+        progressSetting.value.totalBytes = keyExchangeRes.dataMeta.size;
+      }
     } else {
       const res = await fetch(downloadUrl.value);
       if (res.status !== 200) {
@@ -259,6 +262,7 @@ onMounted(async () => {
         return;
       }
       encryptedStream = res.body!;
+      // Should not set Content-Length to progressSetting.value.totalBytes because it is encrypted length
     }
     // Decrypt the response body
     let plainStream: ReadableStream;
@@ -269,8 +273,15 @@ onMounted(async () => {
       updateErrorMessage(() => strings.value?.['password_might_be_wrong']);
       return;
     }
+    showsProgressBar.value = true;
+    const {stream: plainStreamWithProgress, cancel: cancelPlainStreamWithProgress} = getReadableStreamWithProgress(plainStream, (n) => {
+      progressSetting.value.loadedBytes += n;
+    });
+    canceledPromise.then(() => {
+      cancelPlainStreamWithProgress();
+    });
     const FileSaver = await FileSaverAsync();
-    const blob = await new Response(plainStream).blob();
+    const blob = await new Response(plainStreamWithProgress).blob();
     const fileName = decideFileName({
       topPriorityDataMeta: keyExchangeRes.protectionType === "passwordless" ? keyExchangeRes.dataMeta : undefined,
       secretPath: props.composedProps.secretPath,
