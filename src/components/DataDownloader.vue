@@ -308,6 +308,7 @@ onMounted(async () => {
       // NOTE: The feature detection can not be created because it would confirm the downloaded file.
       if (isFirefox()) {
         // NOTE: With "download" attributes, Chrome 108 and Safari 16.1 bypass Service Worker
+        // crbug: https://bugs.chromium.org/p/chromium/issues/detail?id=468227
         // NOTE: Without "download" attribute, Firefox frequently fails to download a large file. Passwordless protection is stable without "download" attribute because it uses Piping UI Robust, which transfer small chunks especially first chunk even in Firefox.
         // For testing in Firefox, you can enable "Block pop-up windows" in your preference.
         a.download = fileName;
