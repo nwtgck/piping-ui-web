@@ -314,6 +314,7 @@ onMounted(async () => {
       { abortSignal: abortController.signal },
     );
     if (keyExchangeRes.dataMeta.size !== undefined) {
+      contentLengthStr = keyExchangeRes.dataMeta.size.toString();
       progressSetting.value.totalBytes = keyExchangeRes.dataMeta.size;
     }
   } else {
