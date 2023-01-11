@@ -123,7 +123,7 @@ const props = defineProps<{ composedProps: DataDownloaderProps }>();
 // TODO: support cancel
 const {promise: canceledPromise, resolve: cancel} = makePromise<void>();
 canceledPromise.then(() => {
-  // canceled.value = true;
+  canceled.value = true;
 });
 const canceled = ref(false);
 
@@ -170,9 +170,6 @@ const progressSetting = ref<{loadedBytes: number, totalBytes?: number}>({
   totalBytes: undefined,
 });
 const progressPercentage = computed<number | null>(() => {
-  // if (isDoneDownload.value) {
-  //   return 100;
-  // }
   if (progressSetting.value.totalBytes === undefined) {
     return null;
   }
