@@ -111,7 +111,7 @@ import {strings} from "@/strings/strings";
 import {ecdsaP384SigningKeyPairPromise} from "@/states/ecdsaP384SigningKeyPairPromise";
 import {firstAtLeastBlobFromReadableStream} from "@/utils/firstAtLeastBlobFromReadableStream";
 import {decideFileName} from "@/piping-ui-utils/decideFileName";
-import {readableBytesString} from "../utils/readableBytesString";
+import {readableBytesString} from "@/utils/readableBytesString";
 import {getReadableStreamWithProgress} from "@/utils/getReadableStreamWithProgress";
 
 const FileSaverAsync = () => import('file-saver').then(p => p.default);
@@ -274,14 +274,17 @@ onMounted(async () => {
       return;
     }
     showsProgressBar.value = true;
-    const {stream: plainStreamWithProgress, cancel: cancelPlainStreamWithProgress} = getReadableStreamWithProgress(plainStream, (n) => {
-      progressSetting.value.loadedBytes += n;
+    const {stream: plainStreamWithProgress, cancel: cancelPlainStreamWithProgress} = getReadableStreamWithProgress(plainStream, {
+      onRead(n) {
+        progressSetting.value.loadedBytes += n;
+      },
     });
     canceledPromise.then(() => {
       cancelPlainStreamWithProgress();
     });
     const FileSaver = await FileSaverAsync();
     const blob = await new Response(plainStreamWithProgress).blob();
+    progressSetting.value.totalBytes = blob.size;
     const fileName = decideFileName({
       topPriorityDataMeta: keyExchangeRes.protectionType === "passwordless" ? keyExchangeRes.dataMeta : undefined,
       secretPath: props.composedProps.secretPath,
@@ -362,8 +365,13 @@ onMounted(async () => {
     ...( mimeType === undefined ? [] : [ [ "Content-Type", mimeType ] ] satisfies [[string, string]] ),
     ['Content-Disposition', "attachment; filename*=UTF-8''" + escapedFileName],
   ];
-  const {stream: readableStreamForDownloadWithProgress, cancel: cancelReadableStreamForDownloadWithProgress} = getReadableStreamWithProgress(readableStreamForDownload, (n) => {
-    progressSetting.value.loadedBytes += n;
+  const {stream: readableStreamForDownloadWithProgress, cancel: cancelReadableStreamForDownloadWithProgress} = getReadableStreamWithProgress(readableStreamForDownload, {
+    onRead(n) {
+      progressSetting.value.loadedBytes += n;
+    },
+    onFinished() {
+      progressSetting.value.totalBytes = progressSetting.value.loadedBytes;
+    },
   });
   canceledPromise.then(() => {
     cancelReadableStreamForDownloadWithProgress();

@@ -403,8 +403,10 @@ onMounted(async () => {
       // Decrypt the response body
       rawOrDecryptedStream = await openPgpUtils.decryptStream(streamForDecrypting, key);
     }
-    const {stream: rawOrDecryptedStreamWithProgress, cancel: cancelRawOrDecryptedStreamWithProgress} = getReadableStreamWithProgress(rawOrDecryptedStream, (n) => {
-      progressSetting.value.loadedBytes += n;
+    const {stream: rawOrDecryptedStreamWithProgress, cancel: cancelRawOrDecryptedStreamWithProgress} = getReadableStreamWithProgress(rawOrDecryptedStream, {
+      onRead(n) {
+        progressSetting.value.loadedBytes += n;
+      },
     });
     canceledPromise.then(() => {
       cancelRawOrDecryptedStreamWithProgress();
