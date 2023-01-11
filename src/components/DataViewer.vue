@@ -359,6 +359,9 @@ onMounted(async () => {
     rawStream = pipingUiRobust.receiveReadableStream(props.composedProps.serverUrl, keyExchangeRes.mainPath, {
       abortSignal: abortController.signal,
     });
+    if (keyExchangeRes.dataMeta.size !== undefined) {
+      progressSetting.value.totalBytes = keyExchangeRes.dataMeta.size;
+    }
   } else {
     const abortController = new AbortController();
     canceledPromise.then(() => {
@@ -383,8 +386,8 @@ onMounted(async () => {
       return;
     }
     const contentLengthStr = res.headers.get("Content-Length");
-    // NOTE: Content-Length is encrypted byte size if password is defined
-    if (contentLengthStr !== null && password.value === undefined) {
+    // NOTE: Should not use Content-Length when password is defined because it is encrypted byte size
+    if (contentLengthStr !== null && keyExchangeRes.protectionType === "password") {
       progressSetting.value.totalBytes = parseInt(contentLengthStr, 10);
     }
     rawStream = res.body!;
