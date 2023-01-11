@@ -1,7 +1,14 @@
 <template>
   <v-expansion-panel ref="rootElement">
-    <v-expansion-panel-header :disable-icon-rotate="hasError">
+    <v-expansion-panel-header :disable-icon-rotate="progressPercentage === 100 || hasError">
       <span>{{ strings?.['download_in_downloader'] }} #{{ composedProps.downloadNo }}</span>
+      <!-- Percentage -->
+      {{ progressPercentage ? `${progressPercentage.toFixed(2)} %` : "" }}
+      <template v-slot:actions>
+        <v-icon :color="headerIconColor" style="margin-left: 0.3em">
+          {{ headerIcon}}
+        </v-icon>
+      </template>
     </v-expansion-panel-header>
     <v-expansion-panel-content>
 
@@ -90,7 +97,7 @@ export type DataDownloaderProps = {
 
 import Vue, {ref, computed, onMounted, nextTick} from "vue";
 import urlJoin from 'url-join';
-import {mdiAlert, mdiChevronDown} from "@mdi/js";
+import {mdiAlert, mdiCheck, mdiChevronDown, mdiCloseCircle} from "@mdi/js";
 import {pipingUiScrollTo} from "@/piping-ui-utils/pipingUiScrollTo";
 import * as pipingUiRobust from "@/piping-ui-robust";
 import VerificationCode from "@/components/VerificationCode.vue";
@@ -126,16 +133,26 @@ const hasError = computed<boolean>(() => errorMessage.value !== undefined);
 const headerIcon = computed<string>(() => {
   if (hasError.value) {
     return mdiAlert;
-  } else {
-    return mdiChevronDown;
   }
+  if (canceled.value) {
+    return mdiCloseCircle;
+  }
+  if (progressPercentage.value === 100) {
+    return mdiCheck;
+  }
+  return mdiChevronDown;
 });
 const headerIconColor = computed<string | undefined>(() => {
   if (hasError.value) {
     return "error";
-  } else {
-    return undefined
   }
+  if (canceled.value) {
+    return "grey";
+  }
+  if (progressPercentage.value === 100) {
+    return "teal";
+  }
+  return undefined;
 });
 const isReadyToDownload = computed<boolean>(() => {
   return props.composedProps.protection.type === 'passwordless' ? verificationStep.value.type === 'verified' && verificationStep.value.verified : true
