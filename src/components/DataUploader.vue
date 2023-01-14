@@ -16,7 +16,7 @@
         <span>{{ strings?.['waiting_for_receiver'] }}</span>
       </v-alert>
 
-      <span v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'verification_code_arrived'">
+      <template v-if="composedProps.protection.type === 'passwordless' && !composedProps.protection.alwaysSendVerify && verificationStep.type === 'verification_code_arrived'">
         <VerificationCode :value="verificationStep.verificationCode" :color="canceled ? 'grey' : undefined"/>
 
         <v-layout>
@@ -40,7 +40,7 @@
             </v-btn>
           </v-flex>
         </v-layout>
-      </span>
+      </template>
 
       <div v-show="isCompressing">
         <div style="text-align: center">
