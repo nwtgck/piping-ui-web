@@ -5,6 +5,17 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [0.16.0] - 2023-01-14
+### Changed
+- Clear input files and text after sent
+- Make Piping UI Auth use detectable for normal receiver in the future
+- Save as input file name in passwordless protection
+- Improve progress bar when viewing in passwordless protection
+
+## Added
+- Show progress bar when downloading in passwordless protection
+- Show update-app button when key exchange version is out-of-date
+
 ## [0.15.0] - 2023-01-07
 ### Added
 - Add info tooltips to "Passwordless", "Verify and Send" and "Password" switches
@@ -454,7 +465,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 ### Added
 - First release
 
-[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.15.0...HEAD
+[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.16.0...HEAD
+[0.16.0]: https://github.com/nwtgck/piping-ui-web/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/nwtgck/piping-ui-web/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/nwtgck/piping-ui-web/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/nwtgck/piping-ui-web/compare/v0.12.1...v0.13.0
