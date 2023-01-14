@@ -12,7 +12,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 - Save as input file name in passwordless protection
 - Improve progress bar when viewing in passwordless protection
 
-## Added
+### Added
 - Show progress bar when downloading in passwordless protection
 - Show update-app button when key exchange version is out-of-date
 
