@@ -161,6 +161,8 @@
         {{ errorMessage }}
       </v-alert>
 
+      <UpdateAppButton v-if="showsUpdateAppButton" />
+
     </v-expansion-panel-content>
   </v-expansion-panel>
 
@@ -191,7 +193,7 @@ import {mdiAlert, mdiCheck, mdiChevronDown, mdiContentSave, mdiCloseCircle, mdiE
 import * as pipingUiRobust from "@/piping-ui-robust";
 
 import * as openPgpUtils from '@/utils/openpgp-utils';
-import * as pipingUiUtils from "@/piping-ui-utils";
+import {pipingUiScrollTo} from "@/piping-ui-utils/pipingUiScrollTo";
 import VerificationCode from "@/components/VerificationCode.vue";
 import {BlobUrlManager} from "@/utils/BlobUrlManager";
 import * as pipingUiAuth from "@/piping-ui-auth";
@@ -203,6 +205,10 @@ import {useErrorMessage} from "@/composables/useErrorMessage";
 import {getReadableStreamWithProgress} from "@/utils/getReadableStreamWithProgress";
 import {strings} from "@/strings/strings";
 import {ecdsaP384SigningKeyPairPromise} from "@/states/ecdsaP384SigningKeyPairPromise";
+import {decideFileName} from "@/piping-ui-utils/decideFileName";
+import {shouldUpdateApp} from "@/piping-ui-utils/shouldUpdateApp";
+
+const UpdateAppButton = () => import('@/components/UpdateAppButton.vue');
 
 // eslint-disable-next-line no-undef
 const props = defineProps<{ composedProps: DataViewerProps }>();
@@ -232,6 +238,8 @@ let blob = new Blob();
 const showsCopied = ref(false);
 const isDecrypting = ref(false);
 const pipingUiAuthVerificationCode = ref<string | undefined>();
+const showsUpdateAppButton = ref(false);
+let topPriorityDataMeta: { fileName: string | undefined, fileExtension: string | undefined } | undefined;
 
 const progressPercentage = computed<number | null>(() => {
   if (isDoneDownload.value) {
@@ -304,7 +312,7 @@ const rootElement = ref<Vue>();
 onMounted(async () => {
   // Scroll to this element
   // NOTE: no need to add `await`
-  pipingUiUtils.scrollTo(rootElement.value!.$el);
+  pipingUiScrollTo(rootElement.value!.$el);
 
   // Key exchange
   const keyExchangeRes = await pipingUiAuth.keyExchangeAndReceiveVerified(
@@ -328,6 +336,7 @@ onMounted(async () => {
       case "key_exchange_error": {
         const errorCode = keyExchangeRes.error.keyExchangeError;
         updateErrorMessage(() => strings.value?.["key_exchange_error"](errorCode));
+        showsUpdateAppButton.value = shouldUpdateApp(keyExchangeRes.error.keyExchangeError);
         break;
       }
       case "sender_not_verified":
@@ -343,6 +352,10 @@ onMounted(async () => {
 
   const {key} = keyExchangeRes;
 
+  if (keyExchangeRes.protectionType === "passwordless") {
+    topPriorityDataMeta = keyExchangeRes.dataMeta;
+  }
+
   let rawStream: ReadableStream<Uint8Array>;
   if (keyExchangeRes.protectionType === "passwordless") {
     const abortController = new AbortController();
@@ -353,6 +366,9 @@ onMounted(async () => {
     rawStream = pipingUiRobust.receiveReadableStream(props.composedProps.serverUrl, keyExchangeRes.mainPath, {
       abortSignal: abortController.signal,
     });
+    if (keyExchangeRes.dataMeta.size !== undefined) {
+      progressSetting.value.totalBytes = keyExchangeRes.dataMeta.size;
+    }
   } else {
     const abortController = new AbortController();
     canceledPromise.then(() => {
@@ -377,8 +393,8 @@ onMounted(async () => {
       return;
     }
     const contentLengthStr = res.headers.get("Content-Length");
-    // NOTE: Content-Length is encrypted byte size if password is defined
-    if (contentLengthStr !== null && password.value === undefined) {
+    // NOTE: Should not use Content-Length when password is defined because it is encrypted byte size
+    if (contentLengthStr !== null && keyExchangeRes.protectionType === "password") {
       progressSetting.value.totalBytes = parseInt(contentLengthStr, 10);
     }
     rawStream = res.body!;
@@ -394,8 +410,10 @@ onMounted(async () => {
       // Decrypt the response body
       rawOrDecryptedStream = await openPgpUtils.decryptStream(streamForDecrypting, key);
     }
-    const {stream: rawOrDecryptedStreamWithProgress, cancel: cancelRawOrDecryptedStreamWithProgress} = getReadableStreamWithProgress(rawOrDecryptedStream, (n) => {
-      progressSetting.value.loadedBytes += n;
+    const {stream: rawOrDecryptedStreamWithProgress, cancel: cancelRawOrDecryptedStreamWithProgress} = getReadableStreamWithProgress(rawOrDecryptedStream, {
+      onRead(n) {
+        progressSetting.value.loadedBytes += n;
+      },
     });
     canceledPromise.then(() => {
       cancelRawOrDecryptedStreamWithProgress();
@@ -500,17 +518,11 @@ function viewRaw() {
 
 async function save(): Promise<void> {
   const FileSaver = await FileSaverAsync();
-  const fileName = await (async () => {
-    // If secret path has extension
-    if (props.composedProps.secretPath.match(/.+\..+/)) {
-      return props.composedProps.secretPath;
-    }
-    const fileTypeResult = await fileType.fromStream(blobToReadableStream(blob));
-    if (fileTypeResult === undefined) {
-      return props.composedProps.secretPath;
-    }
-    return `${props.composedProps.secretPath}.${fileTypeResult.ext}`;
-  })();
+  const fileName = decideFileName({
+    topPriorityDataMeta,
+    secretPath: props.composedProps.secretPath,
+    sniffedFileExtension: (await fileType.fromBlob(blob))?.ext,
+  });
   FileSaver.saveAs(blob, fileName);
 }
 </script>

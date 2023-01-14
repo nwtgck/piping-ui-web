@@ -109,6 +109,8 @@
                v-html="errorMessage"
                :value="hasError" />
 
+      <UpdateAppButton v-if="showsUpdateAppButton" />
+
     </v-expansion-panel-content>
   </v-expansion-panel>
 
@@ -119,19 +121,21 @@ import {type Protection} from "@/datatypes";
 export type DataUploaderProps = {
   uploadNo: number,
   data: File[] | string,
+  inputFileName: string | undefined,
   serverUrl: string,
   secretPath: string,
   protection: Protection,
+  onSentSuccessfully: () => void,
 };
 </script>
 
 <script setup lang="ts">
 /* eslint-disable */
-import Vue, {computed, onMounted, ref} from "vue";
+import Vue, {computed, onMounted, ref, watch} from "vue";
 import urlJoin from 'url-join';
 import {blobToReadableStream} from "binconv/dist/src/blobToReadableStream";
 import * as openPgpUtils from '@/utils/openpgp-utils';
-import * as pipingUiUtils from "@/piping-ui-utils";
+import {pipingUiScrollTo} from "@/piping-ui-utils/pipingUiScrollTo";
 import * as pipingUiRobust from "@/piping-ui-robust";
 import {mdiAlert, mdiCancel, mdiCheck, mdiChevronDown, mdiCloseCircle} from "@mdi/js";
 import VerificationCode from "@/components/VerificationCode.vue";
@@ -145,6 +149,9 @@ import {useErrorMessage} from "@/composables/useErrorMessage";
 import {strings} from "@/strings/strings";
 import {ecdsaP384SigningKeyPairPromise} from "@/states/ecdsaP384SigningKeyPairPromise";
 import * as fileType from 'file-type/browser';
+import {shouldUpdateApp} from "@/piping-ui-utils/shouldUpdateApp";
+
+const UpdateAppButton = () => import('@/components/UpdateAppButton.vue');
 
 const props = defineProps<{ composedProps: DataUploaderProps }>();
 
@@ -167,6 +174,7 @@ const isCompressing = ref(false);
 const isNonStreamingEncrypting = ref(false);
 const verificationStep = ref<pipingUiAuth.VerificationStep>({type: 'initial'});
 const pipingUiAuthVerificationCode = ref<string | undefined>();
+const showsUpdateAppButton = ref(false);
 
 const progressPercentage = computed<number | null>(() => {
   if (progressSetting.value.totalBytes === undefined) {
@@ -180,6 +188,11 @@ const progressPercentage = computed<number | null>(() => {
 
 const isDoneUpload = computed<boolean>(() => {
   return progressPercentage.value === 100;
+});
+watch(isDoneUpload, () => {
+  if (isDoneUpload) {
+    props.composedProps.onSentSuccessfully();
+  }
 });
 
 const uploadUrl = computed<string>(() => urlJoin(props.composedProps.serverUrl, props.composedProps.secretPath));
@@ -259,7 +272,7 @@ const rootElement = ref<Vue>();
 onMounted(async () => {
   // Scroll to this element
   // NOTE: no need to add `await`
-  pipingUiUtils.scrollTo(rootElement.value!.$el);
+  pipingUiScrollTo(rootElement.value!.$el);
 
   switch (props.composedProps.protection.type) {
     case 'raw':
@@ -285,6 +298,7 @@ onMounted(async () => {
       if (keyExchangeRes.type === 'error') {
         verificationStep.value = {type: 'error'};
         updateErrorMessage(() => strings.value?.['key_exchange_error'](keyExchangeRes.keyExchangeError));
+        showsUpdateAppButton.value = shouldUpdateApp(keyExchangeRes.keyExchangeError);
         return;
       }
       const {key, mainPath, verificationCode} = keyExchangeRes;
@@ -305,7 +319,15 @@ async function verify(verified: boolean) {
   verificationStep.value = {type: 'verified', verified};
 
   const plainBody = await makePlainBodyPromise;
-  const parcelExtension = plainBody.mimeType === undefined ? undefined : { version: 1, mimeType: plainBody.mimeType, fileExtension: plainBody.fileExtension } as const;
+  const parcelExtension: pipingUiAuth.VerifiedExtension = {
+    version: 2,
+    data_meta: {
+      mime_type: plainBody.mimeType,
+      size: plainBody.data instanceof Blob ? plainBody.data.size : undefined,
+      file_name: props.composedProps.inputFileName,
+      file_extension: plainBody.fileExtension,
+    },
+  };
   await pipingUiAuth.verify(props.composedProps.serverUrl, mainPath, key, verified, parcelExtension, canceledPromise);
 
   if (!verified) {

@@ -1,7 +1,14 @@
 <template>
   <v-expansion-panel ref="rootElement">
-    <v-expansion-panel-header :disable-icon-rotate="hasError">
+    <v-expansion-panel-header :disable-icon-rotate="progressPercentage === 100 || hasError">
       <span>{{ strings?.['download_in_downloader'] }} #{{ composedProps.downloadNo }}</span>
+      <!-- Percentage -->
+      {{ progressPercentage ? `${progressPercentage.toFixed(2)} %` : "" }}
+      <template v-slot:actions>
+        <v-icon :color="headerIconColor" style="margin-left: 0.3em">
+          {{ headerIcon}}
+        </v-icon>
+      </template>
     </v-expansion-panel-header>
     <v-expansion-panel-content>
 
@@ -11,6 +18,24 @@
 
       <span v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'verification_code_arrived'">
         <VerificationCode :value="verificationStep.verificationCode"/>
+      </span>
+
+      <!-- NOTE: Don't use v-if because the "sibling" element uses "ref" and the ref is loaded in mounted(), but don't know why "sibling" affects. -->
+      <span v-show="showsProgressBar">
+        <!-- loaded of total -->
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on }">
+            <div style="text-align: center" v-on="on">
+              {{ readableBytesString(progressSetting.loadedBytes, 1) }}{{ !progressSetting.totalBytes ? "" : ` of ${readableBytesString(progressSetting.totalBytes, 1)}` }}
+            </div>
+          </template>
+          <span>{{ progressSetting.loadedBytes }}{{ !progressSetting.totalBytes ? "" : ` of ${progressSetting.totalBytes}` }}</span>
+        </v-tooltip>
+
+        <!-- Progress bar -->
+        <v-progress-linear :value="progressPercentage"
+                           :indeterminate="progressPercentage === null && !canceled && !hasError"
+                           :color="canceled ? 'grey' : undefined" />
       </span>
 
       <v-simple-table class="text-left">
@@ -39,6 +64,8 @@
                :value="hasError">
         {{ errorMessage }}
       </v-alert>
+
+      <UpdateAppButton v-if="showsUpdateAppButton" />
 
       <v-dialog v-model="openRetryDownload" persistent max-width="290">
         <v-card>
@@ -72,8 +99,8 @@ export type DataDownloaderProps = {
 
 import Vue, {ref, computed, onMounted, nextTick} from "vue";
 import urlJoin from 'url-join';
-import {mdiAlert, mdiChevronDown} from "@mdi/js";
-import * as pipingUiUtils from "@/piping-ui-utils";
+import {mdiAlert, mdiCheck, mdiChevronDown, mdiCloseCircle} from "@mdi/js";
+import {pipingUiScrollTo} from "@/piping-ui-utils/pipingUiScrollTo";
 import * as pipingUiRobust from "@/piping-ui-robust";
 import VerificationCode from "@/components/VerificationCode.vue";
 import * as pipingUiAuth from "@/piping-ui-auth";
@@ -85,7 +112,12 @@ import {useErrorMessage} from "@/composables/useErrorMessage";
 import {strings} from "@/strings/strings";
 import {ecdsaP384SigningKeyPairPromise} from "@/states/ecdsaP384SigningKeyPairPromise";
 import {firstAtLeastBlobFromReadableStream} from "@/utils/firstAtLeastBlobFromReadableStream";
+import {decideFileName} from "@/piping-ui-utils/decideFileName";
+import {readableBytesString} from "@/utils/readableBytesString";
+import {getReadableStreamWithProgress} from "@/utils/getReadableStreamWithProgress";
+import {shouldUpdateApp} from "@/piping-ui-utils/shouldUpdateApp";
 
+const UpdateAppButton = () => import('@/components/UpdateAppButton.vue');
 const FileSaverAsync = () => import('file-saver').then(p => p.default);
 const swDownloadAsync = () => import("@/sw-download");
 const openPgpUtilsAsync = () => import("@/utils/openpgp-utils");
@@ -95,8 +127,9 @@ const props = defineProps<{ composedProps: DataDownloaderProps }>();
 // TODO: support cancel
 const {promise: canceledPromise, resolve: cancel} = makePromise<void>();
 canceledPromise.then(() => {
-  // canceled.value = true;
+  canceled.value = true;
 });
+const canceled = ref(false);
 
 const {errorMessage, updateErrorMessage} = useErrorMessage();
 const verificationStep = ref<pipingUiAuth.VerificationStep>({type: 'initial'});
@@ -104,16 +137,26 @@ const hasError = computed<boolean>(() => errorMessage.value !== undefined);
 const headerIcon = computed<string>(() => {
   if (hasError.value) {
     return mdiAlert;
-  } else {
-    return mdiChevronDown;
   }
+  if (canceled.value) {
+    return mdiCloseCircle;
+  }
+  if (progressPercentage.value === 100) {
+    return mdiCheck;
+  }
+  return mdiChevronDown;
 });
 const headerIconColor = computed<string | undefined>(() => {
   if (hasError.value) {
     return "error";
-  } else {
-    return undefined
   }
+  if (canceled.value) {
+    return "grey";
+  }
+  if (progressPercentage.value === 100) {
+    return "teal";
+  }
+  return undefined;
 });
 const isReadyToDownload = computed<boolean>(() => {
   return props.composedProps.protection.type === 'passwordless' ? verificationStep.value.type === 'verified' && verificationStep.value.verified : true
@@ -125,12 +168,27 @@ const rootElement = ref<Vue>();
 const pipingUiAuthVerificationCode = ref<string | undefined>();
 const openRetryDownload = ref<boolean>(false);
 const retry_download_button = ref<Vue>();
+const showsProgressBar = ref(false);
+const progressSetting = ref<{loadedBytes: number, totalBytes?: number}>({
+  loadedBytes: 0,
+  totalBytes: undefined,
+});
+const progressPercentage = computed<number | null>(() => {
+  if (progressSetting.value.totalBytes === undefined) {
+    return null;
+  }
+  if (progressSetting.value.totalBytes === 0) {
+    return 100;
+  }
+  return progressSetting.value.loadedBytes / progressSetting.value.totalBytes * 100;
+});
+const showsUpdateAppButton = ref(false);
 
 // NOTE: Automatically download when mounted
 onMounted(async () => {
   // Scroll to this element
   // NOTE: no need to add `await`
-  pipingUiUtils.scrollTo(rootElement.value!.$el);
+  pipingUiScrollTo(rootElement.value!.$el);
 
   // Key exchange
   const keyExchangeRes = await pipingUiAuth.keyExchangeAndReceiveVerified(
@@ -138,7 +196,7 @@ onMounted(async () => {
       props.composedProps.secretPath,
       props.composedProps.protection,
       await ecdsaP384SigningKeyPairPromise.value,
-      (step: VerificationStep) => {
+      (step: pipingUiAuth.VerificationStep) => {
         verificationStep.value = step;
       },
       canceledPromise,
@@ -154,6 +212,7 @@ onMounted(async () => {
       case "key_exchange_error": {
         const errorCode = keyExchangeRes.error.keyExchangeError;
         updateErrorMessage(() => strings.value?.["key_exchange_error"](errorCode));
+        showsUpdateAppButton.value = shouldUpdateApp(keyExchangeRes.error.keyExchangeError);
         break;
       }
       case "sender_not_verified":
@@ -198,6 +257,9 @@ onMounted(async () => {
         keyExchangeRes.mainPath,
         { abortSignal: abortController.signal },
       );
+      if (keyExchangeRes.dataMeta.size !== undefined) {
+        progressSetting.value.totalBytes = keyExchangeRes.dataMeta.size;
+      }
     } else {
       const res = await fetch(downloadUrl.value);
       if (res.status !== 200) {
@@ -206,6 +268,7 @@ onMounted(async () => {
         return;
       }
       encryptedStream = res.body!;
+      // Should not set Content-Length to progressSetting.value.totalBytes because it is encrypted length
     }
     // Decrypt the response body
     let plainStream: ReadableStream;
@@ -216,13 +279,31 @@ onMounted(async () => {
       updateErrorMessage(() => strings.value?.['password_might_be_wrong']);
       return;
     }
-    // Save
+    showsProgressBar.value = true;
+    const {stream: plainStreamWithProgress, cancel: cancelPlainStreamWithProgress} = getReadableStreamWithProgress(plainStream, {
+      onRead(n) {
+        progressSetting.value.loadedBytes += n;
+      },
+    });
+    canceledPromise.then(() => {
+      cancelPlainStreamWithProgress();
+    });
     const FileSaver = await FileSaverAsync();
-    FileSaver.saveAs(await new Response(plainStream).blob(), props.composedProps.secretPath);
+    const blob = await new Response(plainStreamWithProgress).blob();
+    progressSetting.value.totalBytes = blob.size;
+    const fileName = decideFileName({
+      topPriorityDataMeta: keyExchangeRes.protectionType === "passwordless" ? keyExchangeRes.dataMeta : undefined,
+      secretPath: props.composedProps.secretPath,
+      sniffedFileExtension: (await fileType.fromBlob(blob))?.ext,
+    });
+    // Save
+    FileSaver.saveAs(blob, fileName);
     return;
   }
   console.log("downloading streaming with the Service Worker and decrypting if need...");
   const openPgpUtils = await openPgpUtilsAsync();
+
+  showsProgressBar.value = true;
 
   let readableStream: ReadableStream;
   let contentLengthStr: string | undefined = undefined;
@@ -238,6 +319,10 @@ onMounted(async () => {
       keyExchangeRes.mainPath,
       { abortSignal: abortController.signal },
     );
+    if (keyExchangeRes.dataMeta.size !== undefined) {
+      contentLengthStr = keyExchangeRes.dataMeta.size.toString();
+      progressSetting.value.totalBytes = keyExchangeRes.dataMeta.size;
+    }
   } else {
     const res = await fetch(downloadUrl.value);
     if (res.status !== 200) {
@@ -245,7 +330,11 @@ onMounted(async () => {
       updateErrorMessage(() => strings.value?.['fetch_status_error']({status: res.status, message}));
       return;
     }
+    // NOTE: Should not use Content-Length when password is defined because it is encrypted byte size
     contentLengthStr = key === undefined ? res.headers.get("Content-Length") ?? undefined : undefined;
+    if (contentLengthStr !== undefined) {
+      progressSetting.value.totalBytes = parseInt(contentLengthStr, 10);
+    }
     readableStream = res.body!
   }
 
@@ -259,33 +348,43 @@ onMounted(async () => {
     }
   }
   const [readableStreamForDownload, readableStreamForFileType] = readableStream.tee();
-  const mimeTypeAndFileExtension: { mimeType: string, fileExtension: string } | undefined = await (async () => {
+  const { mimeType, fileExtension }: { mimeType: string | undefined, fileExtension: string | undefined } = await (async () => {
+    // Avoid sniffing in passwordless protection
     if (keyExchangeRes.protectionType === "passwordless") {
-      return keyExchangeRes.fileType;
+      return keyExchangeRes.dataMeta;
     }
     // NOTE: Using fileType.fromStream() blocks download when specifying multiple large files in DataUploader.vue. (zip detection may read large bytes)
     // NOTE: 4100 was used in FileType.minimumBytes in file-type until 13.1.2
     const fileTypeResult = await fileType.fromBlob(await firstAtLeastBlobFromReadableStream(readableStreamForFileType, 4100));
-    if (fileTypeResult === undefined) {
-      return undefined;
-    }
-    return { mimeType: fileTypeResult.mime, fileExtension: fileTypeResult.ext };
+    return { mimeType: fileTypeResult?.mime, fileExtension: fileTypeResult?.ext };
   })();
-  let fileName = props.composedProps.secretPath;
-  if (mimeTypeAndFileExtension !== undefined && !fileName.match(/.+\..+/)) {
-    fileName = `${fileName}.${mimeTypeAndFileExtension.fileExtension}`;
-  }
+  const fileName = decideFileName({
+    topPriorityDataMeta: keyExchangeRes.protectionType === "passwordless" ? keyExchangeRes.dataMeta : undefined,
+    secretPath: props.composedProps.secretPath,
+    sniffedFileExtension: fileExtension,
+  });
   // (from: https://github.com/jimmywarting/StreamSaver.js/blob/314e64b8984484a3e8d39822c9b86a345eb36454/sw.js#L120-L122)
   // Make filename RFC5987 compatible
   const escapedFileName = encodeURIComponent(fileName).replace(/['()]/g, escape).replace(/\*/g, '%2A');
   const headers: [string, string][] = [
     ...( contentLengthStr === undefined ? [] : [ [ "Content-Length", contentLengthStr ] ] satisfies [[string, string]] ),
     // Without "Content-Type", Safari in iOS 15 adds ".html" to the downloading file
-    ...( mimeTypeAndFileExtension === undefined ? [] : [ [ "Content-Type", mimeTypeAndFileExtension.mimeType ] ] satisfies [[string, string]] ),
+    ...( mimeType === undefined ? [] : [ [ "Content-Type", mimeType ] ] satisfies [[string, string]] ),
     ['Content-Disposition', "attachment; filename*=UTF-8''" + escapedFileName],
   ];
+  const {stream: readableStreamForDownloadWithProgress, cancel: cancelReadableStreamForDownloadWithProgress} = getReadableStreamWithProgress(readableStreamForDownload, {
+    onRead(n) {
+      progressSetting.value.loadedBytes += n;
+    },
+    onFinished() {
+      progressSetting.value.totalBytes = progressSetting.value.loadedBytes;
+    },
+  });
+  canceledPromise.then(() => {
+    cancelReadableStreamForDownloadWithProgress();
+  });
   // Enroll download ReadableStream and get sw-download ID
-  const {swDownloadId} = await enrollDownload(headers, readableStreamForDownload);
+  const {swDownloadId} = await enrollDownload(headers, readableStreamForDownloadWithProgress);
   // Download via Service Worker
   // NOTE: '/sw-download/v2' can be received by Service Worker in src/sw.js
   // NOTE: URL fragment is passed to Service Worker but not passed to Web server
@@ -302,6 +401,7 @@ onMounted(async () => {
       // NOTE: The feature detection can not be created because it would confirm the downloaded file.
       if (isFirefox()) {
         // NOTE: With "download" attributes, Chrome 108 and Safari 16.1 bypass Service Worker
+        // crbug: https://bugs.chromium.org/p/chromium/issues/detail?id=468227
         // NOTE: Without "download" attribute, Firefox frequently fails to download a large file. Passwordless protection is stable without "download" attribute because it uses Piping UI Robust, which transfer small chunks especially first chunk even in Firefox.
         // For testing in Firefox, you can enable "Block pop-up windows" in your preference.
         a.download = fileName;

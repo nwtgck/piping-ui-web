@@ -242,7 +242,6 @@ import Vue, {computed, onMounted, ref, watch} from 'vue';
 import {type DataUploaderProps} from '@/components/DataUploader.vue';
 import {type DataViewerProps} from "@/components/DataViewer.vue";
 import {type DataDownloaderProps} from "@/components/DataDownloader.vue";
-import * as t from 'io-ts';
 import {mdiAlert, mdiClose, mdiCollapseAll, mdiDelete, mdiDownload, mdiExpandAll, mdiEye, mdiEyeOff, mdiFileFind, mdiKey, mdiShieldCheck, mdiShieldHalfFull, mdiUpload, mdiPencil, mdiInformation} from "@mdi/js";
 import {strings} from "@/strings/strings";
 import {type FilePondFile} from "filepond";
@@ -482,6 +481,8 @@ async function send() {
     return files;
   })();
 
+  const sendingFilePondFiles: FilePondFile[] = inputFiles.value;
+  const sendingText: string = inputText.value;
   // Increment upload counter
   uploadCount.value++;
   // Delegate data uploading
@@ -490,9 +491,21 @@ async function send() {
     props: {
       uploadNo: uploadCount.value,
       data: body,
+      inputFileName: Array.isArray(body) && body.length === 1 ? body[0].name : undefined,
       serverUrl: pipingServerUrl.value,
       secretPath: secretPath.value,
       protection: protection.value,
+      // NOTE: This may leak when not succeeded
+      onSentSuccessfully() {
+        if (inputFiles.value === sendingFilePondFiles) {
+          // clear input files
+          inputFiles.value = [];
+        }
+        if (inputText.value === sendingText) {
+          // clear input text
+          inputText.value = '';
+        }
+      },
     }
   });
   // Open by default

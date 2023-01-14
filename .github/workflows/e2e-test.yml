@@ -6,6 +6,7 @@ on:
 jobs:
   test:
     strategy:
+      fail-fast: false
       matrix:
         include:
           # Chrome 84.0 is the oldest version available on selenium/standalone-xxx.

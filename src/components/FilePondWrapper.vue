@@ -1,6 +1,7 @@
 <template>
   <file-pond :value="value"
              @input="input"
+             ref="filePond"
              :label-idle="labelIdle"
              :allow-multiple="true"
              :allow-paste="true"
@@ -23,6 +24,13 @@ export default Vue.extend({
   props: {
     value: Array as PropType<FilePondFile[]>,
     labelIdle: String,
+  },
+  watch: {
+    value() {
+      if (this.$props.value?.length === 0) {
+        (this.$refs.filePond as any).removeFiles();
+      }
+    }
   },
   methods: {
     input(value: FilePondFile[]) {

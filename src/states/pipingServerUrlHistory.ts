@@ -1,14 +1,14 @@
 import {computed, ref} from "vue";
 import {keys} from "@/local-storage-keys";
 import {loadLocalStorageWithValidation} from "@/utils/loadLocalStorageWithValidation";
-import * as t from "io-ts";
+import {z} from "zod";
 import buildConstants from "@/build-constants";
 
 const defaultServerUrls: ReadonlyArray<string> = buildConstants.pipingServerUrls;
 
 const inner = ref<readonly string[]>((() => {
   // Load server URL history from local storage
-  const savedServerUrlHistory: string[] | undefined = loadLocalStorageWithValidation(t.array(t.string), keys.serverUrlHistory);
+  const savedServerUrlHistory: string[] | undefined = loadLocalStorageWithValidation(z.array(z.string()), keys.serverUrlHistory);
   // If none
   if (savedServerUrlHistory === undefined) {
     // Set default

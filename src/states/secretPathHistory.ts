@@ -1,11 +1,11 @@
 import {computed, ref} from "vue";
 import {keys} from "@/local-storage-keys";
 import {loadLocalStorageWithValidation} from "@/utils/loadLocalStorageWithValidation";
-import * as t from "io-ts";
+import {z} from "zod";
 
 const inner = ref<readonly string[]>((() => {
   // Load secret path history from local storage
-  const savedSecretPathHistory: string[] | undefined = loadLocalStorageWithValidation(t.array(t.string), keys.secretPathHistory);
+  const savedSecretPathHistory: string[] | undefined = loadLocalStorageWithValidation(z.array(z.string()), keys.secretPathHistory);
   if (savedSecretPathHistory === undefined) {
     return [];
   }

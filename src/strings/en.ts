@@ -107,6 +107,7 @@ curl https://ppng.io/mypath | gpg</code>
   },
   data_uploader_xhr_upload_error: 'An error occurred while uploading',
   cancel: 'Cancel',
+  update_the_app: 'Update the app',
   view_in_viewer: 'View',
   download_url: 'Download URL',
   waiting_for_sender: 'Waiting for sender...',
