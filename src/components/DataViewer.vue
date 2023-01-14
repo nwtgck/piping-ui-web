@@ -161,6 +161,8 @@
         {{ errorMessage }}
       </v-alert>
 
+      <UpdateAppButton v-if="showsUpdateAppButton" />
+
     </v-expansion-panel-content>
   </v-expansion-panel>
 
@@ -204,6 +206,9 @@ import {getReadableStreamWithProgress} from "@/utils/getReadableStreamWithProgre
 import {strings} from "@/strings/strings";
 import {ecdsaP384SigningKeyPairPromise} from "@/states/ecdsaP384SigningKeyPairPromise";
 import {decideFileName} from "@/piping-ui-utils/decideFileName";
+import {shouldUpdateApp} from "@/piping-ui-utils/shouldUpdateApp";
+
+const UpdateAppButton = () => import('@/components/UpdateAppButton.vue');
 
 // eslint-disable-next-line no-undef
 const props = defineProps<{ composedProps: DataViewerProps }>();
@@ -233,6 +238,7 @@ let blob = new Blob();
 const showsCopied = ref(false);
 const isDecrypting = ref(false);
 const pipingUiAuthVerificationCode = ref<string | undefined>();
+const showsUpdateAppButton = ref(false);
 let topPriorityDataMeta: { fileName: string | undefined, fileExtension: string | undefined } | undefined;
 
 const progressPercentage = computed<number | null>(() => {
@@ -330,6 +336,7 @@ onMounted(async () => {
       case "key_exchange_error": {
         const errorCode = keyExchangeRes.error.keyExchangeError;
         updateErrorMessage(() => strings.value?.["key_exchange_error"](errorCode));
+        showsUpdateAppButton.value = shouldUpdateApp(keyExchangeRes.error.keyExchangeError);
         break;
       }
       case "sender_not_verified":

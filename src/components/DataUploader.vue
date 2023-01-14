@@ -109,6 +109,8 @@
                v-html="errorMessage"
                :value="hasError" />
 
+      <UpdateAppButton v-if="showsUpdateAppButton" />
+
     </v-expansion-panel-content>
   </v-expansion-panel>
 
@@ -147,6 +149,9 @@ import {useErrorMessage} from "@/composables/useErrorMessage";
 import {strings} from "@/strings/strings";
 import {ecdsaP384SigningKeyPairPromise} from "@/states/ecdsaP384SigningKeyPairPromise";
 import * as fileType from 'file-type/browser';
+import {shouldUpdateApp} from "@/piping-ui-utils/shouldUpdateApp";
+
+const UpdateAppButton = () => import('@/components/UpdateAppButton.vue');
 
 const props = defineProps<{ composedProps: DataUploaderProps }>();
 
@@ -169,6 +174,7 @@ const isCompressing = ref(false);
 const isNonStreamingEncrypting = ref(false);
 const verificationStep = ref<pipingUiAuth.VerificationStep>({type: 'initial'});
 const pipingUiAuthVerificationCode = ref<string | undefined>();
+const showsUpdateAppButton = ref(false);
 
 const progressPercentage = computed<number | null>(() => {
   if (progressSetting.value.totalBytes === undefined) {
@@ -292,6 +298,7 @@ onMounted(async () => {
       if (keyExchangeRes.type === 'error') {
         verificationStep.value = {type: 'error'};
         updateErrorMessage(() => strings.value?.['key_exchange_error'](keyExchangeRes.keyExchangeError));
+        showsUpdateAppButton.value = shouldUpdateApp(keyExchangeRes.keyExchangeError);
         return;
       }
       const {key, mainPath, verificationCode} = keyExchangeRes;

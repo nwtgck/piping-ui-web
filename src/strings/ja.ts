@@ -106,6 +106,7 @@ curl https://ppng.io/mypath | gpg</code>
     return sanitizeHtmlAllowingATag(`エラーが発生しました。サーバーが0.9.4より低い可能性があります。 <a href="${versionUrl}" target="_blank">${versionUrl}</a> でバージョンの確認できます。`);
   },
   data_uploader_xhr_upload_error: 'アップロード中にエラーが発生しました',
+  update_the_app: 'アプリを更新',
   cancel: 'キャンセル',
   view_in_viewer: '表示',
   decrypting: '復号中...',

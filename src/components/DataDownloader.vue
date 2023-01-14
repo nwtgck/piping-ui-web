@@ -65,6 +65,8 @@
         {{ errorMessage }}
       </v-alert>
 
+      <UpdateAppButton v-if="showsUpdateAppButton" />
+
       <v-dialog v-model="openRetryDownload" persistent max-width="290">
         <v-card>
           <v-card-title class="text-h5">{{ strings?.['retry_download_dialog_title'] }}</v-card-title>
@@ -113,7 +115,9 @@ import {firstAtLeastBlobFromReadableStream} from "@/utils/firstAtLeastBlobFromRe
 import {decideFileName} from "@/piping-ui-utils/decideFileName";
 import {readableBytesString} from "@/utils/readableBytesString";
 import {getReadableStreamWithProgress} from "@/utils/getReadableStreamWithProgress";
+import {shouldUpdateApp} from "@/piping-ui-utils/shouldUpdateApp";
 
+const UpdateAppButton = () => import('@/components/UpdateAppButton.vue');
 const FileSaverAsync = () => import('file-saver').then(p => p.default);
 const swDownloadAsync = () => import("@/sw-download");
 const openPgpUtilsAsync = () => import("@/utils/openpgp-utils");
@@ -178,6 +182,7 @@ const progressPercentage = computed<number | null>(() => {
   }
   return progressSetting.value.loadedBytes / progressSetting.value.totalBytes * 100;
 });
+const showsUpdateAppButton = ref(false);
 
 // NOTE: Automatically download when mounted
 onMounted(async () => {
@@ -207,6 +212,7 @@ onMounted(async () => {
       case "key_exchange_error": {
         const errorCode = keyExchangeRes.error.keyExchangeError;
         updateErrorMessage(() => strings.value?.["key_exchange_error"](errorCode));
+        showsUpdateAppButton.value = shouldUpdateApp(keyExchangeRes.error.keyExchangeError);
         break;
       }
       case "sender_not_verified":
