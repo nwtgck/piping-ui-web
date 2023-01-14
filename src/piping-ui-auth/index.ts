@@ -10,14 +10,19 @@ import {z} from "zod";
 import {KEY_EXCHANGE_VERSION} from "@/piping-ui-auth/KEY_EXCHANGE_VERSION";
 import {makeKeyExchangeFailForLegacy} from "@/piping-ui-auth/for-legacy";
 
+// This value might be "piping_auth" or "piping_key_exchange"
+const keyExchangeFormatType = z.custom<`piping_${string}`>((v) =>
+  (v as string).startsWith("piping_")
+);
+
 export const keyExchangeParcelType = z.object({
-  format: z.literal("piping_ui_auth"),
+  format: keyExchangeFormatType,
   version: z.number(),
 }).passthrough();
 export type KeyExchangeParcel = z.infer<typeof keyExchangeParcelType>;
 
 export const keyExchangeV4ParcelType = z.object({
-  format: z.literal("piping_ui_auth"),
+  format: keyExchangeFormatType,
   version: z.literal(4),
   public_signing_jwk: jsonWebKeyType,
   payload: z.string(),
