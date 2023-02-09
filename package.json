@@ -39,7 +39,7 @@
     "vue": "^2.7.10",
     "vue-filepond": "^6.0.3",
     "vuetify": "^2.6.14",
-    "zod": "^3.20.2"
+    "zod": "^3.20.5"
   },
   "devDependencies": {
     "@mdi/js": "^7.0.96",
