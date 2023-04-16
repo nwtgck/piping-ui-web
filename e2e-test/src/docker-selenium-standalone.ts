@@ -30,7 +30,7 @@ RUN sudo apt update && sudo apt install -y socat
     "-p", `${port}:4444`,
     ...(vncPort === undefined ? []: ["-p", `${vncPort}:5900`]),
     ...(noVncPort === undefined ? []: ["-p", `${noVncPort}:7900`]),
-    ...volumesOptions, `--shm-size=2g`, "-e", "SE_START_XVFB=false", "-e", `SE_NODE_MAX_SESSIONS=${maxSessions}`, dockerImage
+    ...volumesOptions, `--shm-size=2g`, "-e", `SE_NODE_MAX_SESSIONS=${maxSessions}`, dockerImage
   ]);
   if (dockerRunResult.status !== 0) {
     throw new Error(`failed to docker-run: ${dockerRunResult.stderr.toString("utf-8")}`);
