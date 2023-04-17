@@ -42,7 +42,7 @@
     "zod": "^3.21.4"
   },
   "devDependencies": {
-    "@mdi/js": "^7.0.96",
+    "@mdi/js": "^7.2.96",
     "@types/chai": "^4.3.3",
     "@types/clipboard": "^2.0.7",
     "@types/file-saver": "^2.0.5",
