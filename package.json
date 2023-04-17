@@ -31,7 +31,7 @@
     "jwk-thumbprint": "^0.1.4",
     "linkify-string": "^4.0.2",
     "linkifyjs": "^4.0.2",
-    "openpgp": "^5.5.0",
+    "openpgp": "^5.7.0",
     "register-service-worker": "^1.7.2",
     "sanitize-html": "^2.10.0",
     "smoothscroll-polyfill": "^0.4.4",
