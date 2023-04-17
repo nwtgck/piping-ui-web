@@ -2,8 +2,6 @@ name: netlify
 
 on:
   push:
-  pull_request:
-    types: [opened, synchronize]
 
 permissions:
   statuses: write
