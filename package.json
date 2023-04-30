@@ -29,7 +29,7 @@
     "filepond": "^4.30.4",
     "jszip": "^3.10.1",
     "jwk-thumbprint": "^0.1.4",
-    "linkify-string": "^4.0.2",
+    "linkify-string": "^4.1.1",
     "linkifyjs": "^4.0.2",
     "openpgp": "^5.8.0",
     "register-service-worker": "^1.7.2",
