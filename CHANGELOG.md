@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [0.16.1] - 2023-08-20
+### Fixed
+- Not make verification code flicker
+
+### Changed
+- (internal) Relax key exchange "format" type restriction
+- Update dependencies 
+
 ## [0.16.0] - 2023-01-14
 ### Changed
 - Clear input files and text after sent
@@ -465,7 +473,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 ### Added
 - First release
 
-[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.16.0...HEAD
+[Unreleased]: https://github.com/nwtgck/piping-ui-web/compare/v0.16.1...HEAD
+[0.16.1]: https://github.com/nwtgck/piping-ui-web/compare/v0.16.0...v0.16.1
 [0.16.0]: https://github.com/nwtgck/piping-ui-web/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/nwtgck/piping-ui-web/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/nwtgck/piping-ui-web/compare/v0.13.0...v0.14.0
