@@ -12,7 +12,7 @@ export function getActions(driver: webdriver.WebDriver) {
       await fileInput.sendKeys(path);
     },
     async inputSecretPath(path: string) {
-      const secretPathClearButton = driver.findElement(webdriver.By.css("[data-testid=secret_path_input] ~ * [aria-label='clear icon']"));
+      const secretPathClearButton = driver.findElement(webdriver.By.css("[data-testid=secret_path_input] ~ * [aria-label='Clear Secret path']"));
       await secretPathClearButton.click();
       const secretPathInput = driver.findElement(webdriver.By.css("[data-testid=secret_path_input]"));
       await secretPathInput.sendKeys(path);

@@ -16,9 +16,8 @@
         <span style="">{{ strings?.['waiting_for_sender'] }}</span>
       </v-alert>
 
-      <span v-if="composedProps.protection.type === 'passwordless' && verificationStep.type === 'verification_code_arrived'">
-        <VerificationCode :value="verificationStep.verificationCode" :color="canceled ? 'grey' : undefined"/>
-      </span>
+      <VerificationCode v-if="composedProps.protection.type === 'passwordless' && !composedProps.protection.alwaysSendVerify && verificationStep.type === 'verification_code_arrived'"
+                        :value="verificationStep.verificationCode" :color="canceled ? 'grey' : undefined"/>
 
       <!-- NOTE: Don't use v-if because the "sibling" element uses "ref" and the ref is loaded in mounted(), but don't know why "sibling" affects. -->
       <span v-show="isReadyToDownload">
