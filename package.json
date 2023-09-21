@@ -73,7 +73,7 @@
     "process": "^0.11.10",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "sass": "~1.32.0",
+    "sass": "~1.68.0",
     "sass-loader": "^10.3.1",
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2",
