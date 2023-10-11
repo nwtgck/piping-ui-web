@@ -48,7 +48,7 @@
     "@types/file-saver": "^2.0.5",
     "@types/mocha": "^10.0.2",
     "@types/react": "^18.2.25",
-    "@types/react-dom": "^18.2.10",
+    "@types/react-dom": "^18.2.13",
     "@types/sanitize-html": "^2.9.1",
     "@types/smoothscroll-polyfill": "^0.3.1",
     "@types/url-join": "^4.0.0",
