@@ -5,7 +5,7 @@
   },
   "devDependencies": {
     "@types/mocha": "^10.0.3",
-    "@types/power-assert": "^1.5.9",
+    "@types/power-assert": "^1.5.10",
     "@types/selenium-webdriver": "^4.1.19",
     "mocha": "^10.2.0",
     "power-assert": "^1.6.1",
