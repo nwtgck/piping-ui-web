@@ -21,7 +21,7 @@ jobs:
 
           # "selenium/standalone-${e2e_docker_image_fragment}"
           # Why fragment? These short names are more readable in GitHub UI
-          - e2e_docker_image_fragment: chrome:118.0
+          - e2e_docker_image_fragment: chrome:117.0
             e2e_service_worker_disable: false
             e2e_block_popup: false
           - e2e_docker_image_fragment: chrome:84.0
