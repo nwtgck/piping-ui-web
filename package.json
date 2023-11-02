@@ -35,7 +35,7 @@
     "register-service-worker": "^1.7.2",
     "sanitize-html": "^2.11.0",
     "smoothscroll-polyfill": "^0.4.4",
-    "url-join": "^4.0.1",
+    "url-join": "^5.0.0",
     "vue": "^2.7.10",
     "vue-filepond": "^6.0.3",
     "vuetify": "^2.7.1",
