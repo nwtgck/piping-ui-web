@@ -37,7 +37,7 @@
     "smoothscroll-polyfill": "^0.4.4",
     "url-join": "^4.0.1",
     "vue": "^2.7.10",
-    "vue-filepond": "^6.0.3",
+    "vue-filepond": "^7.0.4",
     "vuetify": "^2.7.1",
     "zod": "^3.22.4"
   },
