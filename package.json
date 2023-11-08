@@ -36,13 +36,13 @@
     "sanitize-html": "^2.11.0",
     "smoothscroll-polyfill": "^0.4.4",
     "url-join": "^4.0.1",
-    "vue": "^2.7.10",
+    "vue": "^2.7.15",
     "vue-filepond": "^6.0.3",
     "vuetify": "^2.7.1",
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@mdi/js": "^7.2.96",
+    "@mdi/js": "^7.3.67",
     "@types/chai": "^4.3.9",
     "@types/clipboard": "^2.0.7",
     "@types/file-saver": "^2.0.5",
