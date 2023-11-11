@@ -52,7 +52,7 @@
     "@types/sanitize-html": "^2.9.3",
     "@types/smoothscroll-polyfill": "^0.3.3",
     "@types/url-join": "^4.0.0",
-    "@typescript-eslint/eslint-plugin": "^5.61.0",
+    "@typescript-eslint/eslint-plugin": "^6.10.0",
     "@typescript-eslint/parser": "^5.62.0",
     "@vue/cli-plugin-babel": "^5.0.8",
     "@vue/cli-plugin-eslint": "^5.0.8",
