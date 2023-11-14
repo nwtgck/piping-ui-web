@@ -33,7 +33,7 @@ jobs:
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Add publish URL as commit status
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             // When "pull_request", context.payload.pull_request?.head.sha is expected SHA.
