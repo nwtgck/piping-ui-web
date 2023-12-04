@@ -4,8 +4,8 @@
     "start": "mocha --require ts-node/register --timeout=100000000 src/**/*.ts"
   },
   "devDependencies": {
-    "@types/mocha": "^10.0.3",
-    "@types/power-assert": "^1.5.10",
+    "@types/mocha": "^10.0.6",
+    "@types/power-assert": "^1.5.11",
     "@types/selenium-webdriver": "^4.1.20",
     "mocha": "^10.2.0",
     "power-assert": "^1.6.1",
