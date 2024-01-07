@@ -27,27 +27,27 @@ jobs:
           - e2e_docker_image_fragment: chrome:84.0
             e2e_service_worker_disable: false
             e2e_block_popup: false
-          - e2e_docker_image_fragment: firefox:116.0
+          - e2e_docker_image_fragment: firefox:118.0
             e2e_service_worker_disable: false
             e2e_block_popup: false
           - e2e_docker_image_fragment: firefox:78.0
             e2e_service_worker_disable: false
             e2e_block_popup: false
-          - e2e_docker_image_fragment: firefox:116.0
+          - e2e_docker_image_fragment: firefox:118.0
             e2e_service_worker_disable: true
             e2e_block_popup: false
           - e2e_docker_image_fragment: firefox:78.0
             e2e_service_worker_disable: true
             e2e_block_popup: false
-          - e2e_docker_image_fragment: firefox:116.0
+          - e2e_docker_image_fragment: firefox:118.0
             e2e_service_worker_disable: false
             e2e_block_popup: true
 
     runs-on: ubuntu-20.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3.8.1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4.0.1
         with:
           node-version: 16.x
           cache: 'npm'
