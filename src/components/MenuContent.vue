@@ -11,7 +11,7 @@
             <v-list-item-title>Piping UI</v-list-item-title>
             <v-list-item-subtitle>{{ strings?.['version'] }}</v-list-item-subtitle>
             <a href="https://github.com/nwtgck/piping-ui-web" target="_blank">
-              <font-awesome-icon :icon="['fab', 'github']" />
+              <font-awesome-icon :icon="faGithub" />
               {{ strings?.['view_on_github'] }}
             </a>
           </v-list-item-content>
@@ -74,6 +74,8 @@ import DarkThemeSwitch from "@/components/DarkThemeSwitch.vue";
 import {recordsServerUrlHistory} from "@/states/recordsServerUrlHistory";
 import {recordsSecretPathHistory} from "@/states/recordsSecretPathHistory";
 import {forceDisableStreamingUpload} from "@/states/forceDisableStreamingUpload";
+import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome";
+import {faGithub} from "@fortawesome/free-brands-svg-icons";
 
 // Available languages
 type Language = 'en' | 'ja';
@@ -81,6 +83,7 @@ type Language = 'en' | 'ja';
 export default defineComponent({
   components: {
     DarkThemeSwitch,
+    FontAwesomeIcon,
   },
   // v-model is licenseDialog
   props: {
@@ -102,6 +105,7 @@ export default defineComponent({
       recordsServerUrlHistory,
       recordsSecretPathHistory,
       forceDisableStreamingUpload,
+      faGithub,
     };
   },
 });
