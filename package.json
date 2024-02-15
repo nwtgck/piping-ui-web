@@ -37,7 +37,7 @@
     "url-join": "^4.0.1",
     "vue": "^2.7.16",
     "vue-filepond": "^6.0.3",
-    "vuetify": "^2.7.1",
+    "vuetify": "^2.7.2",
     "zod": "^3.22.4"
   },
   "devDependencies": {
