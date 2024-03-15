@@ -12,6 +12,6 @@
     "selenium-webdriver": "^4.18.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.2",
-    "undici": "^6.7.1"
+    "undici": "^6.9.0"
   }
 }
