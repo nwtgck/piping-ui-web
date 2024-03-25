@@ -46,7 +46,7 @@
     "@types/clipboard": "^2.0.7",
     "@types/file-saver": "^2.0.7",
     "@types/mocha": "^10.0.6",
-    "@types/react": "^18.2.67",
+    "@types/react": "^18.2.69",
     "@types/react-dom": "^18.2.22",
     "@types/sanitize-html": "^2.11.0",
     "@types/smoothscroll-polyfill": "^0.3.4",
