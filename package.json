@@ -22,7 +22,7 @@
     "@mattiasbuelens/web-streams-adapter": "^0.1.0",
     "binconv": "^0.2.0",
     "clipboard-copy": "^4.0.1",
-    "core-js": "^3.37.0",
+    "core-js": "^3.37.1",
     "file-saver": "^2.0.5",
     "file-type": "^16.5.3",
     "filepond": "^4.31.1",
