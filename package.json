@@ -51,7 +51,7 @@
     "@types/sanitize-html": "^2.11.0",
     "@types/smoothscroll-polyfill": "^0.3.4",
     "@types/url-join": "^4.0.0",
-    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/eslint-plugin": "^8.3.0",
     "@typescript-eslint/parser": "^5.62.0",
     "@vue/cli-plugin-babel": "^5.0.8",
     "@vue/cli-plugin-eslint": "^5.0.8",
