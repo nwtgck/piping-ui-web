@@ -37,6 +37,7 @@
                     :items="secretPathHistory"
                     :placeholder="strings?.['secret_path_placeholder']"
                     ref="secret_path_ref"
+                    inputmode="numeric"
                     class="ma-0 pa-0 readable-font"
                     outlined
                     clearable
