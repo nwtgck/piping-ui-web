@@ -8,8 +8,8 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4.0.1
+      - uses: actions/setup-node@v4.0.4
         with:
-          node-version: 16.x
+          node-version: 20.x
       - run: npm ci
       - uses: nwtgck/actions-vue-upgrade@develop

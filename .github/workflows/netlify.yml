@@ -13,9 +13,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4.0.1
+      - uses: actions/setup-node@v4.0.4
         with:
-          node-version: 16.x
+          node-version: 20.x
       # base: https://github.com/actions/setup-node/issues/214#issuecomment-810829250
       - name: Reconfigure git to use HTTPS authentication for npm-dependencies using Git
         run: git config --global url."https://github.com/".insteadOf ssh://git@github.com/
@@ -23,7 +23,7 @@ jobs:
       - run: SITE_URL="https://piping-ui.org" npm run build
 
       - name: Deploy to Netlify
-        uses: nwtgck/actions-netlify@v2.1
+        uses: nwtgck/actions-netlify@v3.0
         with:
           publish-dir: './dist'
           production-branch: master
@@ -43,7 +43,7 @@ jobs:
         id: get_netlify_alias
       # For branch deploy
       - name: Deploy to Netlify (branch)
-        uses: nwtgck/actions-netlify@v2.1
+        uses: nwtgck/actions-netlify@v3.0
         with:
           publish-dir: './dist'
           github-token: ${{ secrets.GITHUB_TOKEN }}
