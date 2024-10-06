@@ -30,7 +30,7 @@
     "jwk-thumbprint": "^0.1.4",
     "linkify-string": "^4.0.2",
     "linkifyjs": "^4.0.2",
-    "openpgp": "^5.11.1",
+    "openpgp": "^5.11.2",
     "register-service-worker": "^1.7.2",
     "sanitize-html": "^2.11.0",
     "smoothscroll-polyfill": "^0.4.4",
