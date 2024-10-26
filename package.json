@@ -35,7 +35,7 @@
     "sanitize-html": "^2.13.1",
     "smoothscroll-polyfill": "^0.4.4",
     "url-join": "^4.0.1",
-    "vue": "^2.7.16",
+    "vue": "^3.0.0",
     "vue-filepond": "^6.0.3",
     "vuetify": "^2.7.2",
     "zod": "^3.23.8"
