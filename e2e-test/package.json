@@ -4,14 +4,14 @@
     "start": "mocha --require ts-node/register --timeout=100000000 src/**/*.ts"
   },
   "devDependencies": {
-    "@types/mocha": "^10.0.8",
+    "@types/mocha": "^10.0.9",
     "@types/power-assert": "^1.5.12",
-    "@types/selenium-webdriver": "^4.1.26",
+    "@types/selenium-webdriver": "^4.1.28",
     "mocha": "^10.7.3",
     "power-assert": "^1.6.1",
-    "selenium-webdriver": "^4.25.0",
+    "selenium-webdriver": "^4.27.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.6.2",
-    "undici": "^6.19.8"
+    "typescript": "^5.7.2",
+    "undici": "^7.2.1"
   }
 }
