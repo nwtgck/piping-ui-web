@@ -9,7 +9,7 @@
     "@types/selenium-webdriver": "^4.1.28",
     "mocha": "^10.7.3",
     "power-assert": "^1.6.1",
-    "selenium-webdriver": "^4.29.0",
+    "selenium-webdriver": "^4.30.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.2",
     "undici": "^7.5.0"
