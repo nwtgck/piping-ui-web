@@ -22,10 +22,10 @@
     "@mattiasbuelens/web-streams-adapter": "^0.1.0",
     "binconv": "^0.2.0",
     "clipboard-copy": "^4.0.1",
-    "core-js": "^3.39.0",
+    "core-js": "^3.41.0",
     "file-saver": "^2.0.5",
     "file-type": "^16.5.3",
-    "filepond": "^4.32.6",
+    "filepond": "^4.32.7",
     "jszip": "^3.10.1",
     "jwk-thumbprint": "^0.1.4",
     "linkify-string": "^4.0.2",
@@ -38,7 +38,7 @@
     "vue": "^2.7.16",
     "vue-filepond": "^6.0.3",
     "vuetify": "^2.7.2",
-    "zod": "^3.24.1"
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@mdi/js": "^7.4.47",
@@ -75,7 +75,7 @@
     "sass": "~1.32.0",
     "sass-loader": "^10.3.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.2",
+    "typescript": "^5.8.3",
     "vue-cli-plugin-vuetify": "^2.5.8",
     "vuetify-loader": "^1.9.2"
   },
