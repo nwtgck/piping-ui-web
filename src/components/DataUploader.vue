@@ -84,7 +84,15 @@
         </tr>
         <tr v-if="composedProps.protection.type !== 'passwordless'" class="text-left">
           <td>{{ strings?.['upload_url'] }}</td>
-          <td>{{ uploadUrl }}</td>
+          <td>
+            {{ uploadUrl }}
+            <v-btn small icon @click="copyToClipboard(uploadUrl)" :title="strings?.['copy_to_clipboard']">
+              <v-icon>{{ mdiContentCopy }}</v-icon>
+            </v-btn>
+            <v-btn small icon @click="showQrCode = true" :title="strings?.['show_qr_code']">
+              <v-icon>{{ mdiQrcode }}</v-icon>
+            </v-btn>
+          </td>
         </tr>
         <tr v-if="pipingUiAuthVerificationCode !== undefined" class="text-left">
           <td>{{ strings?.['verification_code'] }}</td>
@@ -92,6 +100,18 @@
         </tr>
         </tbody>
       </v-simple-table>
+
+      <v-dialog v-model="showQrCode" max-width="400">
+        <v-card>
+          <v-card-title>{{ strings?.['qr_code'] }}</v-card-title>
+          <v-card-text>
+            <qrcode-vue :value="uploadUrl" :size="200" />
+          </v-card-text>
+          <v-card-actions>
+            <v-btn text @click="showQrCode = false">{{ strings?.['close'] }}</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
 
       <div v-if="isCancelable" style="text-align: right">
         <!-- Cancel button -->
@@ -152,6 +172,19 @@ import * as fileType from 'file-type/browser';
 import {shouldUpdateApp} from "@/piping-ui-utils/shouldUpdateApp";
 
 const UpdateAppButton = () => import('@/components/UpdateAppButton.vue');
+
+import { mdiContentCopy, mdiQrcode } from "@mdi/js";
+import QrcodeVue from "qrcode.vue";
+
+const showQrCode = ref(false);
+
+function copyToClipboard(text: string) {
+  navigator.clipboard.writeText(text).then(() => {
+    console.log("Copied to clipboard: ", text);
+  }).catch(err => {
+    console.error("Failed to copy: ", err);
+  });
+}
 
 const props = defineProps<{ composedProps: DataUploaderProps }>();
 
