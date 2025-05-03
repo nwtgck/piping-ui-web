@@ -104,7 +104,7 @@
       <v-dialog v-model="showQrCode" max-width="400">
         <v-card>
           <v-card-title>{{ strings?.['qr_code'] }}</v-card-title>
-          <v-card-text>
+          <v-card-text style="text-align: center;">
             <qrcode-vue :value="uploadUrl" :size="200" />
           </v-card-text>
           <v-card-actions>
