@@ -43,7 +43,7 @@ jobs:
             e2e_service_worker_disable: false
             e2e_block_popup: true
 
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
