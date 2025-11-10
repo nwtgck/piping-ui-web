@@ -7,7 +7,7 @@ jobs:
   vue_upgrade:
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-node@v4.4.0
         with:
           node-version: 20.x
