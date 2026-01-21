@@ -31,6 +31,7 @@
     "linkify-string": "^4.0.2",
     "linkifyjs": "^4.0.2",
     "openpgp": "^5.11.2",
+    "qrcode.vue": "^1.7.0",
     "register-service-worker": "^1.7.2",
     "sanitize-html": "^2.13.1",
     "smoothscroll-polyfill": "^0.4.4",
